@@ -26,6 +26,7 @@ bot.use(onBotAddedInChat);
 //   onStart: () => console.log("Bot started"),
 //   drop_pending_updates: true,
 // });
+await bot.api.deleteWebhook({ drop_pending_updates: true });
 run(bot);
 
 console.log("Bot started");
