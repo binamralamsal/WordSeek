@@ -1,4 +1,4 @@
-import { Composer } from "grammy";
+import { Composer, Context, GrammyError } from "grammy";
 
 import { and, asc, eq } from "drizzle-orm";
 
@@ -124,7 +124,7 @@ composer.on("message", async (ctx) => {
       reply_parameters: { message_id: ctx.message.message_id },
       parse_mode: "HTML",
     });
-    ctx.react("🎉");
+    reactWithRandom(ctx);
     await db.delete(gamesTable).where(eq(gamesTable.id, currentGame.id));
     return;
   }
@@ -202,4 +202,36 @@ function getFeedback(data: GuessEntry[], solution: string) {
       return `${feedback} ${guess}`;
     })
     .join("\n");
+}
+
+
+async function reactWithRandom(ctx: Context) {
+  const emojis: ReactionTypeEmoji["emoji"][] = [
+    "🎉",
+    "🏆",
+    "🤩",
+    "⚡",
+    "🫡",
+    "💯",
+    "❤‍🔥",
+    "🦄",
+  ];
+
+  const shuffled = emojis.sort(() => Math.random() - 0.5);
+
+  for (const emoji of shuffled) {
+    try {
+      await ctx.react(emoji);
+      return;
+    } catch (err) {
+      if (
+        err instanceof GrammyError &&
+        err.description?.includes("REACTION_NOT_ALLOWED")
+      ) {
+        continue;
+      } else {
+        break;
+      }
+    }
+  }
 }
