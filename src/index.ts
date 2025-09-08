@@ -23,8 +23,6 @@ bot.use(callbackQueryHandler);
 bot.use(onMessageHander);
 bot.use(onBotAddedInChat);
 
-import { Bot, GrammyError, HttpError } from "grammy";
-
 bot.catch(async (err) => {
   const ctx = err.ctx;
   console.error(`Error while handling update ${ctx.update.update_id}:`);
