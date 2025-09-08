@@ -17,14 +17,15 @@ import { toFancyText } from "../util/to-fancy-text";
 
 const composer = new Composer();
 
-composer.on("message", async (ctx) => {
+composer.on("message:text", async (ctx) => {
   const currentGuess = ctx.message.text?.toLowerCase();
-  if (
-    !currentGuess ||
-    currentGuess.length !== 5 ||
-    currentGuess.startsWith("/")
-  )
+  
+  // regex: only 5 English letters (a-z)
+  const isValidWord = /^[a-z]{5}$/.test(currentGuess ?? "");
+  
+  if (!isValidWord || currentGuess.startsWith("/")) {
     return;
+  }
 
   const [isUserBanned] = await db
     .select()
