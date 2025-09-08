@@ -1,6 +1,7 @@
 import { autoRetry } from "@grammyjs/auto-retry";
 import { parseMode } from "@grammyjs/parse-mode";
 import { run, sequentialize } from "@grammyjs/runner";
+import { GrammyError, HttpError } from "grammy";
 
 import { commands } from "./commands";
 import { bot } from "./config/bot";
@@ -21,6 +22,19 @@ bot.use(commands);
 bot.use(callbackQueryHandler);
 bot.use(onMessageHander);
 bot.use(onBotAddedInChat);
+
+bot.catch((err) => {
+  const ctx = err.ctx;
+  console.error(`Error while handling update ${ctx.update.update_id}:`);
+  const e = err.error;
+  if (e instanceof GrammyError) {
+    console.error("Error in request:", e.description);
+  } else if (e instanceof HttpError) {
+    console.error("Could not contact Telegram:", e);
+  } else {
+    console.error("Unknown error:", e);
+  }
+});
 
 // bot.start({
 //   onStart: () => console.log("Bot started"),
