@@ -10,5 +10,9 @@ export const env = z
       .default("")
       .transform((val) => val.split(",").filter(Boolean).map(Number)),
     REDIS_URI: z.string().default("redis://127.0.0.1:6379"),
+    CUSTOM_API_ROOT: z
+      .string()
+      .url({ message: "CUSTOM_API_ROOT must be a valid URL" })
+      .default("https://api.telegram.org"), // default to official API
   })
   .parse(process.env);
