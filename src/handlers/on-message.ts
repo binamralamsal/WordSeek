@@ -19,10 +19,10 @@ const composer = new Composer();
 
 composer.on("message:text", async (ctx) => {
   const currentGuess = ctx.message.text?.toLowerCase();
-  
+
   // regex: only 5 English letters (a-z)
   const isValidWord = /^[a-z]{5}$/.test(currentGuess ?? "");
-  
+
   if (!isValidWord || currentGuess.startsWith("/")) {
     return;
   }
@@ -50,7 +50,9 @@ composer.on("message:text", async (ctx) => {
       ];
       const randomReply =
         harshReplies[Math.floor(Math.random() * harshReplies.length)];
-      ctx.reply(randomReply, { reply_parameters: { message_id: ctx.msgId } });
+      ctx.reply(randomReply, {
+        reply_parameters: { message_id: ctx.msgId },
+      });
     }
     return;
   }
@@ -160,7 +162,9 @@ composer.on("message:text", async (ctx) => {
       responseMessage += `\n\n<blockquote><strong>Hint:</strong> ${meaning}</blockquote>`;
   }
 
-  ctx.reply(responseMessage);
+  ctx.reply(responseMessage, {
+    protect_content: true,
+  });
 });
 
 export const onMessageHander = composer;
@@ -204,7 +208,6 @@ function getFeedback(data: GuessEntry[], solution: string) {
     })
     .join("\n");
 }
-
 
 async function reactWithRandom(ctx: Context) {
   const emojis: ReactionTypeEmoji["emoji"][] = [
