@@ -158,35 +158,20 @@ composer.on("message:text", async (ctx) => {
     );
   }
 
-  // let responseMessage = toFancyText(getFeedback(allGuesses, currentGame.word));
-
-  // if (allGuesses.length >= 20) {
-  //   const currentWord = currentGame.word;
-  //   const meaning = commonWords[currentWord]?.meaning;
-
-  //   if (meaning)
-  //     responseMessage += `\n\n<blockquote><strong>Hint:</strong> ${meaning}</blockquote>`;
-  // }
-
-  // ctx.reply(responseMessage, {
-  //   protect_content: true,
-  // });
-
   let responseMessage = toFancyText(getFeedback(allGuesses, currentGame.word));
 
   if (allGuesses.length >= 20) {
     const currentWord = currentGame.word;
-    const meaning = commonWords[currentWord]?.meaning;
+    const meaning =
+      commonWords[currentWord as keyof typeof commonWords]?.meaning;
 
     if (meaning)
       responseMessage += `\n\n<blockquote><strong>Hint:</strong> ${meaning}</blockquote>`;
   }
 
-  // Generate and send image
   const imageBuffer = await generateWordleImage(allGuesses, currentGame.word);
 
-  ctx.replyWithPhoto(new InputFile(imageBuffer), {
-    // caption: responseMessage,
+  ctx.replyWithPhoto(new InputFile(new Uint8Array(imageBuffer)), {
     protect_content: true,
     parse_mode: "HTML",
   });
@@ -234,80 +219,7 @@ function getFeedback(data: GuessEntry[], solution: string) {
     .join("\n");
 }
 
-// function generateWordleImage(data: GuessEntry[], solution: string): Buffer {
-//   const tileSize = 60;
-//   const gap = 8;
-//   const padding = 20;
-//   const wordLength = solution.length;
-
-//   const width = padding * 2 + wordLength * tileSize + (wordLength - 1) * gap;
-//   const height = padding * 2 + data.length * tileSize + (data.length - 1) * gap;
-
-//   const canvas = createCanvas(width, height);
-//   const ctx = canvas.getContext("2d");
-
-//   // Background
-//   ctx.fillStyle = "#121213";
-//   ctx.fillRect(0, 0, width, height);
-
-//   data.forEach((entry, rowIndex) => {
-//     const guess = entry.guess.toUpperCase();
-//     const solutionCount: Record<string, number> = {};
-
-//     for (const char of solution.toUpperCase()) {
-//       solutionCount[char] = (solutionCount[char] || 0) + 1;
-//     }
-
-//     const result = Array(guess.length).fill("absent");
-
-//     // First pass: mark correct positions
-//     for (let i = 0; i < guess.length; i++) {
-//       if (guess[i] === solution[i].toUpperCase()) {
-//         result[i] = "correct";
-//         solutionCount[guess[i]]--;
-//       }
-//     }
-
-//     // Second pass: mark present letters
-//     for (let i = 0; i < guess.length; i++) {
-//       if (result[i] === "absent" && solutionCount[guess[i]] > 0) {
-//         result[i] = "present";
-//         solutionCount[guess[i]]--;
-//       }
-//     }
-
-//     // Draw tiles
-//     for (let col = 0; col < guess.length; col++) {
-//       const x = padding + col * (tileSize + gap);
-//       const y = padding + rowIndex * (tileSize + gap);
-
-//       // Set color based on result
-//       if (result[col] === "correct") {
-//         ctx.fillStyle = "#538d4e";
-//       } else if (result[col] === "present") {
-//         ctx.fillStyle = "#b59f3b";
-//       } else {
-//         ctx.fillStyle = "#3a3a3c";
-//       }
-
-//       ctx.fillRect(x, y, tileSize, tileSize);
-
-//       // Draw letter
-//       ctx.fillStyle = "#ffffff";
-//       ctx.font = "bold 32px Arial";
-//       ctx.textAlign = "center";
-//       ctx.textBaseline = "middle";
-//       ctx.fillText(guess[col], x + tileSize / 2, y + tileSize / 2);
-//     }
-//   });
-
-//   return canvas.toBuffer("image/png");
-// }
-
-async function generateWordleImage(
-  data: GuessEntry[],
-  solution: string,
-): Promise<Buffer> {
+async function generateWordleImage(data: GuessEntry[], solution: string) {
   const tiles = data.map((entry) => {
     const guess = entry.guess.toUpperCase();
     const solutionCount: Record<string, number> = {};
@@ -318,7 +230,6 @@ async function generateWordleImage(
 
     const result = Array(guess.length).fill("absent");
 
-    // First pass: mark correct positions
     for (let i = 0; i < guess.length; i++) {
       if (guess[i] === solution[i].toUpperCase()) {
         result[i] = "correct";
@@ -326,7 +237,6 @@ async function generateWordleImage(
       }
     }
 
-    // Second pass: mark present letters
     for (let i = 0; i < guess.length; i++) {
       if (result[i] === "absent" && solutionCount[guess[i]] > 0) {
         result[i] = "present";
@@ -343,49 +253,79 @@ async function generateWordleImage(
     return "#3a3a3c";
   };
 
+  // Determine number of columns
+  const numColumns = data.length > 15 ? 2 : 1;
+  const tilesPerColumn = Math.ceil(tiles.length / numColumns);
+
+  // Split tiles into columns
+  const columns: (typeof tiles)[] = [];
+  for (let i = 0; i < numColumns; i++) {
+    columns.push(tiles.slice(i * tilesPerColumn, (i + 1) * tilesPerColumn));
+  }
+
   const fontPath = join(process.cwd(), "src", "fonts", "roboto.ttf");
-  // or wherever your font is located
   const fontData = await readFile(fontPath);
+
+  const tileSize = 60;
+  const gap = 8;
+  const padding = 20;
+  const columnGap = 16;
+
+  const columnWidth = solution.length * tileSize + (solution.length - 1) * gap;
+  const width =
+    padding * 2 + numColumns * columnWidth + (numColumns - 1) * columnGap;
+  const height =
+    padding * 2 + tilesPerColumn * tileSize + (tilesPerColumn - 1) * gap;
 
   const svg = await satori(
     <div
       style={{
         display: "flex",
-        flexDirection: "column",
         background: "#121213",
         padding: "20px",
-        gap: "8px",
+        gap: `${columnGap}px`,
       }}
     >
-      {tiles.map(({ guess, result }) => (
-        <div style={{ display: "flex", gap: "8px" }}>
-          {guess.split("").map((letter, i) => (
-            <div
-              style={{
-                width: "60px",
-                height: "60px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: getColor(result[i]),
-                color: "white",
-                fontSize: "32px",
-                fontWeight: "bold",
-                fontFamily: "Arial",
-              }}
-            >
-              {letter}
+      {columns.map((column, colIdx) => (
+        <div
+          key={colIdx}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+        >
+          {column.map(({ guess, result }, rowIdx) => (
+            <div key={rowIdx} style={{ display: "flex", gap: "8px" }}>
+              {guess.split("").map((letter, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: "60px",
+                    height: "60px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: getColor(result[i]),
+                    color: "white",
+                    fontSize: "32px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {letter}
+                </div>
+              ))}
             </div>
           ))}
         </div>
       ))}
     </div>,
     {
-      width: 20 + solution.length * 60 + (solution.length - 1) * 8 + 20,
-      height: 20 + data.length * 60 + (data.length - 1) * 8 + 20,
+      width,
+      height,
       fonts: [
         {
-          name: "Roboto Flex",
+          name: "Roboto",
           data: fontData,
           weight: 700,
           style: "normal",
@@ -394,7 +334,6 @@ async function generateWordleImage(
     },
   );
 
-  // Convert SVG to PNG
   const pngBuffer = await sharp(Buffer.from(svg)).png().toBuffer();
 
   return pngBuffer;
