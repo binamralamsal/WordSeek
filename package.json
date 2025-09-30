@@ -12,7 +12,9 @@
     "@types/bun": "latest",
     "@types/express": "^5.0.0",
     "@types/pg": "^8.11.10",
-    "drizzle-kit": "^0.29.1"
+    "@types/react": "^19.1.15",
+    "drizzle-kit": "^0.29.1",
+    "react": "^19.1.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
@@ -23,6 +25,7 @@
     "@grammyjs/runner": "^2.0.3",
     "@neondatabase/serverless": "^0.10.4",
     "better-sqlite3": "^11.7.0",
+    "canvas": "^3.2.0",
     "drizzle-orm": "^0.37.0",
     "express": "^4.21.2",
     "grammy": "^1.33.0",
@@ -30,6 +33,8 @@
     "natural": "^8.0.1",
     "pg": "^8.13.1",
     "postgres": "^3.4.5",
+    "satori": "^0.18.3",
+    "sharp": "^0.34.4",
     "word-definition": "^2.1.6",
     "wordnet-db": "^3.1.14",
     "zod": "^3.23.8"
