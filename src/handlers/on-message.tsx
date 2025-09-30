@@ -168,12 +168,16 @@ composer.on("message:text", async (ctx) => {
       responseMessage += `\n\n<blockquote><strong>Hint:</strong> ${meaning}</blockquote>`;
   }
 
-  const imageBuffer = await generateWordleImage(allGuesses, currentGame.word);
-
-  ctx.replyWithPhoto(new InputFile(new Uint8Array(imageBuffer)), {
+  ctx.reply(responseMessage, {
     protect_content: true,
-    parse_mode: "HTML",
   });
+
+  // const imageBuffer = await generateWordleImage(allGuesses, currentGame.word);
+
+  // ctx.replyWithPhoto(new InputFile(new Uint8Array(imageBuffer)), {
+  //   protect_content: true,
+  //   parse_mode: "HTML",
+  // });
 });
 
 export const onMessageHander = composer;
