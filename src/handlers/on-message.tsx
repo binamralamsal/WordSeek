@@ -1,7 +1,6 @@
 import { Composer, Context, GrammyError, InputFile } from "grammy";
 import { ReactionTypeEmoji } from "grammy/types";
 
-import { Canvas, CanvasRenderingContext2D, createCanvas } from "canvas";
 import { and, asc, eq } from "drizzle-orm";
 import { readFile } from "fs/promises";
 import { join } from "path";
