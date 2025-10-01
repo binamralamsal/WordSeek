@@ -87,51 +87,65 @@ composer.on("message:text", async (ctx) => {
     );
 
   if (currentGuess === currentGame.word) {
-    const allGuesses = await db.query.guessesTable.findMany({
-      where: eq(guessesTable.gameId, currentGame.id),
-    });
+    if (!ctx.from.is_bot) {
+      const allGuesses = await db.query.guessesTable.findMany({
+        where: eq(guessesTable.gameId, currentGame.id),
+      });
 
-    const name = `${ctx.from.first_name}${
-      ctx.from.last_name ? " " + ctx.from.last_name : ""
-    }`;
-    const username = ctx.from.username;
-    const userId = ctx.from.id.toString();
-    const chatId = ctx.chat.id.toString();
+      const name = `${ctx.from.first_name}${
+        ctx.from.last_name ? " " + ctx.from.last_name : ""
+      }`;
+      const username = ctx.from.username;
+      const userId = ctx.from.id.toString();
+      const chatId = ctx.chat.id.toString();
 
-    const score = 30 - allGuesses.length;
-    const additionalMessage = `Added ${
-      30 - allGuesses.length
-    } to the leaderboard.`;
+      const score = 30 - allGuesses.length;
+      const additionalMessage = `Added ${
+        30 - allGuesses.length
+      } to the leaderboard.`;
 
-    const [dbUser] = await db
-      .insert(usersTable)
-      .values({
-        name,
-        telegramUserId: userId,
-        username,
-      })
-      .onConflictDoUpdate({
-        target: [usersTable.telegramUserId],
-        set: {
+      const [dbUser] = await db
+        .insert(usersTable)
+        .values({
           name,
-          username: username || null,
-        },
-      })
-      .returning({ userId: usersTable.id });
-    await db.insert(leaderboardTable).values({
-      score,
-      chatId,
-      userId: dbUser.userId,
-    });
+          telegramUserId: userId,
+          username,
+        })
+        .onConflictDoUpdate({
+          target: [usersTable.telegramUserId],
+          set: {
+            name,
+            username: username || null,
+          },
+        })
+        .returning({ userId: usersTable.id });
+      await db.insert(leaderboardTable).values({
+        score,
+        chatId,
+        userId: dbUser.userId,
+      });
 
-    const formattedResponse = `Congrats! You guessed it correctly.\n${additionalMessage}\nStart with /new\n${formatWordDetails(
-      currentGuess,
-    )}`;
+      const formattedResponse = `Congrats! You guessed it correctly.\n${additionalMessage}\nStart with /new\n${formatWordDetails(
+        currentGuess,
+      )}`;
 
-    ctx.reply(formattedResponse, {
-      reply_parameters: { message_id: ctx.message.message_id },
-      parse_mode: "HTML",
-    });
+      ctx.reply(formattedResponse, {
+        reply_parameters: { message_id: ctx.message.message_id },
+        parse_mode: "HTML",
+      });
+    } else {
+      const additionalMessage = `Anonymous admins or channels don't get points.`;
+
+      const formattedResponse = `Congrats! You guessed it correctly.\n${additionalMessage}\nStart with /new\n${formatWordDetails(
+        currentGuess,
+      )}`;
+
+      ctx.reply(formattedResponse, {
+        reply_parameters: { message_id: ctx.message.message_id },
+        parse_mode: "HTML",
+      });
+    }
+
     reactWithRandom(ctx);
     await db.delete(gamesTable).where(eq(gamesTable.id, currentGame.id));
     return;
