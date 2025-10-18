@@ -73,7 +73,9 @@ composer.command("score", async (ctx) => {
       targetUserName = users[0]!.name;
     }
   } else {
-    targetUserId = ctx.from.id.toString();
+    targetUserId =
+      ctx.message?.reply_to_message?.message_id.toString() ||
+      ctx.from.id.toString();
   }
 
   const [userExists] = await db
