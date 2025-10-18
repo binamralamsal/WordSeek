@@ -74,7 +74,7 @@ composer.command("score", async (ctx) => {
     }
   } else {
     targetUserId =
-      ctx.message?.reply_to_message?.message_id.toString() ||
+      ctx.message?.reply_to_message?.from?.id.toString() ||
       ctx.from.id.toString();
   }
 
