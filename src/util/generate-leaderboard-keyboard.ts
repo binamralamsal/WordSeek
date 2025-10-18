@@ -9,7 +9,8 @@ import type { AllowedChatSearchKey, AllowedChatTimeKey } from "../types";
 export function generateLeaderboardKeyboard(
   searchKey: AllowedChatSearchKey,
   timeKey: AllowedChatTimeKey,
-  callbackKey: "leaderboard" | `myscore ${number}` = "leaderboard",
+  callbackKey: "leaderboard" | `score ${string | number}` = "leaderboard",
+  backButton?: { text: string; callback: string },
 ) {
   const keyboard = new InlineKeyboard();
 
@@ -23,6 +24,7 @@ export function generateLeaderboardKeyboard(
       `${callbackKey} ${key} ${timeKey}`,
     );
   });
+
   keyboard.row();
 
   allowedChatTimeKeys.forEach((key, index) => {
@@ -41,6 +43,10 @@ export function generateLeaderboardKeyboard(
 
   keyboard.row();
   keyboard.text("🔄 Refresh", `${callbackKey} ${searchKey} ${timeKey}`);
+
+  if (backButton) {
+    keyboard.text(backButton.text, backButton.callback);
+  }
 
   return keyboard;
 }
