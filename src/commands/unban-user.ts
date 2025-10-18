@@ -10,11 +10,9 @@ const composer = new Composer();
 
 composer.command("unban", async (ctx) => {
   if (!ctx.from || ctx.chat.type !== "private") return;
-
   if (!env.ADMIN_USERS.includes(ctx.from.id)) return;
 
   const isUsername = ctx.match.startsWith("@");
-
   const [user] = await db
     .select()
     .from(usersTable)
@@ -25,6 +23,15 @@ composer.command("unban", async (ctx) => {
     );
 
   if (!user) return ctx.reply("Can't find the user");
+
+  const [existingBan] = await db
+    .select()
+    .from(bannedUsersTable)
+    .where(eq(bannedUsersTable.userId, user.id));
+
+  if (!existingBan) {
+    return ctx.reply(`⚠️ ${user.name} is not banned`);
+  }
 
   await db.delete(bannedUsersTable).where(eq(bannedUsersTable.userId, user.id));
 
