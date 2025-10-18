@@ -1,6 +1,6 @@
 import { Composer } from "grammy";
 
-import { count, countDistinct, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import { env } from "../config/env";
 import { db } from "../drizzle/db";
@@ -10,11 +10,9 @@ const composer = new Composer();
 
 composer.command("ban", async (ctx) => {
   if (!ctx.from || ctx.chat.type !== "private") return;
-
   if (!env.ADMIN_USERS.includes(ctx.from.id)) return;
 
   const isUsername = ctx.match.startsWith("@");
-
   const [user] = await db
     .select()
     .from(usersTable)
@@ -25,6 +23,15 @@ composer.command("ban", async (ctx) => {
     );
 
   if (!user) return ctx.reply("Can't find the user");
+
+  const [existingBan] = await db
+    .select()
+    .from(bannedUsersTable)
+    .where(eq(bannedUsersTable.userId, user.id));
+
+  if (existingBan) {
+    return ctx.reply(`⚠️ ${user.name} is already banned`);
+  }
 
   await db.insert(bannedUsersTable).values({
     userId: user.id,
