@@ -240,7 +240,7 @@ composer.on("callback_query:data", async (ctx) => {
         timeKey: timeKey as AllowedChatTimeKey,
       });
 
-      if (!userScores) {
+      if (!userScores || !userScores[0]) {
         const message = formatNoScoresMessage({
           isOwnScore: userId === ctx.from?.id.toString(),
           userName: userInfo.name,
