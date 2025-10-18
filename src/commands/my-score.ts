@@ -1,11 +1,5 @@
 import { Composer } from "grammy";
 
-import { getUserScores } from "../services/get-user-scores";
-import { CommandsHelper } from "../util/commands-helper";
-import { formatUserScoreMessage } from "../util/format-user-score-message";
-import { generateLeaderboardKeyboard } from "../util/generate-leaderboard-keyboard";
-import { parseLeaderboardInput } from "../util/parse-leaderboard-input";
-
 const composer = new Composer();
 
 composer.command("myscore", async (ctx) => {
