@@ -112,7 +112,7 @@ composer.command("score", async (ctx) => {
     timeKey,
   });
 
-  if (!userScores) {
+  if (!userScores || !userScores[0]) {
     const message = formatNoScoresMessage({
       isOwnScore,
       userName: targetUserName,

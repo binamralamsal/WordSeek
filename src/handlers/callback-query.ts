@@ -131,7 +131,7 @@ composer.on("callback_query:data", async (ctx) => {
         timeKey,
       });
 
-      if (!userScores) {
+      if (!userScores || !userScores[0]) {
         const message = formatNoScoresMessage({
           isOwnScore: false,
           userName: userInfo.name,

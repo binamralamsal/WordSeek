@@ -4,7 +4,7 @@ import { getLeaderboardScores } from "../services/get-leaderboard-scores";
 import { CommandsHelper } from "../util/commands-helper";
 import { formatLeaderboardMessage } from "../util/format-leaderboard-message";
 import { generateLeaderboardKeyboard } from "../util/generate-leaderboard-keyboard";
-import { parseLeaderboardFilters, parseLeaderboardInput } from "../util/parse-leaderboard-input";
+import { parseLeaderboardFilters } from "../util/parse-leaderboard-input";
 
 const composer = new Composer();
 
