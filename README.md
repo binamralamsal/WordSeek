@@ -28,9 +28,10 @@
   ```
   /leaderboard global week
   ```
-- **/myscore** - View your score. Example:
+- **/score** - View your score. Example:
   ```
-  /myscore group all
+  /score group all
+  /score @username group
   ```
 - **/stats** - View bot usage stats (admin users only).
 
