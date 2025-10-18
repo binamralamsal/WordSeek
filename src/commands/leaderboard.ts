@@ -4,12 +4,12 @@ import { getLeaderboardScores } from "../services/get-leaderboard-scores";
 import { CommandsHelper } from "../util/commands-helper";
 import { formatLeaderboardMessage } from "../util/format-leaderboard-message";
 import { generateLeaderboardKeyboard } from "../util/generate-leaderboard-keyboard";
-import { parseLeaderboardInput } from "../util/parse-leaderboard-input";
+import { parseLeaderboardFilters, parseLeaderboardInput } from "../util/parse-leaderboard-input";
 
 const composer = new Composer();
 
 composer.command("leaderboard", async (ctx) => {
-  const { searchKey, timeKey } = parseLeaderboardInput(
+  const { searchKey, timeKey } = parseLeaderboardFilters(
     ctx.match,
     ctx.chat.type === "private" ? "global" : undefined,
   );

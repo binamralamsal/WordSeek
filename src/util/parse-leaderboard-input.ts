@@ -52,22 +52,18 @@ export function parseLeaderboardInput(
 // Simplified version for commands that don't need target parsing
 export function parseLeaderboardFilters(
   input: string,
-  defaultSearchKey?: AllowedChatSearchKey,
-  defaultTimeKey?: AllowedChatTimeKey | null,
+  defaultSearchKey: AllowedChatSearchKey = "group",
+  defaultTimeKey: AllowedChatTimeKey = "month",
 ) {
-  const parts = input.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const parts = input.toLowerCase().trim().split(" ");
 
-  const foundSearchKey = parts.find((part) =>
+  const searchKey = (parts.find((part) =>
     allowedChatSearchKeys.includes(part as AllowedChatSearchKey),
-  ) as AllowedChatSearchKey | undefined;
+  ) || defaultSearchKey) as AllowedChatSearchKey;
 
-  const foundTimeKey = parts.find((part) =>
+  const timeKey = (parts.find((part) =>
     allowedChatTimeKeys.includes(part as AllowedChatTimeKey),
-  ) as AllowedChatTimeKey | undefined;
-
-  const searchKey = foundSearchKey || defaultSearchKey;
-  const timeKey =
-    foundTimeKey || (defaultTimeKey === null ? undefined : defaultTimeKey);
+  ) || defaultTimeKey) as AllowedChatTimeKey;
 
   return { searchKey, timeKey };
 }
