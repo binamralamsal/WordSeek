@@ -94,7 +94,6 @@ composer.on("callback_query:data", async (ctx) => {
 
     return await ctx.answerCallbackQuery();
   } else if (ctx.callbackQuery.data.startsWith("score")) {
-    console.log("FUCK");
     const parts = ctx.callbackQuery.data.split(" ");
 
     if (ctx.callbackQuery.data.startsWith("score_select")) {
