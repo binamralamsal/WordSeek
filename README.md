@@ -67,7 +67,7 @@
 4. **Set up the database**:
    Run the database migrations to set up the required tables:
    ```bash
-   bun run migrate
+   bun run db:migrate latest
    ```
 
 5. **Start the bot**:
@@ -81,13 +81,9 @@
      ```
 
 ### Additional Database Commands
-- **Generate new migrations** (after schema changes):
+- **Create new migrations** (after schema changes):
   ```bash
-  bun run generate
-  ```
-- **Open database studio** (for database management):
-  ```bash
-  bun run studio
+  bun run db:migrate make migration-name
   ```
 
 ## Environment Variables
