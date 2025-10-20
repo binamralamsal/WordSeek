@@ -7,7 +7,6 @@ type FormatUserScoreData = {
   rank: number;
   name: string;
   username: string | null;
-  userId: string;
 };
 
 export function formatUserScoreMessage(

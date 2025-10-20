@@ -1,22 +1,14 @@
-import { Composer, Context, GrammyError, InputFile } from "grammy";
+import { Composer, Context, GrammyError } from "grammy";
 import { ReactionTypeEmoji } from "grammy/types";
 
-import { and, asc, eq } from "drizzle-orm";
 import { readFile } from "fs/promises";
 import { join } from "path";
 import satori from "satori";
 import sharp from "sharp";
 
+import { db } from "../config/db";
 import allWords from "../data/allWords.json";
 import commonWords from "../data/commonWords.json";
-import { db } from "../drizzle/db";
-import {
-  bannedUsersTable,
-  gamesTable,
-  guessesTable,
-  leaderboardTable,
-  usersTable,
-} from "../drizzle/schema";
 import { formatWordDetails } from "../util/format-word-details";
 import { toFancyText } from "../util/to-fancy-text";
 
@@ -32,11 +24,11 @@ composer.on("message:text", async (ctx) => {
     return;
   }
 
-  const [isUserBanned] = await db
-    .select()
-    .from(bannedUsersTable)
-    .where(eq(usersTable.telegramUserId, ctx.from.id.toString()))
-    .innerJoin(usersTable, eq(bannedUsersTable.userId, usersTable.id));
+  const isUserBanned = await db
+    .selectFrom("bannedUsers")
+    .selectAll()
+    .where("userId", "=", ctx.from.id.toString())
+    .executeTakeFirst();
 
   if (isUserBanned) {
     const randomEmoji = (["🤡", "🤣"] as const)[Math.floor(Math.random() * 2)];
@@ -62,9 +54,11 @@ composer.on("message:text", async (ctx) => {
     return;
   }
 
-  const currentGame = await db.query.gamesTable.findFirst({
-    where: eq(gamesTable.activeChat, String(ctx.chat.id)),
-  });
+  const currentGame = await db
+    .selectFrom("games")
+    .selectAll()
+    .where("activeChat", "=", ctx.chat.id.toString())
+    .executeTakeFirst();
 
   if (!currentGame) return;
 
@@ -74,56 +68,42 @@ composer.on("message:text", async (ctx) => {
   )
     return ctx.reply(`${currentGuess} is not a valid word.`);
 
-  const guessExists = await db.query.guessesTable.findFirst({
-    where: and(
-      eq(guessesTable.guess, currentGuess),
-      eq(guessesTable.chatId, ctx.chat.id.toString()),
-    ),
-  });
+  const guessExists = await db
+    .selectFrom("guesses")
+    .selectAll()
+    .where("guess", "=", currentGuess)
+    .where("chatId", "=", ctx.chat.id.toString())
+    .executeTakeFirst();
 
   if (guessExists)
     return ctx.reply(
       "Someone has already guessed your word. Please try another one!",
     );
 
+  const userId = ctx.from.id.toString();
+  const chatId = ctx.chat.id.toString();
+
   if (currentGuess === currentGame.word) {
     if (!ctx.from.is_bot) {
-      const allGuesses = await db.query.guessesTable.findMany({
-        where: eq(guessesTable.gameId, currentGame.id),
-      });
-
-      const name = `${ctx.from.first_name}${
-        ctx.from.last_name ? " " + ctx.from.last_name : ""
-      }`;
-      const username = ctx.from.username;
-      const userId = ctx.from.id.toString();
-      const chatId = ctx.chat.id.toString();
+      const allGuesses = await db
+        .selectFrom("guesses")
+        .selectAll()
+        .where("gameId", "=", currentGame.id)
+        .execute();
 
       const score = 30 - allGuesses.length;
       const additionalMessage = `Added ${
         30 - allGuesses.length
       } to the leaderboard.`;
 
-      const [dbUser] = await db
-        .insert(usersTable)
+      await db
+        .insertInto("leaderboard")
         .values({
-          name,
-          telegramUserId: userId,
-          username,
+          score,
+          chatId,
+          userId,
         })
-        .onConflictDoUpdate({
-          target: [usersTable.telegramUserId],
-          set: {
-            name,
-            username: username || null,
-          },
-        })
-        .returning({ userId: usersTable.id });
-      await db.insert(leaderboardTable).values({
-        score,
-        chatId,
-        userId: dbUser.userId,
-      });
+        .execute();
 
       const formattedResponse = `Congrats! You guessed it correctly.\n${additionalMessage}\nStart with /new\n${formatWordDetails(
         currentGuess,
@@ -147,23 +127,28 @@ composer.on("message:text", async (ctx) => {
     }
 
     reactWithRandom(ctx);
-    await db.delete(gamesTable).where(eq(gamesTable.id, currentGame.id));
+    await db.deleteFrom("games").where("id", "=", currentGame.id).execute();
     return;
   }
 
-  await db.insert(guessesTable).values({
-    gameId: currentGame.id,
-    guess: currentGuess,
-    chatId: ctx.chat.id.toString(),
-  });
+  await db
+    .insertInto("guesses")
+    .values({
+      gameId: currentGame.id,
+      guess: currentGuess,
+      chatId,
+    })
+    .execute();
 
-  const allGuesses = await db.query.guessesTable.findMany({
-    where: eq(guessesTable.gameId, currentGame.id),
-    orderBy: asc(guessesTable.createdAt),
-  });
+  const allGuesses = await db
+    .selectFrom("guesses")
+    .selectAll()
+    .where("gameId", "=", currentGame.id)
+    .orderBy("createdAt", "asc")
+    .execute();
 
   if (allGuesses.length === 30) {
-    await db.delete(gamesTable).where(eq(gamesTable.id, currentGame.id));
+    await db.deleteFrom("games").where("id", "=", currentGame.id).execute();
     return ctx.reply(
       "Game Over! The word was " +
         currentGame.word +

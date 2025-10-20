@@ -23,7 +23,7 @@ composer.command("leaderboard", async (ctx) => {
     timeKey,
   });
 
-  ctx.reply(formatLeaderboardMessage(memberScores, searchKey, timeKey), {
+  ctx.reply(formatLeaderboardMessage(memberScores, searchKey), {
     disable_notification: true,
     reply_markup: keyboard,
     link_preview_options: {

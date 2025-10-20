@@ -1,1 +1,0 @@
-ALTER TABLE "leaderboard" ALTER COLUMN "username" DROP NOT NULL;

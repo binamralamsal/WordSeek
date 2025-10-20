@@ -1,19 +1,25 @@
+import { GrammyError, HttpError } from "grammy";
+
 import { autoRetry } from "@grammyjs/auto-retry";
 import { parseMode } from "@grammyjs/parse-mode";
 import { run, sequentialize } from "@grammyjs/runner";
-import { GrammyError, HttpError } from "grammy";
 
 import { commands } from "./commands";
 import { bot } from "./config/bot";
 import { callbackQueryHandler } from "./handlers/callback-query";
 import { onBotAddedInChat } from "./handlers/on-bot-added-in-chat";
 import { onMessageHander } from "./handlers/on-message";
+import { userSyncHandler } from "./handlers/user-sync-handler";
 import { CommandsHelper } from "./util/commands-helper";
 
 bot.api.config.use(autoRetry());
 bot.api.config.use(parseMode("HTML"));
+bot.use(userSyncHandler);
+
 bot.use(
   sequentialize((ctx) => {
+    if (ctx.callbackQuery) return undefined;
+
     return ctx.chatId?.toString() || ctx.from?.id.toString();
   }),
 );
@@ -33,12 +39,16 @@ bot.catch(async (err) => {
 
     // Specific case: bot doesn't have permission to send messages
     if (
-      e.description.includes("not enough rights to send text messages to the chat") &&
+      e.description.includes(
+        "not enough rights to send text messages to the chat",
+      ) &&
       ctx.chat?.type !== "private"
     ) {
       try {
-        console.log(`Leaving chat ${ctx.chat.id} due to missing rights.`);
-        await ctx.api.leaveChat(ctx.chat.id);
+        if (ctx.chat) {
+          console.log(`Leaving chat ${ctx.chat.id} due to missing rights.`);
+          await ctx.api.leaveChat(ctx.chat.id);
+        }
       } catch (leaveErr) {
         console.error("Failed to leave chat:", leaveErr);
       }

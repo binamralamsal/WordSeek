@@ -1,1 +1,0 @@
-ALTER TABLE "leaderboard" ALTER COLUMN "temp_user_id" SET NOT NULL;

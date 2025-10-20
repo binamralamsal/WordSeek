@@ -1,7 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
-
-import { db } from "../drizzle/db";
-import { leaderboardTable, usersTable } from "../drizzle/schema";
+import { db } from "../config/db";
 import type { AllowedChatSearchKey, AllowedChatTimeKey } from "../types";
 
 export async function getSmartDefaults({
@@ -21,17 +18,13 @@ export async function getSmartDefaults({
     requestedSearchKey || (chatType === "private" ? "global" : "group");
 
   if (searchKey === "group" && chatType !== "private") {
-    const [groupScoresExist] = await db
-      .select()
-      .from(leaderboardTable)
-      .innerJoin(usersTable, eq(leaderboardTable.userId, usersTable.id))
-      .where(
-        and(
-          eq(leaderboardTable.chatId, chatId),
-          eq(usersTable.telegramUserId, userId),
-        ),
-      )
-      .limit(1);
+    const groupScoresExist = await db
+      .selectFrom("leaderboard")
+      .select("userId")
+      .where("userId", "=", userId)
+      .where("chatId", "=", chatId)
+      .limit(1)
+      .executeTakeFirst();
 
     if (!groupScoresExist) {
       searchKey = "global";
@@ -50,19 +43,17 @@ export async function getSmartDefaults({
     });
   }
 
-  const [hasAnyScoresQuery] = await db
-    .select()
-    .from(leaderboardTable)
-    .innerJoin(usersTable, eq(leaderboardTable.userId, usersTable.id))
-    .where(
-      and(
-        eq(usersTable.telegramUserId, userId),
-        searchKey === "group" ? eq(leaderboardTable.chatId, chatId) : undefined,
-      ),
-    )
+  let hasAnyScoresQuery = db
+    .selectFrom("leaderboard")
+    .select("userId")
+    .where("userId", "=", userId)
     .limit(1);
 
-  const hasAnyScores = !!hasAnyScoresQuery;
+  if (searchKey === "group") {
+    hasAnyScoresQuery = hasAnyScoresQuery.where("chatId", "=", chatId);
+  }
+
+  const hasAnyScores = !!(await hasAnyScoresQuery.executeTakeFirst());
 
   return { searchKey, timeKey, hasAnyScores };
 }
@@ -76,20 +67,18 @@ async function getSmartDefaultTimeKey({
   chatId: string;
   searchKey: AllowedChatSearchKey;
 }): Promise<AllowedChatTimeKey> {
-  const [latestEntry] = await db
-    .select({
-      createdAt: leaderboardTable.createdAt,
-    })
-    .from(leaderboardTable)
-    .innerJoin(usersTable, eq(leaderboardTable.userId, usersTable.id))
-    .where(
-      and(
-        eq(usersTable.telegramUserId, userId),
-        searchKey === "group" ? eq(leaderboardTable.chatId, chatId) : undefined,
-      ),
-    )
-    .orderBy(desc(leaderboardTable.createdAt))
+  let query = db
+    .selectFrom("leaderboard")
+    .select("createdAt")
+    .where("userId", "=", userId)
+    .orderBy("createdAt", "desc")
     .limit(1);
+
+  if (searchKey === "group") {
+    query = query.where("chatId", "=", chatId);
+  }
+
+  const latestEntry = await query.executeTakeFirst();
 
   if (!latestEntry) {
     return "all";

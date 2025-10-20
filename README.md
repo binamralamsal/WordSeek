@@ -59,7 +59,7 @@
    Create a `.env` file in the root directory with the following variables:
    ```env
    BOT_TOKEN=your-telegram-bot-token
-   DATABASE_URI=your-postgresql-database-url
+   DATABASE_URL=your-postgresql-database-url
    NODE_ENV=development
    REDIS_URI=redis://127.0.0.1:6379
    ```
@@ -95,7 +95,7 @@
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `BOT_TOKEN` | Your Telegram bot token from BotFather | `123456789:ABCdefGHIjklMNOpqrsTUVwxyz` |
-| `DATABASE_URI` | PostgreSQL connection string | `postgresql://user:password@localhost:5432/wordseek` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:password@localhost:5432/wordseek` |
 | `NODE_ENV` | Environment mode | `development` or `production` |
 | `REDIS_URI` | Redis connection string | `redis://127.0.0.1:6379` |
 
@@ -141,7 +141,7 @@ We welcome contributions to enhance the bot! Here's how you can help:
 ## Troubleshooting
 
 ### Common Issues
-- **Database connection errors**: Ensure PostgreSQL is running and the `DATABASE_URI` is correct.
+- **Database connection errors**: Ensure PostgreSQL is running and the `DATABASE_URL` is correct.
 - **Redis connection errors**: Make sure Redis server is running on the specified port.
 - **Bot not responding**: Verify your `BOT_TOKEN` is valid and the bot is not already running elsewhere.
 - **Migration errors**: Ensure you have proper database permissions and the database exists.

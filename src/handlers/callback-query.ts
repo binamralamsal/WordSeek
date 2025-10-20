@@ -1,17 +1,15 @@
 import { Composer, InlineKeyboard } from "grammy";
 
-import { and, eq } from "drizzle-orm";
+import { sql } from "kysely";
 
 import {
   allowedChatSearchKeys,
   allowedChatTimeKeys,
 } from "../config/constants";
-import { db } from "../drizzle/db";
-import { leaderboardTable, usersTable } from "../drizzle/schema";
+import { db } from "../config/db";
 import { getLeaderboardScores } from "../services/get-leaderboard-scores";
 import { getUserScores } from "../services/get-user-scores";
 import { AllowedChatSearchKey, AllowedChatTimeKey } from "../types";
-import { lower } from "../util/drizzle-lower";
 import { formatLeaderboardMessage } from "../util/format-leaderboard-message";
 import { formatNoScoresMessage } from "../util/format-no-scores-message";
 import { formatUserScoreMessage } from "../util/format-user-score-message";
@@ -47,7 +45,6 @@ composer.on("callback_query:data", async (ctx) => {
         formatLeaderboardMessage(
           memberScores,
           searchKey as AllowedChatSearchKey,
-          timeKey as AllowedChatTimeKey,
         ),
         {
           reply_markup: keyboard,
@@ -62,13 +59,10 @@ composer.on("callback_query:data", async (ctx) => {
     if (!username) break condition;
 
     const users = await db
-      .select({
-        id: usersTable.telegramUserId,
-        name: usersTable.name,
-        username: usersTable.username,
-      })
-      .from(usersTable)
-      .where(eq(lower(usersTable.username), username));
+      .selectFrom("users")
+      .select(["id", "name", "username"])
+      .where(sql`lower(username)`, "=", username)
+      .execute();
 
     if (users.length === 0) {
       return ctx.answerCallbackQuery({
@@ -103,10 +97,11 @@ composer.on("callback_query:data", async (ctx) => {
 
       const chatId = ctx.chat.id.toString();
 
-      const [userInfo] = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.telegramUserId, userId));
+      const userInfo = await db
+        .selectFrom("users")
+        .select(["name"])
+        .where("id", "=", userId)
+        .executeTakeFirst();
 
       if (!userInfo) {
         return ctx.answerCallbackQuery({
@@ -123,14 +118,14 @@ composer.on("callback_query:data", async (ctx) => {
         chatType: ctx.chat.type,
       });
 
-      const userScores = await getUserScores({
+      const userScore = await getUserScores({
         chatId,
         userId,
         searchKey,
         timeKey,
       });
 
-      if (!userScores || !userScores[0]) {
+      if (!userScore) {
         const message = formatNoScoresMessage({
           isOwnScore: false,
           userName: userInfo.name,
@@ -181,7 +176,7 @@ composer.on("callback_query:data", async (ctx) => {
       );
 
       await ctx
-        .editMessageText(formatUserScoreMessage(userScores[0], searchKey), {
+        .editMessageText(formatUserScoreMessage(userScore, searchKey), {
           reply_markup: keyboard,
           parse_mode: "HTML",
           link_preview_options: { is_disabled: true },
@@ -205,10 +200,11 @@ composer.on("callback_query:data", async (ctx) => {
 
       const chatId = ctx.chat.id.toString();
 
-      const [userInfo] = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.telegramUserId, userId));
+      const userInfo = await db
+        .selectFrom("users")
+        .select(["name"])
+        .where("id", "=", userId)
+        .executeTakeFirst();
 
       if (!userInfo) {
         return ctx.answerCallbackQuery({
@@ -217,30 +213,26 @@ composer.on("callback_query:data", async (ctx) => {
         });
       }
 
-      const [hasAnyScoresQuery] = await db
-        .select()
-        .from(leaderboardTable)
-        .innerJoin(usersTable, eq(leaderboardTable.userId, usersTable.id))
-        .where(
-          and(
-            eq(usersTable.telegramUserId, userId),
-            searchKey === "group"
-              ? eq(leaderboardTable.chatId, chatId)
-              : undefined,
-          ),
-        )
+      let hasAnyScoresQuery = db
+        .selectFrom("leaderboard")
+        .select("userId")
+        .where("userId", "=", userId)
         .limit(1);
 
-      const hasAnyScores = !!hasAnyScoresQuery;
+      if (searchKey === "group") {
+        hasAnyScoresQuery = hasAnyScoresQuery.where("chatId", "=", chatId);
+      }
 
-      const userScores = await getUserScores({
+      const hasAnyScores = !!(await hasAnyScoresQuery.executeTakeFirst());
+
+      const userScore = await getUserScores({
         chatId,
         userId,
         searchKey: searchKey as AllowedChatSearchKey,
         timeKey: timeKey as AllowedChatTimeKey,
       });
 
-      if (!userScores || !userScores[0]) {
+      if (!userScore) {
         const message = formatNoScoresMessage({
           isOwnScore: userId === ctx.from?.id.toString(),
           userName: userInfo.name,
@@ -276,10 +268,7 @@ composer.on("callback_query:data", async (ctx) => {
 
       await ctx
         .editMessageText(
-          formatUserScoreMessage(
-            userScores[0],
-            searchKey as AllowedChatSearchKey,
-          ),
+          formatUserScoreMessage(userScore, searchKey as AllowedChatSearchKey),
           {
             reply_markup: keyboard,
             parse_mode: "HTML",

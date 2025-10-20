@@ -1,15 +1,10 @@
 import { FOOTER_MESSAGE } from "../config/constants";
-import type {
-  AllowedChatSearchKey,
-  AllowedChatTimeKey,
-  LeaderboardEntry,
-} from "../types";
+import type { AllowedChatSearchKey, LeaderboardEntry } from "../types";
 import { escapeHtmlEntities } from "../util/escape-html-entities";
 
 export function formatLeaderboardMessage(
   data: LeaderboardEntry[],
   searchKey: AllowedChatSearchKey,
-  timeKey: AllowedChatTimeKey,
 ) {
   const blocks = data.reduce((acc, entry, index) => {
     const rank = index < 3 ? ["🥇", "🥈", "🥉"][index] : "🔅";

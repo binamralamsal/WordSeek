@@ -1,9 +1,6 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { sql } from "kysely";
 
-import { db } from "../drizzle/db";
-import { leaderboardTable, usersTable } from "../drizzle/schema";
-import { AllowedChatSearchKey, AllowedChatTimeKey } from "../types";
-import { getTimeFilter } from "../util/get-time-filter";
+import { db } from "../config/db";
 
 export async function getLeaderboardScores({
   chatId,
@@ -11,26 +8,58 @@ export async function getLeaderboardScores({
   timeKey,
 }: {
   chatId: string;
-  searchKey: AllowedChatSearchKey;
-  timeKey: AllowedChatTimeKey;
+  searchKey: "group" | "global";
+  timeKey: "today" | "week" | "month" | "year" | "all";
 }) {
-  const conditions = [
-    searchKey === "group" ? eq(leaderboardTable.chatId, chatId) : undefined,
-    getTimeFilter(timeKey),
-  ].filter(Boolean);
+  let leaderboardQuery = db
+    .selectFrom("leaderboard")
+    .innerJoin("users", "users.id", "leaderboard.userId")
+    .select((eb) => [
+      "users.id as userId",
+      "users.name as name",
+      "users.username as username",
+      sql<number>`cast(sum(${eb.ref("leaderboard.score")}) as integer)`.as(
+        "totalScore",
+      ),
+    ])
+    .groupBy("users.id")
+    .orderBy(sql`sum(${sql.ref("leaderboard.score")}) desc`)
+    .limit(20);
 
-  return db
-    .select({
-      userId: usersTable.telegramUserId,
-      name: usersTable.name,
-      username: usersTable.username,
-      totalScore: sql<number>`cast(sum(${leaderboardTable.score}) as integer)`,
-    })
-    .from(leaderboardTable)
-    .where(and(...conditions))
-    .groupBy(usersTable.telegramUserId, usersTable.name, usersTable.username)
-    .innerJoin(usersTable, eq(usersTable.id, leaderboardTable.userId))
-    .orderBy(desc(sql`sum(${leaderboardTable.score})`))
-    .limit(20)
-    .execute();
+  if (searchKey === "group")
+    leaderboardQuery = leaderboardQuery.where(
+      "leaderboard.chatId",
+      "=",
+      chatId,
+    );
+  if (timeKey !== "all") {
+    leaderboardQuery = leaderboardQuery.where((eb) => {
+      if (timeKey === "today")
+        return eb(
+          sql`date_trunc('day', ${eb.ref("leaderboard.createdAt")})`,
+          "=",
+          sql<Date>`date_trunc('day', now())`,
+        );
+      else if (timeKey === "week")
+        return eb(
+          sql`date_trunc('week', ${eb.ref("leaderboard.createdAt")})`,
+          "=",
+          sql<Date>`date_trunc('week', now())`,
+        );
+      else if (timeKey === "month")
+        return eb(
+          sql`date_trunc('month', ${eb.ref("leaderboard.createdAt")})`,
+          "=",
+          sql<Date>`date_trunc('month', now())`,
+        );
+      else
+        return eb(
+          sql`date_trunc('year', ${eb.ref("leaderboard.createdAt")})`,
+          "=",
+          sql<Date>`date_trunc('year', now())`,
+        );
+    });
+  }
+
+  return await leaderboardQuery.execute();
 }

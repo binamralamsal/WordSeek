@@ -1,1 +1,0 @@
-ALTER TABLE "guesses" ALTER COLUMN "chat_id" SET DEFAULT '1';

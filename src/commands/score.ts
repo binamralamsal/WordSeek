@@ -1,12 +1,10 @@
 import { Composer } from "grammy";
 
-import { eq } from "drizzle-orm";
+import { sql } from "kysely";
 
-import { db } from "../drizzle/db";
-import { usersTable } from "../drizzle/schema";
+import { db } from "../config/db";
 import { getUserScores } from "../services/get-user-scores";
 import { CommandsHelper } from "../util/commands-helper";
-import { lower } from "../util/drizzle-lower";
 import { formatNoScoresMessage } from "../util/format-no-scores-message";
 import { formatUserScoreMessage } from "../util/format-user-score-message";
 import { generateLeaderboardKeyboard } from "../util/generate-leaderboard-keyboard";
@@ -40,13 +38,10 @@ composer.command("score", async (ctx) => {
       const username = target.replace(/^@/, "");
 
       const users = await db
-        .select({
-          id: usersTable.telegramUserId,
-          name: usersTable.name,
-          username: usersTable.username,
-        })
-        .from(usersTable)
-        .where(eq(lower(usersTable.username), username));
+        .selectFrom("users")
+        .select(["id", "name", "username"])
+        .where(sql`lower(${"username"})`, "=", username)
+        .execute();
 
       if (users.length === 0) {
         return ctx.reply(`No user found with username @${username}.`);
@@ -78,10 +73,11 @@ composer.command("score", async (ctx) => {
       ctx.from.id.toString();
   }
 
-  const [userExists] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.telegramUserId, targetUserId));
+  const userExists = await db
+    .selectFrom("users")
+    .select("name")
+    .where("id", "=", targetUserId)
+    .executeTakeFirst();
 
   if (!userExists) {
     return ctx.reply("User not found.");
@@ -105,14 +101,14 @@ composer.command("score", async (ctx) => {
     `score ${targetUserId}`,
   );
 
-  const userScores = await getUserScores({
+  const userScore = await getUserScores({
     userId: targetUserId,
     chatId,
     searchKey,
     timeKey,
   });
 
-  if (!userScores || !userScores[0]) {
+  if (!userScore) {
     const message = formatNoScoresMessage({
       isOwnScore,
       userName: targetUserName,
@@ -130,7 +126,7 @@ composer.command("score", async (ctx) => {
     });
   }
 
-  const message = formatUserScoreMessage(userScores[0], searchKey);
+  const message = formatUserScoreMessage(userScore, searchKey);
   ctx.reply(message, {
     disable_notification: true,
     reply_markup: keyboard,

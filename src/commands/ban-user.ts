@@ -1,10 +1,7 @@
 import { Composer } from "grammy";
 
-import { eq } from "drizzle-orm";
-
+import { db } from "../config/db";
 import { env } from "../config/env";
-import { db } from "../drizzle/db";
-import { bannedUsersTable, usersTable } from "../drizzle/schema";
 
 const composer = new Composer();
 
@@ -13,29 +10,35 @@ composer.command("ban", async (ctx) => {
   if (!env.ADMIN_USERS.includes(ctx.from.id)) return;
 
   const isUsername = ctx.match.startsWith("@");
-  const [user] = await db
-    .select()
-    .from(usersTable)
+
+  const user = await db
+    .selectFrom("users")
+    .selectAll()
     .where(
-      isUsername
-        ? eq(usersTable.username, ctx.match.substring(1))
-        : eq(usersTable.telegramUserId, ctx.match),
-    );
+      isUsername ? "username" : "id",
+      "=",
+      isUsername ? ctx.match.substring(1) : ctx.match,
+    )
+    .executeTakeFirst();
 
   if (!user) return ctx.reply("Can't find the user");
 
-  const [existingBan] = await db
-    .select()
-    .from(bannedUsersTable)
-    .where(eq(bannedUsersTable.userId, user.id));
+  const existingBan = await db
+    .selectFrom("bannedUsers")
+    .selectAll()
+    .where("userId", "=", user.id)
+    .executeTakeFirst();
 
   if (existingBan) {
     return ctx.reply(`⚠️ ${user.name} is already banned`);
   }
 
-  await db.insert(bannedUsersTable).values({
-    userId: user.id,
-  });
+  await db
+    .insertInto("bannedUsers")
+    .values({
+      userId: user.id,
+    })
+    .execute();
 
   ctx.reply(`Banned ${user.name} from the bot`);
 });

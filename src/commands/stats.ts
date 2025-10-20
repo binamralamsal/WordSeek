@@ -1,13 +1,11 @@
 import { Composer } from "grammy";
 
-import { count, countDistinct, like } from "drizzle-orm";
 import { promises as fs } from "fs";
 import os from "os";
 import process from "process";
 
+import { db } from "../config/db";
 import { env } from "../config/env";
-import { db } from "../drizzle/db";
-import { leaderboardTable, usersTable } from "../drizzle/schema";
 
 const composer = new Composer();
 
@@ -37,15 +35,19 @@ composer.command("stats", async (ctx) => {
   const loadAvg = os.loadavg();
 
   const [usersResult, groupsResult] = await Promise.all([
-    db.select({ usersCount: count(usersTable.id) }).from(usersTable),
     db
-      .select({ groupsCount: countDistinct(leaderboardTable.chatId) })
-      .from(leaderboardTable)
-      .where(like(leaderboardTable.chatId, "-1%")),
+      .selectFrom("users")
+      .select((eb) => eb.fn.count("id").as("usersCount"))
+      .executeTakeFirstOrThrow(),
+    db
+      .selectFrom("leaderboard")
+      .select((eb) => eb.fn.count("chatId").distinct().as("groupsCount"))
+      .where("chatId", "like", "-1%")
+      .executeTakeFirstOrThrow(),
   ]);
 
-  const usersCount = usersResult[0].usersCount;
-  const groupsCount = groupsResult[0].groupsCount;
+  const usersCount = usersResult.usersCount;
+  const groupsCount = groupsResult.groupsCount;
 
   const formatBytes = (bytes: number) => {
     if (!bytes) return "0 B";
