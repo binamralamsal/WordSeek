@@ -20,6 +20,7 @@ composer.command("new", async (ctx) => {
       .values({
         word: randomWord,
         activeChat: chatId.toString(),
+        startedBy: ctx.msg.from?.id.toString(),
       })
       .execute();
     ctx.reply("Game started! Guess the 5 letter word!");

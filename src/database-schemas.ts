@@ -29,6 +29,7 @@ export interface Game {
   activeChat: string;
   createdAt: Generated<Timestamp>;
   id: Generated<number>;
+  startedBy: string | null;
   updatedAt: Generated<Timestamp>;
   word: string;
 }

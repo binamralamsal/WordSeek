@@ -4,10 +4,8 @@ import { escapeHtmlEntities } from "./escape-html-entities";
 export function formatWordDetails(word: string) {
   const wordDetails = commonWords[word];
 
-  return `
-<blockquote><strong>${escapeHtmlEntities(
-    capitalizeFirstLetter(word),
-  )}</strong> <code>${
+  return `<blockquote><strong>Correct Word: ${word}</strong>
+<strong>${escapeHtmlEntities(capitalizeFirstLetter(word))}</strong> <code>${
     escapeHtmlEntities(wordDetails.pronunciation) || ""
   }</code>
 ${
