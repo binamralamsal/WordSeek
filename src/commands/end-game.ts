@@ -33,7 +33,7 @@ export async function endGame(
     `<blockquote>🎮 <b>Game Ended</b></blockquote>
 ${formatWordDetails(word)}
 <blockquote>${reason}
-Start a new game with /newhush</blockquote>`,
+Start a new game with /new</blockquote>`,
     { parse_mode: "HTML" },
   );
 }
