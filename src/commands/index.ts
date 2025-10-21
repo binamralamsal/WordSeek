@@ -8,7 +8,9 @@ import { myScoreCommand } from "./my-score";
 import { newGameCommand } from "./new-game";
 import { scoreCommand } from "./score";
 import { seekAuthCommand } from "./seekauth";
+import { setGameTopicCommand } from "./setgametopic";
 import { startCommand } from "./start";
+import { startMatchCommand } from "./startmatch";
 import { statsCommand } from "./stats";
 import { unbanCommand } from "./unban-user";
 
@@ -26,6 +28,8 @@ composer.use(
   leaderboardCommand,
   scoreCommand,
   seekAuthCommand,
+  startMatchCommand,
+  setGameTopicCommand,
 );
 
 export const commands = composer;

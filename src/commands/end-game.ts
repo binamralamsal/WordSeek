@@ -42,6 +42,22 @@ composer.command("end", async (ctx) => {
   const chatId = ctx.chat.id;
   if (!ctx.message) return;
 
+  if (ctx.chat.is_forum) {
+    const topicData = await db
+      .selectFrom("chatGameTopics")
+      .where("chatId", "=", chatId.toString())
+      .selectAll()
+      .execute();
+    const topicIds = topicData.map((t) => t.topicId);
+    if (
+      topicData.length > 0 &&
+      !topicIds.includes(ctx.msg.message_thread_id?.toString() || "")
+    )
+      return await ctx.reply(
+        "This topic is not set for the game. Please play the game in the designated topic.",
+      );
+  }
+
   const currentGame = await db
     .selectFrom("games")
     .selectAll()

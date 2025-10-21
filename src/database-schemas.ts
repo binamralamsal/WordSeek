@@ -25,6 +25,13 @@ export interface BannedUser {
   userId: string;
 }
 
+export interface ChatGameTopic {
+  chatId: string;
+  createdAt: Generated<Timestamp>;
+  topicId: string;
+  updatedAt: Generated<Timestamp>;
+}
+
 export interface Game {
   activeChat: string;
   createdAt: Generated<Timestamp>;
@@ -63,6 +70,7 @@ export interface User {
 export interface DB {
   authorizedUsers: AuthorizedUser;
   bannedUsers: BannedUser;
+  chatGameTopics: ChatGameTopic;
   games: Game;
   guesses: Guess;
   leaderboard: Leaderboard;
