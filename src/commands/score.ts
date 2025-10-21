@@ -75,8 +75,8 @@ composer.command("score", async (ctx) => {
   const message = formatUserScoreMessage(userScore, searchKey);
   ctx.reply(message, {
     disable_notification: true,
-    reply_markup: keyboard,
     parse_mode: "HTML",
+    reply_markup: keyboard,
     reply_parameters: {
       message_id: ctx.msgId,
     },

@@ -27,6 +27,7 @@ composer.command("help", (ctx) =>
   - Example: <code>/leaderboard global month</code> <code>/score group all</code>
 
   ${FOOTER_MESSAGE}`,
+    { parse_mode: "HTML" },
   ),
 );
 

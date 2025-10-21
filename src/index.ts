@@ -1,7 +1,6 @@
 import { GrammyError, HttpError } from "grammy";
 
 import { autoRetry } from "@grammyjs/auto-retry";
-import { parseMode } from "@grammyjs/parse-mode";
 import { run, sequentialize } from "@grammyjs/runner";
 
 import { commands } from "./commands";
@@ -13,7 +12,6 @@ import { userSyncHandler } from "./handlers/user-sync-handler";
 import { CommandsHelper } from "./util/commands-helper";
 
 bot.api.config.use(autoRetry());
-bot.api.config.use(parseMode("HTML"));
 bot.use(userSyncHandler);
 
 bot.use(

@@ -52,6 +52,7 @@ composer.on("callback_query:data", async (ctx) => {
         ),
         {
           reply_markup: keyboard,
+          parse_mode: "HTML",
           link_preview_options: { is_disabled: true },
         },
       )
@@ -158,6 +159,7 @@ composer.on("callback_query:data", async (ctx) => {
 
         await ctx
           .editMessageText(message, {
+            parse_mode: "HTML",
             reply_markup: keyboard,
           })
           .catch(() => {});
@@ -255,6 +257,7 @@ composer.on("callback_query:data", async (ctx) => {
         await ctx
           .editMessageText(message, {
             reply_markup: keyboard,
+            parse_mode: "HTML",
           })
           .catch(() => {});
 

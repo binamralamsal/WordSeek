@@ -34,6 +34,7 @@ export async function endGame(
 ${formatWordDetails(word)}
 <blockquote>${reason}
 Start a new game with /newhush</blockquote>`,
+    { parse_mode: "HTML" },
   );
 }
 
@@ -113,6 +114,7 @@ composer.command("end", async (ctx) => {
       `<b>Current votes: 1/3</b>\n\n` +
       `React with the button below to vote for ending the game.`,
     {
+      parse_mode: "HTML",
       reply_markup: {
         inline_keyboard: [
           [
