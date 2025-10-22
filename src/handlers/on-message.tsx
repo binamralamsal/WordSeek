@@ -62,6 +62,20 @@ composer.on("message:text", async (ctx) => {
 
   if (!currentGame) return;
 
+  const chatId = ctx.chat.id.toString();
+
+  if (ctx.chat.is_forum) {
+    const topicData = await db
+      .selectFrom("chatGameTopics")
+      .where("chatId", "=", chatId.toString())
+      .selectAll()
+      .execute();
+    const topicIds = topicData.map((t) => t.topicId);
+    const currentTopicId = ctx.msg.message_thread_id?.toString() || "general";
+
+    if (topicData.length > 0 && !topicIds.includes(currentTopicId)) return;
+  }
+
   if (
     !allWords.includes(currentGuess) &&
     !Object.keys(commonWords).includes(currentGuess)
@@ -81,7 +95,6 @@ composer.on("message:text", async (ctx) => {
     );
 
   const userId = ctx.from.id.toString();
-  const chatId = ctx.chat.id.toString();
 
   if (currentGuess === currentGame.word) {
     if (!ctx.from.is_bot) {

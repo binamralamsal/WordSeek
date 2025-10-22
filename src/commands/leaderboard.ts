@@ -15,15 +15,13 @@ composer.command("leaderboard", async (ctx) => {
   if (ctx.chat.is_forum) {
     const topicData = await db
       .selectFrom("chatGameTopics")
-      .where("chatId", "=", chatId)
+      .where("chatId", "=", chatId.toString())
       .selectAll()
       .execute();
     const topicIds = topicData.map((t) => t.topicId);
+    const currentTopicId = ctx.msg.message_thread_id?.toString() || "general";
 
-    if (
-      topicData.length > 0 &&
-      !topicIds.includes(ctx.msg.message_thread_id?.toString() || "")
-    )
+    if (topicData.length > 0 && !topicIds.includes(currentTopicId))
       return await ctx.reply(
         "This topic is not set for the game. Please play the game in the designated topic.",
       );

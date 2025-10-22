@@ -24,6 +24,7 @@ composer.command("score", async (ctx) => {
       .selectAll()
       .execute();
     const topicIds = topicData.map((t) => t.topicId);
+
     if (
       topicData.length > 0 &&
       !topicIds.includes(ctx.msg.message_thread_id?.toString() || "")

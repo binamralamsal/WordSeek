@@ -17,11 +17,6 @@ composer.command("setgametopic", async (ctx) => {
     return;
   }
 
-  if (!ctx.msg.is_topic_message) {
-    await ctx.reply("Please use this command within a topic.");
-    return;
-  }
-
   try {
     const chatMember = await ctx.api.getChatMember(
       ctx.chat.id,
@@ -39,11 +34,10 @@ composer.command("setgametopic", async (ctx) => {
     );
   }
 
-  const topicId = ctx.msg.message_thread_id?.toString();
+  let topicId = ctx.msg.message_thread_id?.toString();
 
   if (!topicId) {
-    await ctx.reply("Could not retrieve the topic ID.");
-    return;
+    topicId = "general";
   }
 
   try {
