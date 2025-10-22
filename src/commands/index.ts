@@ -13,6 +13,7 @@ import { startCommand } from "./start";
 import { startMatchCommand } from "./startmatch";
 import { statsCommand } from "./stats";
 import { unbanCommand } from "./unban-user";
+import { unsetGameTopicCommand } from "./unsetgametopic";
 
 const composer = new Composer();
 
@@ -30,6 +31,7 @@ composer.use(
   seekAuthCommand,
   startMatchCommand,
   setGameTopicCommand,
+  unsetGameTopicCommand,
 );
 
 export const commands = composer;
