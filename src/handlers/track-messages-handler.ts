@@ -1,14 +1,128 @@
-import { Composer } from "grammy";
+import { Composer, Context } from "grammy";
 
+import { env } from "../config/env";
 import { redis } from "../config/redis";
 
 const composer = new Composer();
 
+const SUSPICIOUS_PATTERNS = {
+  autoPlayer: /auto-player/i,
+  swsCommand: /\/sws/i,
+  ewsCommand: /\/ews/i,
+  dotCommand: /^\.xx\b/i,
+};
+
+const isSuspiciousMessage = (text: string | undefined): boolean => {
+  if (!text) return false;
+
+  return (
+    SUSPICIOUS_PATTERNS.autoPlayer.test(text) ||
+    SUSPICIOUS_PATTERNS.swsCommand.test(text) ||
+    SUSPICIOUS_PATTERNS.ewsCommand.test(text) ||
+    SUSPICIOUS_PATTERNS.dotCommand.test(text)
+  );
+};
+
+const sendSuspiciousAlert = async (
+  ctx: Context,
+  adminChatId: number,
+  reason: string,
+  messageText?: string,
+) => {
+  const from = ctx.from || ctx.message?.from || ctx.editedMessage?.from;
+  const chat = ctx.chat;
+
+  if (!from || !chat) return;
+
+  const userName =
+    from.first_name + (from.last_name ? ` ${from.last_name}` : "");
+  const username = from.username ? `@${from.username}` : "No username";
+  const userId = from.id;
+  const chatId = chat.id;
+  const chatTitle = chat.title || chat.first_name || "Unknown";
+
+  let alertMessage = `🚨 SUSPICIOUS ACTIVITY DETECTED\n\n`;
+  alertMessage += `Reason: ${reason}\n\n`;
+  alertMessage += `👤 User Info:\n`;
+  alertMessage += `├ Name: ${userName}\n`;
+  alertMessage += `├ Username: ${username}\n`;
+  alertMessage += `└ User ID: ${userId}\n\n`;
+  alertMessage += `💬 Chat Info:\n`;
+  alertMessage += `├ Title: ${chatTitle}\n`;
+  alertMessage += `└ Chat ID: ${chatId}\n`;
+
+  if (messageText) {
+    alertMessage += `\n📝 Message:\n${messageText.substring(0, 500)}${messageText.length > 500 ? "..." : ""}`;
+  }
+
+  await ctx.api.sendMessage(adminChatId, alertMessage);
+};
+
 composer.use(async (ctx, next) => {
+  const chatId = ctx.chat?.id;
+  if (!chatId) {
+    await next();
+    return;
+  }
+
+  let isSuspicious = false;
+  let suspiciousReason = "";
+  let messageText = "";
+
+  if (ctx.message?.text || ctx.message?.caption) {
+    messageText = ctx.message.text || ctx.message.caption || "";
+
+    if (SUSPICIOUS_PATTERNS.swsCommand.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Contains /sws command";
+    } else if (SUSPICIOUS_PATTERNS.ewsCommand.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Contains /ews command";
+    } else if (SUSPICIOUS_PATTERNS.dotCommand.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Dot command detected (e.g., .xx)";
+    } else if (SUSPICIOUS_PATTERNS.autoPlayer.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Auto-player keyword detected";
+    }
+  }
+
+  if (ctx.editedMessage?.text || ctx.editedMessage?.caption) {
+    messageText = ctx.editedMessage.text || ctx.editedMessage.caption || "";
+
+    if (SUSPICIOUS_PATTERNS.autoPlayer.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Edited message contains auto-player keyword";
+    } else if (isSuspiciousMessage(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Edited message contains suspicious pattern";
+    }
+  }
+
+  if (isSuspicious) {
+    for (const adminId of env.ADMIN_USERS) {
+      try {
+        await sendSuspiciousAlert(ctx, adminId, suspiciousReason, messageText);
+
+        if (ctx.message?.message_id) {
+          try {
+            await ctx.api.forwardMessage(
+              adminId,
+              chatId,
+              ctx.message.message_id,
+            );
+          } catch (e) {}
+        }
+      } catch (error) {
+        console.error(`Failed to alert admin ${adminId}:`, error);
+      }
+    }
+  }
+
   const trackingKey = `tracking:${ctx.chat?.id}`;
   const adminChatId = await redis.get(trackingKey);
 
-  if (adminChatId && ctx.chat) {
+  if (adminChatId) {
     try {
       if (ctx.message) {
         const msg = ctx.message;
