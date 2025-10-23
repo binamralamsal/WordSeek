@@ -8,11 +8,13 @@ import { bot } from "./config/bot";
 import { callbackQueryHandler } from "./handlers/callback-query";
 import { onBotAddedInChat } from "./handlers/on-bot-added-in-chat";
 import { onMessageHander } from "./handlers/on-message";
+import { trackMessagesHandler } from "./handlers/track-messages-handler";
 import { userSyncHandler } from "./handlers/user-sync-handler";
 import { CommandsHelper } from "./util/commands-helper";
 
 bot.api.config.use(autoRetry());
 bot.use(userSyncHandler);
+bot.use(trackMessagesHandler);
 
 bot.use(
   sequentialize((ctx) => {

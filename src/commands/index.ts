@@ -12,6 +12,7 @@ import { setGameTopicCommand } from "./setgametopic";
 import { startCommand } from "./start";
 import { startMatchCommand } from "./startmatch";
 import { statsCommand } from "./stats";
+import { trackCommand } from "./track";
 import { unbanCommand } from "./unban-user";
 import { unsetGameTopicCommand } from "./unsetgametopic";
 
@@ -32,6 +33,7 @@ composer.use(
   startMatchCommand,
   setGameTopicCommand,
   unsetGameTopicCommand,
+  trackCommand,
 );
 
 export const commands = composer;

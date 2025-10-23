@@ -23,7 +23,7 @@ composer.command("unsetgametopic", async (ctx) => {
     if (!allowedStatus.includes(chatMember.status)) {
       return ctx.reply("Only admins can use this command.");
     }
-  } catch (err) {
+  } catch {
     return ctx.reply(
       "⚠️ I couldn't verify admin rights.\n" +
         "👉 Please make sure I’m an admin in this group.",
