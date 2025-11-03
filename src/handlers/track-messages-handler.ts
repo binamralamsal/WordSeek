@@ -100,21 +100,53 @@ composer.use(async (ctx, next) => {
   }
 
   if (isSuspicious) {
-    for (const adminId of env.ADMIN_USERS) {
+    if (env.LOGS_CHANNEL) {
+      // Send to logs channel
       try {
-        await sendSuspiciousAlert(ctx, adminId, suspiciousReason, messageText);
+        await sendSuspiciousAlert(
+          ctx,
+          env.LOGS_CHANNEL,
+          suspiciousReason,
+          messageText,
+        );
 
         if (ctx.message?.message_id) {
           try {
             await ctx.api.forwardMessage(
-              adminId,
+              env.LOGS_CHANNEL,
               chatId,
               ctx.message.message_id,
             );
-          } catch (e) {}
+          } catch (e) {
+            console.error("Failed to forward message to logs channel:", e);
+          }
         }
       } catch (error) {
-        console.error(`Failed to alert admin ${adminId}:`, error);
+        console.error("Failed to send alert to logs channel:", error);
+      }
+    } else {
+      // Fallback to admin users
+      for (const adminId of env.ADMIN_USERS) {
+        try {
+          await sendSuspiciousAlert(
+            ctx,
+            adminId,
+            suspiciousReason,
+            messageText,
+          );
+
+          if (ctx.message?.message_id) {
+            try {
+              await ctx.api.forwardMessage(
+                adminId,
+                chatId,
+                ctx.message.message_id,
+              );
+            } catch (e) {}
+          }
+        } catch (error) {
+          console.error(`Failed to alert admin ${adminId}:`, error);
+        }
       }
     }
   }

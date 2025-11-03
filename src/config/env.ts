@@ -14,5 +14,9 @@ export const env = z
       .string()
       .url({ message: "CUSTOM_API_ROOT must be a valid URL" })
       .default("https://api.telegram.org"), // default to official API
+    LOGS_CHANNEL: z
+      .string()
+      .optional()
+      .transform((v) => (v ? Number(v) : undefined)),
   })
   .parse(process.env);
