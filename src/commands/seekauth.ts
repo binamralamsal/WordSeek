@@ -28,9 +28,10 @@ export async function getTargetUser(
     };
   }
 
-  const replyToMessageFrom = ctx.message?.reply_to_message?.from;
+  const replyToMessage = ctx.message?.reply_to_message;
+  const replyToMessageFrom = replyToMessage?.from;
 
-  if (replyToMessageFrom && !replyToMessageFrom.is_bot) {
+  if (replyToMessageFrom && !replyToMessageFrom.is_bot && !replyToMessage.is_topic_message) {
     const user = replyToMessageFrom;
 
     return {
