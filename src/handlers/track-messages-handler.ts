@@ -201,7 +201,7 @@ composer.use(async (ctx, next) => {
 
             await ctx.api.sendMessage(
               Number(adminChatId),
-              `🔔 New ${messageType} in chat ${ctx.chat.id}\nFrom: ${from}\n\nMessage ID: ${msg.message_id}`,
+              `🔔 New ${messageType} in chat ${ctx.chat.id}\nFrom: ${from}\n\nMessage ID: ${msg.message_id}${msg.text ? `\n\n${msg.text}` : ""}`,
             );
           }
         }
