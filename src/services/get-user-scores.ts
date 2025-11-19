@@ -67,6 +67,7 @@ export async function getUserScores({
       "users.id",
       "users.name",
       "users.username",
+      "users.profilePicFileId",
       "lb.totalScore",
       "lb.rank",
     ])

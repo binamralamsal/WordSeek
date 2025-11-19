@@ -13,14 +13,20 @@ export function formatUserScoreMessage(
   data: FormatUserScoreData,
   searchKey: AllowedChatSearchKey,
 ) {
-  const name = escapeHtmlEntities(data.name);
-  const mentionLink = data.username
-    ? `<a href="t.me/${data.username}">${name}'s</a>`
-    : `${name}'s`;
+  const safeName = escapeHtmlEntities(data.name);
 
-  const message = `<blockquote><strong>🏆 ${mentionLink} total score ${
-    searchKey === "global" ? "globally" : "in this chat"
-  } is ${data.totalScore.toLocaleString()}, and rank is ${data.rank.toLocaleString()} 🏆</strong></blockquote>`;
+  const displayName = data.username
+    ? `<a href="https://t.me/${escapeHtmlEntities(data.username)}">${safeName}</a>`
+    : safeName;
 
-  return `${message}\n\n${FOOTER_MESSAGE}`;
+  const scopeText = searchKey === "global" ? "Globally" : "In This Chat";
+
+  return [
+    `<blockquote>🏆 <b>${displayName}'s Performance ${scopeText}</b> 🏆</blockquote>`,
+    ``,
+    `📊 <b>Total Score:</b> ${data.totalScore.toLocaleString()}`,
+    `🏅 <b>Rank:</b> #${data.rank.toLocaleString()}`,
+    ``,
+    FOOTER_MESSAGE,
+  ].join("\n");
 }

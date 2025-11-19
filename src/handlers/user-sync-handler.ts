@@ -18,6 +18,10 @@ composer.use(async (ctx, next) => {
 
     (async () => {
       try {
+        const photos = await ctx.api.getUserProfilePhotos(Number(userId));
+        const profilePicFileId =
+          photos.total_count > 0 ? photos.photos[0][0].file_id : null;
+
         if (userUsername) {
           await db
             .updateTable("users")
@@ -33,11 +37,13 @@ composer.use(async (ctx, next) => {
             id: userId,
             name: userName,
             username: userUsername,
+            profilePicFileId,
           })
           .onConflict((oc) =>
             oc.column("id").doUpdateSet({
               name: userName,
               username: userUsername,
+              profilePicFileId,
             }),
           )
           .execute();
@@ -49,7 +55,7 @@ composer.use(async (ctx, next) => {
     console.error("Error in user sync middleware:", error);
   }
 
-  return next();
+  return await next();
 });
 
 export const userSyncHandler = composer;

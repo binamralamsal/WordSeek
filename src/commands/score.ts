@@ -43,6 +43,7 @@ composer.command("score", async (ctx) => {
   const isOwnScore = !target;
 
   const targetUser = await getTargetUser(ctx, target, true);
+  console.log(targetUser);
 
   if (!targetUser) {
     return ctx.reply("User not found.");
@@ -90,9 +91,10 @@ composer.command("score", async (ctx) => {
   }
 
   const message = formatUserScoreMessage(userScore, searchKey);
-  ctx.reply(message, {
+
+  const opts = {
     disable_notification: true,
-    parse_mode: "HTML",
+    parse_mode: "HTML" as const,
     reply_markup: keyboard,
     reply_parameters: {
       message_id: ctx.msgId,
@@ -100,7 +102,16 @@ composer.command("score", async (ctx) => {
     link_preview_options: {
       is_disabled: true,
     },
-  });
+  };
+
+  if (userScore.profilePicFileId) {
+    return await ctx.replyWithPhoto(userScore.profilePicFileId, {
+      caption: message,
+      ...opts,
+    });
+  }
+
+  return await ctx.reply(message, opts);
 });
 
 CommandsHelper.addNewCommand(

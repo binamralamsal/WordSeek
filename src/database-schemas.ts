@@ -63,6 +63,7 @@ export interface User {
   createdAt: Generated<Timestamp>;
   id: string;
   name: string;
+  profilePicFileId: string | null;
   updatedAt: Generated<Timestamp>;
   username: string | null;
 }

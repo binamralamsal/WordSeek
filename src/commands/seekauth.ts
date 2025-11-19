@@ -31,7 +31,11 @@ export async function getTargetUser(
   const replyToMessage = ctx.message?.reply_to_message;
   const replyToMessageFrom = replyToMessage?.from;
 
-  if (replyToMessageFrom && !replyToMessageFrom.is_bot && !replyToMessage.is_topic_message) {
+  if (
+    replyToMessageFrom &&
+    !replyToMessageFrom.is_bot &&
+    !replyToMessage.is_topic_message
+  ) {
     const user = replyToMessageFrom;
 
     return {
@@ -78,9 +82,11 @@ export async function getTargetUser(
           }),
         )
         .execute();
+      console.log(userData);
       return userData;
     }
 
+    console.log("FUCK 3");
     if (identifier && entity.type === "mention") {
       const username = identifier.slice(1);
 
@@ -109,6 +115,7 @@ export async function getTargetUser(
     } catch {
       // Fall through to database
     }
+    console.log("FUCK 4");
 
     const user = await db
       .selectFrom("users")

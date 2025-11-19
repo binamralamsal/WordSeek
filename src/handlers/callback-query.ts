@@ -254,13 +254,23 @@ composer.on("callback_query:data", async (ctx) => {
           `score ${userId}`,
         );
 
-        await ctx
-          .editMessageText(message, {
-            reply_markup: keyboard,
-            parse_mode: "HTML",
-          })
-          .catch(() => {});
-
+        try {
+          if (ctx.msg?.photo) {
+            await ctx.editMessageCaption({
+              caption: message,
+              reply_markup: keyboard,
+              parse_mode: "HTML",
+            });
+          } else {
+            await ctx.editMessageText(message, {
+              reply_markup: keyboard,
+              parse_mode: "HTML",
+              link_preview_options: { is_disabled: true },
+            });
+          }
+        } catch (err) {
+          console.error(err);
+        }
         return ctx.answerCallbackQuery({
           text: "No scores found for this period.",
           show_alert: false,
@@ -273,16 +283,28 @@ composer.on("callback_query:data", async (ctx) => {
         `score ${userId}`,
       );
 
-      await ctx
-        .editMessageText(
-          formatUserScoreMessage(userScore, searchKey as AllowedChatSearchKey),
-          {
+      const caption = formatUserScoreMessage(
+        userScore,
+        searchKey as AllowedChatSearchKey,
+      );
+
+      try {
+        if (ctx.msg?.photo) {
+          await ctx.editMessageCaption({
+            caption,
+            reply_markup: keyboard,
+            parse_mode: "HTML",
+          });
+        } else {
+          await ctx.editMessageText(caption, {
             reply_markup: keyboard,
             parse_mode: "HTML",
             link_preview_options: { is_disabled: true },
-          },
-        )
-        .catch(() => {});
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
 
       return await ctx.answerCallbackQuery();
     }
