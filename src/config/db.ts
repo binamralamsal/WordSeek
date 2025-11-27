@@ -21,13 +21,15 @@ const dialect = new PostgresDialect({
 export const db = new Kysely<DB>({
   dialect,
   log: (event) => {
-    if (event.level === "query") {
-      console.log("SQL:", event.query.sql);
-      console.log("Parameters:", event.query.parameters);
-    } else {
-      console.error("Error:", event.error);
+    if (env.NODE_ENV === "development") {
+      if (event.level === "query") {
+        console.log("SQL:", event.query.sql);
+        console.log("Parameters:", event.query.parameters);
+      } else {
+        console.error("Error:", event.error);
+      }
+      console.log("-------------");
     }
-    console.log("-------------");
   },
   plugins: [new CamelCasePlugin(), new DeduplicateJoinsPlugin()],
 });
