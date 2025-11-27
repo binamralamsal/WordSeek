@@ -92,6 +92,8 @@ Blocked: <code>${blockedCount}</code>
 Deleted: <code>${deletedCount}</code>`,
         { parse_mode: "HTML" },
       );
+
+      await sleep(10_000);
     }
   }
 
@@ -112,5 +114,7 @@ Total Failed: <code>${totalFailed}</code>`,
     { parse_mode: "HTML" },
   );
 });
+
+const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 export const broadcastCommand = composer;
