@@ -41,6 +41,7 @@ Please mention the message that you want to broadcast.`,
   let unknownErrorCount = 0;
   let blockedCount = 0;
   let successCount = 0;
+  let deletedCount = 0;
   const startTime = Date.now();
 
   for (let i = 0; i < chats.length; i++) {
@@ -69,6 +70,7 @@ Please mention the message that you want to broadcast.`,
             .deleteFrom("broadcastChats")
             .where("id", "=", chat.id)
             .execute();
+          deletedCount++;
         } catch (deleteError) {}
       })();
     }
@@ -86,7 +88,8 @@ Please mention the message that you want to broadcast.`,
 Estimated time: <code>${formatDuration(estimatedRemaining)}</code>
 Total Users: <code>${chats.length}</code>
 Success: <code>${successCount}</code>
-Blocked: <code>${blockedCount}</code>`,
+Blocked: <code>${blockedCount}</code>
+Deleted: <code>${deletedCount}</code>`,
         { parse_mode: "HTML" },
       );
     }
@@ -104,7 +107,8 @@ Completed in: <code>${formatDuration(totalTime)}</code>
 Total Users: <code>${chats.length}</code>
 Success: <code>${successCount}</code>
 Blocked: <code>${blockedCount}</code>
-Deleted: <code>${totalFailed}</code>`,
+Deleted: <code>${deletedCount}</code>
+Total Failed: <code>${totalFailed}</code>`,
     { parse_mode: "HTML" },
   );
 });
