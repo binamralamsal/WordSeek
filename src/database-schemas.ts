@@ -25,6 +25,14 @@ export interface BannedUser {
   userId: string;
 }
 
+export interface BroadcastChat {
+  createdAt: Generated<Timestamp>;
+  id: string;
+  name: string | null;
+  updatedAt: Generated<Timestamp>;
+  username: string | null;
+}
+
 export interface ChatGameTopic {
   chatId: string;
   createdAt: Generated<Timestamp>;
@@ -70,6 +78,7 @@ export interface User {
 export interface DB {
   authorizedUsers: AuthorizedUser;
   bannedUsers: BannedUser;
+  broadcastChats: BroadcastChat;
   chatGameTopics: ChatGameTopic;
   games: Game;
   guesses: Guess;

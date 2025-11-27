@@ -1,6 +1,7 @@
 import { Composer } from "grammy";
 
 import { banCommand } from "./ban-user";
+import { broadcastCommand } from "./broadcast";
 import { endGameCommand } from "./end-game";
 import { helpCommand } from "./help";
 import { leaderboardCommand } from "./leaderboard";
@@ -36,6 +37,7 @@ composer.use(
   unsetGameTopicCommand,
   trackCommand,
   transferCommand,
+  broadcastCommand,
 );
 
 export const commands = composer;

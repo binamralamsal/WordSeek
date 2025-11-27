@@ -182,6 +182,7 @@ composer.on("message:text", async (ctx) => {
 
   ctx.reply(responseMessage, {
     protect_content: true,
+    parse_mode: "HTML",
   });
 
   // const imageBuffer = await generateWordleImage(allGuesses, currentGame.word);
