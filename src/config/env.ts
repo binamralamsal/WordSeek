@@ -30,7 +30,8 @@ export const env = z
       .min(1, { message: "DAILY_WORDLE_SECRET is required" }),
     GEMINI_API_KEYS: z
       .string()
-      .min(1, { message: "GEMINI_API_KEYS is required" })
-      .transform((val) => val.split(" ").filter(Boolean)),
+      .transform((val) => val.split(" ").filter(Boolean))
+      .optional()
+      .default([]),
   })
   .parse(process.env);
