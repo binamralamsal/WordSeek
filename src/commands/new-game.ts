@@ -39,7 +39,7 @@ composer.command("new", async (ctx) => {
       );
       if (result.success) {
         return ctx.reply(
-          "⚠️ You have an active Wordle of the Day game in your private chat. Please pause it with /pausedaily before playing regular Wordle.",
+          "⚠️ You have an active WordSeek of the Day game in your private chat. Please pause it with /pausedaily before playing regular WordSeek.",
         );
       }
     }

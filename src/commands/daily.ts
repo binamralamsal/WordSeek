@@ -13,7 +13,7 @@ composer.command("daily", async (ctx) => {
   try {
     if (ctx.chat.type !== "private") {
       return ctx.reply(
-        "Wordle of the Day can only be played in private chat with the bot. Send me a message directly!",
+        "WordSeek of the Day can only be played in private chat with the bot. Send me a message directly!",
       );
     }
 
@@ -27,7 +27,7 @@ composer.command("daily", async (ctx) => {
 
     if (activeRegularGame) {
       return ctx.reply(
-        `⚠️ You have an active regular WordSeek game. Please complete or end that game with /end before starting Wordle of the Day.`,
+        `⚠️ You have an active regular WordSeek game. Please complete or end that game with /end before starting WordSeek of the Day.`,
       );
     }
 
@@ -48,7 +48,7 @@ composer.command("daily", async (ctx) => {
 
     if (!dailyWord) {
       return ctx.reply(
-        "Today's Wordle is not ready yet. Please try again later!",
+        "Today's WordSeek is not ready yet. Please try again later!",
       );
     }
 
@@ -74,12 +74,12 @@ composer.command("daily", async (ctx) => {
       const lastGuess = existingGuesses[existingGuesses.length - 1];
       if (lastGuess.guess === dailyWord.word) {
         return ctx.reply(
-          `You've already completed today's Wordle! You got it in ${existingGuesses.length} ${existingGuesses.length === 1 ? "try" : "tries"}. Come back tomorrow for a new challenge!`,
+          `You've already completed today's WordSeek! You got it in ${existingGuesses.length} ${existingGuesses.length === 1 ? "try" : "tries"}. Come back tomorrow for a new challenge!`,
         );
       }
       if (existingGuesses.length >= 6) {
         return ctx.reply(
-          `You've already used all 6 attempts for today's Wordle. The word was: ${dailyWord.word.toUpperCase()}\n\nCome back tomorrow for a new challenge!`,
+          `You've already used all 6 attempts for today's WordSeek. The word was: ${dailyWord.word.toUpperCase()}\n\nCome back tomorrow for a new challenge!`,
         );
       }
     }
@@ -103,26 +103,20 @@ composer.command("daily", async (ctx) => {
         dailyWord.word,
       );
       return ctx.replyWithPhoto(new InputFile(imageBuffer), {
-        caption: `Welcome back! You have ${attemptsLeft} ${attemptsLeft === 1 ? "attempt" : "attempts"} left for today's Wordle. Keep guessing!`,
+        caption: `Welcome back! You have ${attemptsLeft} ${attemptsLeft === 1 ? "attempt" : "attempts"} left for today's WordSeek. Keep guessing!`,
       });
     } else {
       return ctx.reply(
-        "🎯 Wordle of the Day started! Guess the 5-letter word. You have 6 attempts. Good luck!",
+        "🎯 WordSeek of the Day started! Guess the 5-letter word. You have 6 attempts. Good luck!",
       );
     }
-
-    ctx.reply(
-      attemptsUsed > 0
-        ? `Welcome back! You have ${attemptsLeft} ${attemptsLeft === 1 ? "attempt" : "attempts"} left for today's Wordle. Keep guessing!`
-        : "🎯 Wordle of the Day started! Guess the 5-letter word. You have 6 attempts. Good luck!",
-    );
   } catch (error) {
     console.error("Error starting daily wordle:", error);
     ctx.reply("Something went wrong. Please try again.");
   }
 });
 
-CommandsHelper.addNewCommand("daily", "Play Wordle of the Day (DM only)");
+CommandsHelper.addNewCommand("daily", "Play WordSeek of the Day (DM only)");
 
 composer.command("pausedaily", async (ctx) => {
   if (!ctx.from) return;
@@ -134,14 +128,14 @@ composer.command("pausedaily", async (ctx) => {
 
     if (!dailyGameData) {
       return ctx.reply(
-        "You don't have an active Wordle of the Day game to pause.",
+        "You don't have an active WordSeek of the Day game to pause.",
       );
     }
 
     await redis.del(`daily_wordle:${userId}`);
 
     ctx.reply(
-      "✅ Your Wordle of the Day game has been paused. You can now play regular Wordle.\n\nTo play today's Wordle again, use /daily (your previous attempts will still count).",
+      "✅ Your WordSeek of the Day game has been paused. You can now play regular WordSeek.\n\nTo play today's WordSeek again, use /daily (your previous attempts will still count).",
     );
   } catch (error) {
     console.error("Error pausing daily wordle:", error);
@@ -149,6 +143,6 @@ composer.command("pausedaily", async (ctx) => {
   }
 });
 
-CommandsHelper.addNewCommand("pausedaily", "Pause Wordle of the Day game");
+CommandsHelper.addNewCommand("pausedaily", "Pause WordSeek of the Day game");
 
 export const dailyWordleCommand = composer;

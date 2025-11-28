@@ -5,7 +5,7 @@ import z from "zod";
 import { SYSTEM_PROMPT } from "../config/constants";
 import { db } from "../config/db";
 import { env } from "../config/env";
-import words from "../data/allWords.json";
+import words from "../data/daily-word-lists.json";
 import { APIKeyManager } from "../util/key-manager";
 
 const keyManager = new APIKeyManager();
