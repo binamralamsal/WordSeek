@@ -425,7 +425,7 @@ export function generateWordleShareText(
     return result.join("");
   });
 
-  return `Wordle ${attemptLine}\n${lines.join("\n")}`;
+  return `Wordle ${attemptLine}\n\n${lines.join("\n")}\nTry yourself by using /daily command.`;
 }
 
 async function handleDailyWordleLoss(
