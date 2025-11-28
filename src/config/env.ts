@@ -18,5 +18,19 @@ export const env = z
       .string()
       .optional()
       .transform((v) => (v ? Number(v) : undefined)),
+    TIME_ZONE: z.string().optional().default("UTC"),
+    DAILY_WORDLE_START_DATE: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format, expected YYYY-MM-DD")
+      .optional()
+      .default("2025-01-01")
+      .transform((val) => new Date(val)),
+    DAILY_WORDLE_SECRET: z
+      .string()
+      .min(1, { message: "DAILY_WORDLE_SECRET is required" }),
+    GEMINI_API_KEYS: z
+      .string()
+      .min(1, { message: "GEMINI_API_KEYS is required" })
+      .transform((val) => val.split(" ").filter(Boolean)),
   })
   .parse(process.env);

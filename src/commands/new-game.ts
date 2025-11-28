@@ -3,14 +3,19 @@ import { Composer } from "grammy";
 import { DatabaseError } from "pg";
 
 import { db } from "../config/db";
+import { redis } from "../config/redis";
+import { dailyWordleSchema } from "../handlers/on-message";
 import { CommandsHelper } from "../util/commands-helper";
 import { WordSelector } from "../util/word-selector";
 
 const composer = new Composer();
 
 composer.command("new", async (ctx) => {
+  if (!ctx.from) return;
+
   try {
     const chatId = ctx.chat.id;
+    const userId = ctx.from.id.toString();
 
     if (ctx.chat.is_forum) {
       const topicData = await db
@@ -25,6 +30,18 @@ composer.command("new", async (ctx) => {
         return await ctx.reply(
           "This topic is not set for the game. Please play the game in the designated topic.",
         );
+    }
+
+    if (ctx.chat.type === "private") {
+      const dailyGameData = await redis.get(`daily_wordle:${userId}`);
+      const result = dailyWordleSchema.safeParse(
+        JSON.parse(dailyGameData || "{}"),
+      );
+      if (result.success) {
+        return ctx.reply(
+          "⚠️ You have an active Wordle of the Day game in your private chat. Please pause it with /pausedaily before playing regular Wordle.",
+        );
+      }
     }
 
     const wordSelector = new WordSelector();

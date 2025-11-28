@@ -31,9 +31,7 @@ export async function endGame(
 
   await ctx.reply(
     `<blockquote>🎮 <b>Game Ended</b></blockquote>
-${formatWordDetails(word)}
-<blockquote>${reason}
-Start a new game with /new</blockquote>`,
+${formatWordDetails(word)}<blockquote>${reason ? `${reason}\n` : ""}Start a new game with /new</blockquote>`,
     { parse_mode: "HTML" },
   );
 }

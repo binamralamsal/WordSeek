@@ -7,6 +7,8 @@ type FormatUserScoreData = {
   rank: number;
   name: string;
   username: string | null;
+  currentStreak: number | null;
+  highestStreak: number | null;
 };
 
 export function formatUserScoreMessage(
@@ -15,12 +17,28 @@ export function formatUserScoreMessage(
 ) {
   const name = escapeHtmlEntities(data.name);
   const mentionLink = data.username
-    ? `<a href="t.me/${data.username}">${name}'s</a>`
-    : `${name}'s`;
+    ? `<a href="https://t.me/${data.username}">${name}</a>`
+    : name;
 
-  const message = `<blockquote><strong>🏆 ${mentionLink} total score ${
-    searchKey === "global" ? "globally" : "in this chat"
-  } is ${data.totalScore.toLocaleString()}, and rank is ${data.rank.toLocaleString()} 🏆</strong></blockquote>`;
+  const scopeText = searchKey === "global" ? "globally" : "in this chat";
 
-  return `${message}\n\n${FOOTER_MESSAGE}`;
+  const totalScore = data.totalScore.toLocaleString();
+  const rank = data.rank.toLocaleString();
+
+  const currentStreak =
+    data.currentStreak !== null ? data.currentStreak.toString() : "0";
+  const highestStreak =
+    data.highestStreak !== null ? data.highestStreak.toString() : "0";
+
+  return `
+<blockquote><strong>🏆 Regular WordSeek Scores</strong></blockquote>
+<b>${mentionLink}</b> has a total score of <b>${totalScore}</b> ${scopeText}.
+Their rank is <b>#${rank}</b>.
+
+<blockquote><strong>🔥 Daily WordSeek Stats</strong></blockquote>
+<b>Current Streak:</b> ${currentStreak} days
+<b>Highest Streak:</b> ${highestStreak} days
+
+${FOOTER_MESSAGE}
+  `.trim();
 }

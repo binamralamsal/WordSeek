@@ -63,12 +63,15 @@ export async function getUserScores({
       return innerQuery.as("lb");
     })
     .innerJoin("users", "users.id", "lb.userId")
+    .leftJoin("userStats", "userStats.userId", "users.id")
     .select([
       "users.id",
       "users.name",
       "users.username",
       "lb.totalScore",
       "lb.rank",
+      "userStats.highestStreak",
+      "userStats.currentStreak",
     ])
     .where("users.id", "=", userId);
 

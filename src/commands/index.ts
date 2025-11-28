@@ -2,6 +2,7 @@ import { Composer } from "grammy";
 
 import { banCommand } from "./ban-user";
 import { broadcastCommand } from "./broadcast";
+import { dailyWordleCommand } from "./daily";
 import { endGameCommand } from "./end-game";
 import { helpCommand } from "./help";
 import { leaderboardCommand } from "./leaderboard";
@@ -38,6 +39,7 @@ composer.use(
   trackCommand,
   transferCommand,
   broadcastCommand,
+  dailyWordleCommand,
 );
 
 export const commands = composer;

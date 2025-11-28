@@ -1,28 +1,41 @@
 import { Composer, Context, GrammyError } from "grammy";
+import { InputFile } from "grammy";
 import { ReactionTypeEmoji } from "grammy/types";
 
 import { readFile } from "fs/promises";
 import { join } from "path";
 import satori from "satori";
 import sharp from "sharp";
+import z from "zod";
 
 import { db } from "../config/db";
+import { redis } from "../config/redis";
 import allWords from "../data/allWords.json";
 import commonWords from "../data/commonWords.json";
-import { formatWordDetails } from "../util/format-word-details";
+import {
+  formatDailyWordDetails,
+  formatWordDetails,
+} from "../util/format-word-details";
 import { toFancyText } from "../util/to-fancy-text";
 
 const composer = new Composer();
 
+export const dailyWordleSchema = z.object({
+  dailyWordId: z.number(),
+  date: z.string(),
+});
+
 composer.on("message:text", async (ctx) => {
   const currentGuess = ctx.message.text?.toLowerCase();
 
-  // regex: only 5 English letters (a-z)
   const isValidWord = /^[a-z]{5}$/.test(currentGuess ?? "");
 
   if (!isValidWord || currentGuess.startsWith("/")) {
     return;
   }
+
+  const userId = ctx.from.id.toString();
+  const chatId = ctx.chat.id.toString();
 
   const isUserBanned = await db
     .selectFrom("bannedUsers")
@@ -54,6 +67,32 @@ composer.on("message:text", async (ctx) => {
     return;
   }
 
+  if (ctx.chat.type === "private") {
+    const dailyGameData = await redis.get(`daily_wordle:${userId}`);
+    const result = dailyWordleSchema.safeParse(
+      JSON.parse(dailyGameData || "{}"),
+    );
+    if (result.success) {
+      const today = new Date().toLocaleString("en-US", {
+        timeZone: "Asia/Kathmandu",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const [month, day, year] = today.split("/");
+      const todayDate = `${year}-${month}-${day}`;
+
+      if (result.data.date !== todayDate) {
+        await redis.del(`daily_wordle:${userId}`);
+        return ctx.reply(
+          "Your previous game has expired. Please start today's Wordle with /daily",
+        );
+      }
+
+      return handleDailyWordleGuess(ctx, currentGuess);
+    }
+  }
+
   const currentGame = await db
     .selectFrom("games")
     .selectAll()
@@ -61,8 +100,6 @@ composer.on("message:text", async (ctx) => {
     .executeTakeFirst();
 
   if (!currentGame) return;
-
-  const chatId = ctx.chat.id.toString();
 
   if (ctx.chat.is_forum) {
     const topicData = await db
@@ -93,8 +130,6 @@ composer.on("message:text", async (ctx) => {
     return ctx.reply(
       "Someone has already guessed your word. Please try another one!",
     );
-
-  const userId = ctx.from.id.toString();
 
   if (currentGuess === currentGame.word) {
     if (!ctx.from.is_bot) {
@@ -184,21 +219,264 @@ composer.on("message:text", async (ctx) => {
     protect_content: true,
     parse_mode: "HTML",
   });
-
-  // const imageBuffer = await generateWordleImage(allGuesses, currentGame.word);
-
-  // ctx.replyWithPhoto(new InputFile(new Uint8Array(imageBuffer)), {
-  //   protect_content: true,
-  //   parse_mode: "HTML",
-  // });
 });
+
+async function handleDailyWordleGuess(ctx: Context, currentGuess: string) {
+  const userId = ctx.from!.id.toString();
+
+  if (
+    !allWords.includes(currentGuess) &&
+    !Object.keys(commonWords).includes(currentGuess)
+  ) {
+    return ctx.reply(`${currentGuess.toUpperCase()} is not a valid word.`);
+  }
+
+  const today = new Date().toLocaleString("en-US", {
+    timeZone: "Asia/Kathmandu",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const [month, day, year] = today.split("/");
+  const todayDate = `${year}-${month}-${day}`;
+
+  const dailyWord = await db
+    .selectFrom("dailyWords")
+    .selectAll()
+    .where("date", "=", new Date(todayDate))
+    .executeTakeFirst();
+
+  if (!dailyWord) {
+    return ctx.reply(
+      "Today's Wordle is not available. Please try again later.",
+    );
+  }
+
+  const existingGuesses = await db
+    .selectFrom("dailyGuesses")
+    .selectAll()
+    .where("userId", "=", userId)
+    .where("dailyWordId", "=", dailyWord.id)
+    .orderBy("attemptNumber", "asc")
+    .execute();
+
+  if (existingGuesses.some((g) => g.guess === currentGuess)) {
+    return ctx.reply("You've already guessed this word. Try a different one!");
+  }
+
+  const attemptNumber = existingGuesses.length + 1;
+  await db
+    .insertInto("dailyGuesses")
+    .values({
+      userId,
+      dailyWordId: dailyWord.id,
+      guess: currentGuess,
+      attemptNumber,
+    })
+    .execute();
+
+  const allGuesses = await db
+    .selectFrom("dailyGuesses")
+    .selectAll()
+    .where("userId", "=", userId)
+    .where("dailyWordId", "=", dailyWord.id)
+    .orderBy("attemptNumber", "asc")
+    .execute();
+
+  if (currentGuess === dailyWord.word) {
+    await handleDailyWordleWin(ctx, dailyWord, allGuesses);
+    return;
+  }
+
+  if (allGuesses.length >= 6) {
+    await handleDailyWordleLoss(ctx, dailyWord, allGuesses);
+    return;
+  }
+
+  const imageBuffer = await generateWordleImage(allGuesses, dailyWord.word);
+  const attemptsLeft = 6 - allGuesses.length;
+
+  await ctx.replyWithPhoto(new InputFile(new Uint8Array(imageBuffer)), {
+    caption: `${attemptsLeft} ${attemptsLeft === 1 ? "attempt" : "attempts"} remaining`,
+    protect_content: true,
+  });
+}
+
+type DailyWord = {
+  date: Date;
+  dayNumber: number;
+  meaning: string | null;
+  phonetic: string | null;
+  sentence: string | null;
+  word: string;
+};
+async function handleDailyWordleWin(
+  ctx: Context,
+  dailyWord: DailyWord,
+  allGuesses: GuessEntry[],
+) {
+  const userId = ctx.from!.id.toString();
+
+  await redis.del(`daily_wordle:${userId}`);
+
+  const userStats = await db
+    .selectFrom("userStats")
+    .selectAll()
+    .where("userId", "=", userId)
+    .executeTakeFirst();
+
+  if (userStats) {
+    const today = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kathmandu",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const [month, day, year] = today.split("/");
+    const todayDate = new Date(`${year}-${month}-${day}`);
+
+    let newStreak = 1;
+    if (userStats.lastGuessed) {
+      const lastGuessedDate = new Date(userStats.lastGuessed);
+      const diffTime = Math.abs(
+        todayDate.getTime() - lastGuessedDate.getTime(),
+      );
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 1) {
+        newStreak = userStats.currentStreak + 1;
+      }
+    }
+
+    const newHighestStreak = Math.max(newStreak, userStats.highestStreak);
+
+    await db
+      .updateTable("userStats")
+      .set({
+        currentStreak: newStreak,
+        highestStreak: newHighestStreak,
+        lastGuessed: new Date().toISOString(),
+      })
+      .where("userId", "=", userId)
+      .execute();
+
+    const imageBuffer = await generateWordleImage(allGuesses, dailyWord.word);
+    const shareText = generateWordleShareText(
+      dailyWord.dayNumber,
+      allGuesses,
+      dailyWord.word,
+    );
+
+    await ctx.replyWithPhoto(new InputFile(new Uint8Array(imageBuffer)), {
+      caption: `🎉 Congratulations! You guessed it in ${allGuesses.length} ${allGuesses.length === 1 ? "try" : "tries"}!\n\n🔥 Current Streak: ${newStreak}\n⭐ Highest Streak: ${newHighestStreak}\n\n${formatDailyWordDetails(dailyWord)}`,
+      parse_mode: "HTML",
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "📤 Share",
+              switch_inline_query: shareText,
+            },
+          ],
+        ],
+      },
+    });
+
+    reactWithRandom(ctx);
+  }
+}
+
+export function generateWordleShareText(
+  dayNumber: number,
+  guesses: GuessEntry[],
+  solution: string,
+) {
+  const totalAttempts = guesses.length;
+  const attemptLine = `${dayNumber} ${totalAttempts}/6`;
+
+  const lines = guesses.map((entry) => {
+    const guess = entry.guess.toUpperCase();
+    const sol = solution.toUpperCase();
+    const result: string[] = [];
+
+    const solutionCount: Record<string, number> = {};
+
+    for (const c of sol) {
+      solutionCount[c] = (solutionCount[c] || 0) + 1;
+    }
+
+    for (let i = 0; i < guess.length; i++) {
+      if (guess[i] === sol[i]) {
+        result[i] = "🟩";
+        solutionCount[guess[i]]--;
+      }
+    }
+
+    for (let i = 0; i < guess.length; i++) {
+      if (result[i]) continue;
+      if (solutionCount[guess[i]] > 0) {
+        result[i] = "🟨";
+        solutionCount[guess[i]]--;
+      } else {
+        result[i] = "⬛";
+      }
+    }
+
+    return result.join("");
+  });
+
+  return `Wordle ${attemptLine}\n${lines.join("\n")}`;
+}
+
+async function handleDailyWordleLoss(
+  ctx: Context,
+  dailyWord: DailyWord,
+  allGuesses: GuessEntry[],
+) {
+  const userId = ctx.from!.id.toString();
+
+  await redis.del(`daily_wordle:${userId}`);
+
+  await db
+    .updateTable("userStats")
+    .set({
+      currentStreak: 0,
+      lastGuessed: new Date().toISOString(),
+    })
+    .where("userId", "=", userId)
+    .execute();
+
+  const imageBuffer = await generateWordleImage(allGuesses, dailyWord.word);
+  const shareText = generateWordleShareText(
+    dailyWord.dayNumber,
+    allGuesses,
+    dailyWord.word,
+  );
+
+  await ctx.replyWithPhoto(new InputFile(new Uint8Array(imageBuffer)), {
+    caption: `Game Over! The word was: ${dailyWord.word.toUpperCase()}\n\n💔 Streak reset to 0\n\n${formatDailyWordDetails(dailyWord)}\n\nCome back tomorrow for a new challenge!`,
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: "📤 Share",
+            switch_inline_query: shareText,
+          },
+        ],
+      ],
+    },
+  });
+}
 
 export const onMessageHander = composer;
 
 interface GuessEntry {
   id: number;
   guess: string;
-  gameId: number;
+  gameId?: number;
+  dailyWordId?: number;
+  attemptNumber?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -235,7 +513,10 @@ function getFeedback(data: GuessEntry[], solution: string) {
     .join("\n");
 }
 
-async function generateWordleImage(data: GuessEntry[], solution: string) {
+export async function generateWordleImage(
+  data: GuessEntry[],
+  solution: string,
+) {
   const tiles = data.map((entry) => {
     const guess = entry.guess.toUpperCase();
     const solutionCount: Record<string, number> = {};
@@ -269,29 +550,25 @@ async function generateWordleImage(data: GuessEntry[], solution: string) {
     return "#3a3a3c";
   };
 
-  // Determine number of columns
-  const numColumns = data.length > 15 ? 2 : 1;
-  const tilesPerColumn = Math.ceil(tiles.length / numColumns);
-
-  // Split tiles into columns
-  const columns: (typeof tiles)[] = [];
-  for (let i = 0; i < numColumns; i++) {
-    columns.push(tiles.slice(i * tilesPerColumn, (i + 1) * tilesPerColumn));
-  }
-
   const fontPath = join(process.cwd(), "src", "fonts", "roboto.ttf");
   const fontData = await readFile(fontPath);
 
   const tileSize = 60;
   const gap = 8;
   const padding = 20;
-  const columnGap = 16;
 
   const columnWidth = solution.length * tileSize + (solution.length - 1) * gap;
-  const width =
-    padding * 2 + numColumns * columnWidth + (numColumns - 1) * columnGap;
-  const height =
-    padding * 2 + tilesPerColumn * tileSize + (tilesPerColumn - 1) * gap;
+  const width = padding * 2 + columnWidth;
+  const height = padding * 2 + 6 * tileSize + 5 * gap; // Always 6 rows for daily wordle
+
+  // Pad with empty rows if less than 6 guesses
+  const paddedTiles = [...tiles];
+  while (paddedTiles.length < 6) {
+    paddedTiles.push({
+      guess: "     ",
+      result: Array(5).fill("empty"),
+    });
+  }
 
   const svg = await satori(
     <div
@@ -299,42 +576,40 @@ async function generateWordleImage(data: GuessEntry[], solution: string) {
         display: "flex",
         background: "#121213",
         padding: "20px",
-        gap: `${columnGap}px`,
       }}
     >
-      {columns.map((column, colIdx) => (
-        <div
-          key={colIdx}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-          }}
-        >
-          {column.map(({ guess, result }, rowIdx) => (
-            <div key={rowIdx} style={{ display: "flex", gap: "8px" }}>
-              {guess.split("").map((letter, i) => (
-                <div
-                  key={i}
-                  style={{
-                    width: "60px",
-                    height: "60px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: getColor(result[i]),
-                    color: "white",
-                    fontSize: "32px",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {letter}
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      ))}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+        }}
+      >
+        {paddedTiles.map(({ guess, result }, rowIdx) => (
+          <div key={rowIdx} style={{ display: "flex", gap: "8px" }}>
+            {guess.split("").map((letter, i) => (
+              <div
+                key={i}
+                style={{
+                  width: "60px",
+                  height: "60px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background:
+                    result[i] === "empty" ? "#3a3a3c" : getColor(result[i]),
+                  color: result[i] === "empty" ? "#3a3a3c" : "white",
+                  fontSize: "32px",
+                  fontWeight: "bold",
+                  border: result[i] === "empty" ? "2px solid #565758" : "none",
+                }}
+              >
+                {letter.trim()}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>,
     {
       width,

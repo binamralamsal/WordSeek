@@ -19,10 +19,12 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@grammyjs/auto-retry": "^2.0.2",
     "@grammyjs/parse-mode": "^2.2.0",
     "@grammyjs/runner": "^2.0.3",
     "bullmq": "^5.61.0",
+    "cron": "^4.3.4",
     "grammy": "^1.38.3",
     "ioredis": "^5.8.1",
     "kysely": "^0.28.8",

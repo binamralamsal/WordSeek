@@ -40,6 +40,28 @@ export interface ChatGameTopic {
   updatedAt: Generated<Timestamp>;
 }
 
+export interface DailyGuess {
+  attemptNumber: number;
+  createdAt: Generated<Timestamp>;
+  dailyWordId: number;
+  guess: string;
+  id: Generated<number>;
+  updatedAt: Generated<Timestamp>;
+  userId: string;
+}
+
+export interface DailyWord {
+  createdAt: Generated<Timestamp>;
+  date: Timestamp;
+  dayNumber: Generated<number>;
+  id: Generated<number>;
+  meaning: string | null;
+  phonetic: string | null;
+  sentence: string | null;
+  updatedAt: Generated<Timestamp>;
+  word: string;
+}
+
 export interface Game {
   activeChat: string;
   createdAt: Generated<Timestamp>;
@@ -75,13 +97,25 @@ export interface User {
   username: string | null;
 }
 
+export interface UserStat {
+  createdAt: Generated<Timestamp>;
+  currentStreak: Generated<number>;
+  highestStreak: Generated<number>;
+  lastGuessed: Timestamp | null;
+  updatedAt: Generated<Timestamp>;
+  userId: string;
+}
+
 export interface DB {
   authorizedUsers: AuthorizedUser;
   bannedUsers: BannedUser;
   broadcastChats: BroadcastChat;
   chatGameTopics: ChatGameTopic;
+  dailyGuesses: DailyGuess;
+  dailyWords: DailyWord;
   games: Game;
   guesses: Guess;
   leaderboard: Leaderboard;
   users: User;
+  userStats: UserStat;
 }
