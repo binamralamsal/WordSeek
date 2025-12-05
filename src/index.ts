@@ -31,7 +31,7 @@ bot.use(onBotAddedInChat);
 
 bot.catch(errorHandler);
 dailyWordleCron.start();
-dailyWordleCron.fireOnTick();
+// dailyWordleCron.fireOnTick();
 
 // bot.start({
 //   onStart: () => console.log("Bot started"),
