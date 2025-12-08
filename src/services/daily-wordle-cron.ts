@@ -79,17 +79,29 @@ function getDateStringFromDate(d: Date, timeZone: string): string {
 
 export function getCurrentGameDateString() {
   const now = new Date();
-  const timeInTimezone = new Date(
-    now.toLocaleString("en-US", { timeZone: env.TIME_ZONE }),
-  );
 
-  const currentHour = timeInTimezone.getHours();
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: env.TIME_ZONE,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
+  const parts = formatter.formatToParts(now);
+  const get = (t: string) => parts.find((p) => p.type === t)!.value;
+
+  const timeInTimezone = new Date(
+    `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}`,
+  );
 
   let baseDate = timeInTimezone;
 
-  if (currentHour < 6) {
-    // Use previous calendar day
-    baseDate = new Date(timeInTimezone.getTime() - 24 * 60 * 60 * 1000);
+  if (timeInTimezone.getHours() < 6) {
+    baseDate = new Date(baseDate.getTime() - 24 * 60 * 60 * 1000);
   }
 
   return getDateStringFromDate(baseDate, env.TIME_ZONE);
