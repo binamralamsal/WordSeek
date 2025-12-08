@@ -421,12 +421,15 @@ composer.on("callback_query:data", async (ctx) => {
       text: `Vote recorded! ${votesNeeded} more votes needed.`,
     });
   } else if (ctx.callbackQuery.data.startsWith("help_")) {
+    type HelpSection = "howto" | "scores" | "group" | "other" | "admin";
+
     if (!ctx.from) {
       await ctx.answerCallbackQuery();
       return;
     }
 
-    const isAdmin = env.ADMIN_USERS.includes(ctx.from.id);
+    const shouldShowAdminCommands =
+      env.ADMIN_USERS.includes(ctx.from.id) && ctx.chat?.type === "private";
     let message = "";
     let activeSection: HelpSection = "howto";
 
@@ -449,7 +452,7 @@ composer.on("callback_query:data", async (ctx) => {
         activeSection = "other";
         break;
       case "help_admin":
-        if (!isAdmin) {
+        if (!shouldShowAdminCommands) {
           await ctx.answerCallbackQuery({
             text: "You don't have permission to view this.",
             show_alert: true,
@@ -464,7 +467,10 @@ composer.on("callback_query:data", async (ctx) => {
         return;
     }
 
-    const keyboard = getMainHelpKeyboard(isAdmin, activeSection);
+    const keyboard = getMainHelpKeyboard(
+      shouldShowAdminCommands,
+      activeSection,
+    );
 
     const commonOptions = {
       parse_mode: "HTML" as const,
