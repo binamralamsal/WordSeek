@@ -23,7 +23,6 @@ import { getSmartDefaults } from "../util/get-smart-defaults";
 const composer = new Composer();
 
 composer.on("callback_query:data", async (ctx) => {
-  console.log(ctx.callbackQuery.data);
   condition: if (ctx.callbackQuery.data.startsWith("leaderboard")) {
     const [, searchKey, timeKey] = ctx.callbackQuery.data.split(" ");
     if (!allowedChatSearchKeys.includes(searchKey as AllowedChatSearchKey))
