@@ -34,20 +34,37 @@ composer.command("stats", async (ctx) => {
   const cpus = os.cpus();
   const loadAvg = os.loadavg();
 
-  const [usersResult, groupsResult] = await Promise.all([
+  const [
+    allUsersResult,
+    activePlayersResult,
+    activeGroupsResult,
+    totalGroupsResult,
+  ] = await Promise.all([
     db
       .selectFrom("users")
-      .select((eb) => eb.fn.count("id").as("usersCount"))
+      .select((eb) => eb.fn.count("id").as("count"))
       .executeTakeFirstOrThrow(),
     db
       .selectFrom("leaderboard")
-      .select((eb) => eb.fn.count("chatId").distinct().as("groupsCount"))
+      .select((eb) => eb.fn.count("chatId").distinct().as("count"))
+      .where("chatId", "not like", "-1%")
+      .executeTakeFirstOrThrow(),
+    db
+      .selectFrom("leaderboard")
+      .select((eb) => eb.fn.count("chatId").distinct().as("count"))
       .where("chatId", "like", "-1%")
+      .executeTakeFirstOrThrow(),
+    db
+      .selectFrom("broadcastChats")
+      .select((eb) => eb.fn.count("id").as("count"))
+      .where("id", "like", "-1%")
       .executeTakeFirstOrThrow(),
   ]);
 
-  const usersCount = usersResult.usersCount;
-  const groupsCount = groupsResult.groupsCount;
+  const allUsersCount = allUsersResult.count;
+  const activePlayersCount = activePlayersResult.count;
+  const activeGroupsCount = activeGroupsResult.count;
+  const totalGroupsCount = totalGroupsResult.count;
 
   const formatBytes = (bytes: number) => {
     if (!bytes) return "0 B";
@@ -64,8 +81,10 @@ composer.command("stats", async (ctx) => {
 
   // Basic bot stats
   statsMessage += `<blockquote>📊 <b>Bot Overview</b>\n`;
-  statsMessage += `├ Users: ${usersCount}\n`;
-  statsMessage += `├ Groups: ${groupsCount}\n`;
+  statsMessage += `├ Total Users: ${allUsersCount}\n`;
+  statsMessage += `├ Active Players: ${activePlayersCount}\n`;
+  statsMessage += `├ Total Groups: ${totalGroupsCount}\n`;
+  statsMessage += `├ Active Groups: ${activeGroupsCount}\n`;
   statsMessage += `├ Uptime: ${uptimeHours}h ${uptimeMinutes}m\n`;
   statsMessage += `└ PID: ${process.pid}</blockquote>\n\n`;
 
