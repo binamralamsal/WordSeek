@@ -68,13 +68,14 @@ async function getWordDetails(
 }
 
 function getDateStringFromDate(d: Date, timeZone: string): string {
-  const localized = new Date(d.toLocaleString("en-US", { timeZone }));
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
 
-  const year = localized.getFullYear();
-  const month = String(localized.getMonth() + 1).padStart(2, "0");
-  const day = String(localized.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  return fmt.format(d);
 }
 
 export function getCurrentGameDateString() {
