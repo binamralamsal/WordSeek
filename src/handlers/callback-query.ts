@@ -4,6 +4,14 @@ import { sql } from "kysely";
 
 import { endGame, isUserAuthorized } from "../commands/end-game";
 import {
+  getAdminCommandsMessage,
+  getGroupSettingsMessage,
+  getHowToPlayMessage,
+  getMainHelpKeyboard,
+  getOtherCommandsMessage,
+  getScoresMessage,
+} from "../commands/help";
+import {
   allowedChatSearchKeys,
   allowedChatTimeKeys,
 } from "../config/constants";
@@ -412,6 +420,65 @@ composer.on("callback_query:data", async (ctx) => {
     await ctx.answerCallbackQuery({
       text: `Vote recorded! ${votesNeeded} more votes needed.`,
     });
+  } else if (ctx.callbackQuery.data.startsWith("help_")) {
+    if (!ctx.from) {
+      await ctx.answerCallbackQuery();
+      return;
+    }
+
+    const isAdmin = env.ADMIN_USERS.includes(ctx.from.id);
+    let message = "";
+    let activeSection: HelpSection = "howto";
+
+    switch (ctx.callbackQuery.data) {
+      case "help_main":
+      case "help_howto":
+        message = getHowToPlayMessage();
+        activeSection = "howto";
+        break;
+      case "help_scores":
+        message = getScoresMessage();
+        activeSection = "scores";
+        break;
+      case "help_group":
+        message = getGroupSettingsMessage();
+        activeSection = "group";
+        break;
+      case "help_other":
+        message = getOtherCommandsMessage();
+        activeSection = "other";
+        break;
+      case "help_admin":
+        if (!isAdmin) {
+          await ctx.answerCallbackQuery({
+            text: "You don't have permission to view this.",
+            show_alert: true,
+          });
+          return;
+        }
+        message = getAdminCommandsMessage();
+        activeSection = "admin";
+        break;
+      default:
+        await ctx.answerCallbackQuery();
+        return;
+    }
+
+    const keyboard = getMainHelpKeyboard(isAdmin, activeSection);
+
+    const commonOptions = {
+      parse_mode: "HTML" as const,
+      reply_markup: keyboard,
+    };
+
+    try {
+      await ctx.editMessageText(message, commonOptions);
+    } catch {
+      await ctx.deleteMessage();
+      await ctx.reply(message, commonOptions);
+    }
+
+    await ctx.answerCallbackQuery();
   }
 });
 

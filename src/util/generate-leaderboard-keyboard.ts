@@ -1,6 +1,8 @@
 import { InlineKeyboard } from "grammy";
 
 import {
+  DISCUSSION_GROUP,
+  UPDATES_CHANNEL,
   allowedChatSearchKeys,
   allowedChatTimeKeys,
 } from "../config/constants";
@@ -42,7 +44,9 @@ export function generateLeaderboardKeyboard(
   });
 
   keyboard.row();
+  keyboard.url("Updates", UPDATES_CHANNEL);
   keyboard.text("🔄 Refresh", `${callbackKey} ${searchKey} ${timeKey}`);
+  keyboard.url("Discussion", DISCUSSION_GROUP);
 
   if (backButton) {
     keyboard.text(backButton.text, backButton.callback);

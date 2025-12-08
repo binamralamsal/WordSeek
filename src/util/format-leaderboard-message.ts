@@ -1,4 +1,3 @@
-import { FOOTER_MESSAGE } from "../config/constants";
 import type { AllowedChatSearchKey, LeaderboardEntry } from "../types";
 import { escapeHtmlEntities } from "../util/escape-html-entities";
 
@@ -32,5 +31,5 @@ export function formatLeaderboardMessage(
 
   return `<blockquote>🏆 ${
     searchKey === "global" ? "Global" : "Group"
-  } Leaderboard 🏆</blockquote>\n\n${formattedEntries}\n\n${FOOTER_MESSAGE}`;
+  } Leaderboard 🏆</blockquote>\n\n${formattedEntries}`;
 }

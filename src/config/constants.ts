@@ -1,4 +1,5 @@
-export const FOOTER_MESSAGE = `<blockquote>🛠 Developed by Binamra Lamsal\n📢 Official Channel for announcements: @WordSeek\n🗨 Official Group for playing and suggestions: @WordGuesser</blockquote>`;
+export const UPDATES_CHANNEL = "https://t.me/WordSeek";
+export const DISCUSSION_GROUP = "https://t.me/WordGuesser";
 
 export const allowedChatSearchKeys = ["global", "group"] as const;
 export const allowedChatTimeKeys = [

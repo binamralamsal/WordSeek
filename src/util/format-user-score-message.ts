@@ -1,4 +1,3 @@
-import { FOOTER_MESSAGE } from "../config/constants";
 import { AllowedChatSearchKey } from "../types";
 import { escapeHtmlEntities } from "./escape-html-entities";
 
@@ -37,8 +36,5 @@ Their rank is <b>#${rank}</b>.
 
 <blockquote><strong>🔥 Daily WordSeek Stats</strong></blockquote>
 <b>Current Streak:</b> ${currentStreak} days
-<b>Highest Streak:</b> ${highestStreak} days
-
-${FOOTER_MESSAGE}
-  `.trim();
+<b>Highest Streak:</b> ${highestStreak} days`.trim();
 }

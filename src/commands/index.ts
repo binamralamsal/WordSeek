@@ -5,6 +5,7 @@ import { broadcastCommand } from "./broadcast";
 import { dailyWordleCommand } from "./daily";
 import { endGameCommand } from "./end-game";
 import { helpCommand } from "./help";
+import { idCommand } from "./id";
 import { leaderboardCommand } from "./leaderboard";
 import { myScoreCommand } from "./my-score";
 import { newGameCommand } from "./new-game";
@@ -40,6 +41,7 @@ composer.use(
   transferCommand,
   broadcastCommand,
   dailyWordleCommand,
+  idCommand,
 );
 
 export const commands = composer;
