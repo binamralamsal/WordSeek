@@ -41,8 +41,7 @@ async function getWordDetails(
 
       const ai = genAI.getGenerativeModel({ model: modelName });
 
-      const prompt = `${SYSTEM_PROMPT}
- **THE WORD TO CREATE HINTS FOR:** ${word}`;
+      const prompt = `${SYSTEM_PROMPT}\n **THE WORD TO CREATE HINTS FOR:** ${word}`;
       const result = await ai.generateContent(prompt);
 
       let text = result.response.text();
@@ -68,50 +67,87 @@ async function getWordDetails(
   }
 }
 
+function getDateStringFromDate(d: Date, timeZone: string): string {
+  const localized = new Date(d.toLocaleString("en-US", { timeZone }));
+
+  const year = localized.getFullYear();
+  const month = String(localized.getMonth() + 1).padStart(2, "0");
+  const day = String(localized.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+export function getCurrentGameDateString() {
+  const now = new Date();
+  const timeInTimezone = new Date(
+    now.toLocaleString("en-US", { timeZone: env.TIME_ZONE }),
+  );
+
+  const currentHour = timeInTimezone.getHours();
+
+  let baseDate = timeInTimezone;
+
+  if (currentHour < 6) {
+    // Use previous calendar day
+    baseDate = new Date(timeInTimezone.getTime() - 24 * 60 * 60 * 1000);
+  }
+
+  return getDateStringFromDate(baseDate, env.TIME_ZONE);
+}
+
+async function generateDailyWordInternal(gameDate: string) {
+  const existingWord = await db
+    .selectFrom("dailyWords")
+    .selectAll()
+    .where("date", "=", new Date(gameDate))
+    .executeTakeFirst();
+
+  if (existingWord) return existingWord;
+
+  const seed = seedFromSecret(env.DAILY_WORDLE_SECRET);
+  const shuffled = deterministicShuffle(seed);
+  const word = getWordOfTheDay(shuffled);
+
+  const details = await getWordDetails(word);
+
+  const insertedWord = await db
+    .insertInto("dailyWords")
+    .values({
+      word,
+      date: gameDate,
+      meaning: details?.meaning,
+      phonetic: details?.phonetic,
+      sentence: details?.sentence,
+    })
+    .returningAll()
+    .executeTakeFirstOrThrow();
+
+  console.log(`Successfully generated daily word: ${word} for ${gameDate}`);
+  return insertedWord;
+}
+
 async function generateDailyWord() {
   try {
-    console.log("Generating daily word for", new Date().toISOString());
-
-    const today = new Date().toLocaleString("en-US", {
-      timeZone: "Asia/Kathmandu",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-    const [month, day, year] = today.split("/");
-    const todayDate = `${year}-${month}-${day}`;
-
-    const existingWord = await db
-      .selectFrom("dailyWords")
-      .selectAll()
-      .where("date", "=", new Date(todayDate))
-      .executeTakeFirst();
-
-    if (existingWord) {
-      console.log("Daily word already exists for today:", existingWord.word);
-      return;
-    }
-
-    const seed = seedFromSecret(env.DAILY_WORDLE_SECRET);
-    const shuffled = deterministicShuffle(seed);
-    const word = getWordOfTheDay(shuffled);
-
-    const details = await getWordDetails(word);
-
-    await db
-      .insertInto("dailyWords")
-      .values({
-        word: word,
-        date: todayDate,
-        meaning: details?.meaning,
-        phonetic: details?.phonetic,
-        sentence: details?.sentence,
-      })
-      .execute();
-
-    console.log(`Successfully generated daily word: ${word} for ${todayDate}`);
+    const gameDate = getCurrentGameDateString();
+    console.log(
+      "Generating daily word for",
+      gameDate,
+      "at",
+      new Date().toISOString(),
+    );
+    await generateDailyWordInternal(gameDate);
   } catch (error) {
     console.error("Error generating daily word:", error);
+  }
+}
+
+export async function ensureDailyWordExists(gameDate?: string) {
+  try {
+    const dateToUse = gameDate ?? getCurrentGameDateString();
+    return await generateDailyWordInternal(dateToUse);
+  } catch (error) {
+    console.error("Error ensuring daily word exists:", error);
+    return null;
   }
 }
 

@@ -9,7 +9,10 @@ import { onBotAddedInChat } from "./handlers/on-bot-added-in-chat";
 import { onMessageHander } from "./handlers/on-message";
 import { trackMessagesHandler } from "./handlers/track-messages-handler";
 import { userAndChatSyncHandler } from "./handlers/user-and-chat-sync-handler";
-import { dailyWordleCron } from "./services/daily-wordle-cron";
+import {
+  dailyWordleCron,
+  ensureDailyWordExists,
+} from "./services/daily-wordle-cron";
 import { CommandsHelper } from "./util/commands-helper";
 
 bot.api.config.use(autoRetry());
@@ -31,12 +34,8 @@ bot.use(onBotAddedInChat);
 
 bot.catch(errorHandler);
 dailyWordleCron.start();
-// dailyWordleCron.fireOnTick();
+await ensureDailyWordExists();
 
-// bot.start({
-//   onStart: () => console.log("Bot started"),
-//   drop_pending_updates: true,
-// });
 await bot.api.deleteWebhook({ drop_pending_updates: true });
 run(bot);
 

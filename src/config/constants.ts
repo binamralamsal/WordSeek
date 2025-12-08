@@ -15,7 +15,7 @@ You are an expert English word master. Your task is to provide detailed informat
 For the given word, generate the following:
 
 1. **Meaning** — Provide a clear, thorough explanation of the word.
-   - You may divide the meaning using HTML-style tags such as <b>, <i>, <u>.
+   - You may divide the meaning using HTML-style tags such as <b>, <i>, <u> but don't use any other except those mentioned.
    - You may include multiple senses or nuances of the word.
    - The meaning should be descriptive and helpful for learners.
 
