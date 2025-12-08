@@ -29,14 +29,21 @@ A fun and competitive Wordle-style game that you can play directly on Telegram.
 
 Ready to test your word skills? Let's play!`;
 
-  await ctx.replyWithPhoto(
-    new InputFile(createReadStream("./src/data/banner.png")),
-    {
-      caption,
+  try {
+    await ctx.replyWithPhoto(
+      new InputFile(createReadStream("./src/data/banner.png")),
+      {
+        caption,
+        parse_mode: "HTML",
+        reply_markup: keyboard,
+      },
+    );
+  } catch {
+    await ctx.reply(caption, {
       parse_mode: "HTML",
       reply_markup: keyboard,
-    },
-  );
+    });
+  }
 });
 
 CommandsHelper.addNewCommand("start", "Start the bot");

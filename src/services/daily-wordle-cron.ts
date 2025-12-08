@@ -67,9 +67,8 @@ async function getWordDetails(
   }
 }
 
-function getDateStringFromDate(d: Date, timeZone: string): string {
+function getDateStringFromDate(d: Date) {
   const fmt = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -105,7 +104,7 @@ export function getCurrentGameDateString() {
     baseDate = new Date(baseDate.getTime() - 24 * 60 * 60 * 1000);
   }
 
-  return getDateStringFromDate(baseDate, env.TIME_ZONE);
+  return getDateStringFromDate(baseDate);
 }
 
 async function generateDailyWordInternal(gameDate: string) {
