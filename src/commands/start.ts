@@ -1,10 +1,9 @@
-import { Composer, InlineKeyboard } from "grammy";
+import { Composer, InlineKeyboard, InputFile } from "grammy";
+
+import { createReadStream } from "fs";
 
 import { DISCUSSION_GROUP, UPDATES_CHANNEL } from "../config/constants";
 import { CommandsHelper } from "../util/commands-helper";
-
-const START_IMAGE_FILE_ID =
-  "AgACAgUAAxkBAAIDtWk26BDg7ia9Mw_-NnoVSYJ696dbAAKtDGsbz8S4VZffav_YDJo5AQADAgADeQADNgQ";
 
 const composer = new Composer();
 
@@ -30,11 +29,14 @@ A fun and competitive Wordle-style game that you can play directly on Telegram.
 
 Ready to test your word skills? Let's play!`;
 
-  await ctx.replyWithPhoto(START_IMAGE_FILE_ID, {
-    caption,
-    parse_mode: "HTML",
-    reply_markup: keyboard,
-  });
+  await ctx.replyWithPhoto(
+    new InputFile(createReadStream("./src/data/banner.png")),
+    {
+      caption,
+      parse_mode: "HTML",
+      reply_markup: keyboard,
+    },
+  );
 });
 
 CommandsHelper.addNewCommand("start", "Start the bot");
