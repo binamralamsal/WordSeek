@@ -17,6 +17,7 @@ import {
   formatWordDetails,
 } from "../util/format-word-details";
 import { toFancyText } from "../util/to-fancy-text";
+import { getCurrentGameDateString } from "../services/daily-wordle-cron";
 
 const composer = new Composer();
 
@@ -73,14 +74,7 @@ composer.on("message:text", async (ctx) => {
       JSON.parse(dailyGameData || "{}"),
     );
     if (result.success) {
-      const today = new Date().toLocaleString("en-US", {
-        timeZone: "Asia/Kathmandu",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      });
-      const [month, day, year] = today.split("/");
-      const todayDate = `${year}-${month}-${day}`;
+      const todayDate = getCurrentGameDateString();
 
       if (result.data.date !== todayDate) {
         await redis.del(`daily_wordle:${userId}`);
