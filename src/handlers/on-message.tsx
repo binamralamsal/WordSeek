@@ -216,7 +216,6 @@ composer.on("message:text", async (ctx) => {
   }
 
   ctx.reply(responseMessage, {
-    protect_content: true,
     parse_mode: "HTML",
   });
 });
@@ -298,7 +297,6 @@ async function handleDailyWordleGuess(ctx: Context, currentGuess: string) {
 
   await ctx.replyWithPhoto(new InputFile(new Uint8Array(imageBuffer)), {
     caption: `${attemptsLeft} ${attemptsLeft === 1 ? "attempt" : "attempts"} remaining`,
-    protect_content: true,
   });
 }
 
