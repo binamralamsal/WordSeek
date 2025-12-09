@@ -20,10 +20,24 @@ const FREE_MODELS = [
   "gemini-1.5-pro",
 ];
 
+const allowedTags = ["b", "i", "u"];
+
+function sanitizeMeaning(input: string) {
+  return input.replace(
+    /<\/?([a-zA-Z0-9]+)([^>]*)>/g,
+    (match, tagName: string) => {
+      if (allowedTags.includes(tagName.toLowerCase())) {
+        return match.replace(/ .*>/, ">");
+      }
+      return "";
+    },
+  );
+}
+
 const wordDetailsSchema = z.object({
   word: z.string(),
   phonetic: z.string(),
-  meaning: z.string(),
+  meaning: z.string().transform((val) => sanitizeMeaning(val)),
   sentence: z.string(),
 });
 
