@@ -12,12 +12,12 @@ import { db } from "../config/db";
 import { redis } from "../config/redis";
 import allWords from "../data/allWords.json";
 import commonWords from "../data/commonWords.json";
+import { getCurrentGameDateString } from "../services/daily-wordle-cron";
 import {
   formatDailyWordDetails,
   formatWordDetails,
 } from "../util/format-word-details";
 import { toFancyText } from "../util/to-fancy-text";
-import { getCurrentGameDateString } from "../services/daily-wordle-cron";
 
 const composer = new Composer();
 
@@ -224,14 +224,7 @@ async function handleDailyWordleGuess(ctx: Context, currentGuess: string) {
     return ctx.reply(`${currentGuess.toUpperCase()} is not a valid word.`);
   }
 
-  const today = new Date().toLocaleString("en-US", {
-    timeZone: "Asia/Kathmandu",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  const [month, day, year] = today.split("/");
-  const todayDate = `${year}-${month}-${day}`;
+  const todayDate = getCurrentGameDateString();
 
   const dailyWord = await db
     .selectFrom("dailyWords")
@@ -318,25 +311,21 @@ async function handleDailyWordleWin(
     .executeTakeFirst();
 
   if (userStats) {
-    const today = new Date().toLocaleString("en-US", {
-      timeZone: "Asia/Kathmandu",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-    const [month, day, year] = today.split("/");
-    const todayDate = new Date(`${year}-${month}-${day}`);
+    const todayDateString = getCurrentGameDateString();
+    const todayDate = new Date(todayDateString + "T00:00:00");
 
     let newStreak = 1;
+
     if (userStats.lastGuessed) {
-      const lastGuessedDate = new Date(userStats.lastGuessed);
-      const diffTime = Math.abs(
-        todayDate.getTime() - lastGuessedDate.getTime(),
-      );
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const lastGuessedDate = new Date(userStats.lastGuessed + "T00:00:00");
+
+      const diffTime = todayDate.getTime() - lastGuessedDate.getTime();
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
       if (diffDays === 1) {
         newStreak = userStats.currentStreak + 1;
+      } else if (diffDays === 0) {
+        newStreak = userStats.currentStreak;
       }
     }
 
