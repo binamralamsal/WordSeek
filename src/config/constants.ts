@@ -19,6 +19,7 @@ For the given word, generate the following:
    - You may divide the meaning using HTML-style tags such as <b>, <i>, <u> but don't use any other except those mentioned.
    - You may include multiple senses or nuances of the word.
    - The meaning should be descriptive and helpful for learners.
+   - The meaning length must not exceed 900 characters.
 
 2. **Phonetic** — Provide the standard IPA pronunciation.
 

@@ -317,10 +317,11 @@ async function handleDailyWordleWin(
     let newStreak = 1;
 
     if (userStats.lastGuessed) {
-      const lastGuessedDate = new Date(userStats.lastGuessed + "T00:00:00");
+      const lastGuessedDate = new Date(userStats.lastGuessed);
+      lastGuessedDate.setHours(0, 0, 0, 0);
 
       const diffTime = todayDate.getTime() - lastGuessedDate.getTime();
-      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
       if (diffDays === 1) {
         newStreak = userStats.currentStreak + 1;
