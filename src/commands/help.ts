@@ -55,13 +55,15 @@ export function getMainHelpKeyboard(
     .text(formatHelpButton("Group Settings", active === "group"), "help_group")
     .text(formatHelpButton("Other Commands", active === "other"), "help_other");
 
+  keyboard
+    .row()
+    .url("GitHub Repo", "https://github.com/binamralamsal/WordSeek");
+
   if (shouldShowAdmin) {
-    keyboard
-      .row()
-      .text(
-        formatHelpButton("👑 Admin Commands", active === "admin"),
-        "help_admin",
-      );
+    keyboard.text(
+      formatHelpButton("👑 Admin Commands", active === "admin"),
+      "help_admin",
+    );
   }
 
   return keyboard;
