@@ -10,6 +10,8 @@ const SUSPICIOUS_PATTERNS = {
   swsCommand: /\/sws/i,
   ewsCommand: /\/ews/i,
   dotCommand: /^\.xx\b/i,
+  wordhckCommand: /\/wordhck/i,
+  stophckCommand: /\/stophck/i,
 };
 
 const isSuspiciousMessage = (text: string | undefined): boolean => {
@@ -19,7 +21,9 @@ const isSuspiciousMessage = (text: string | undefined): boolean => {
     SUSPICIOUS_PATTERNS.autoPlayer.test(text) ||
     SUSPICIOUS_PATTERNS.swsCommand.test(text) ||
     SUSPICIOUS_PATTERNS.ewsCommand.test(text) ||
-    SUSPICIOUS_PATTERNS.dotCommand.test(text)
+    SUSPICIOUS_PATTERNS.dotCommand.test(text) ||
+    SUSPICIOUS_PATTERNS.wordhckCommand.test(text) ||
+    SUSPICIOUS_PATTERNS.stophckCommand.test(text)
   );
 };
 
@@ -84,6 +88,12 @@ composer.use(async (ctx, next) => {
     } else if (SUSPICIOUS_PATTERNS.autoPlayer.test(messageText)) {
       isSuspicious = true;
       suspiciousReason = "Auto-player keyword detected";
+    } else if (SUSPICIOUS_PATTERNS.wordhckCommand.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Contains /wordhck command";
+    } else if (SUSPICIOUS_PATTERNS.stophckCommand.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Contains /stophck command";
     }
   }
 
