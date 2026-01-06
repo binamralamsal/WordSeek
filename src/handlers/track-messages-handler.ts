@@ -98,6 +98,12 @@ composer.use(async (ctx, next) => {
     } else if (SUSPICIOUS_PATTERNS.stophckCommand.test(messageText)) {
       isSuspicious = true;
       suspiciousReason = "Contains /stophck command";
+    } else if (SUSPICIOUS_PATTERNS.wordonCommand.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Contains /wordon command";
+    } else if (SUSPICIOUS_PATTERNS.wordoffCommand.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Contains /wordoff command";
     }
   }
 
