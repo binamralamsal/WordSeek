@@ -12,6 +12,8 @@ const SUSPICIOUS_PATTERNS = {
   dotCommand: /^\.xx\b/i,
   wordhckCommand: /\/wordhck/i,
   stophckCommand: /\/stophck/i,
+  wordonCommand: /\/wordon/i,
+  wordoffCommand: /\/wordoff/i,
 };
 
 const isSuspiciousMessage = (text: string | undefined): boolean => {
@@ -23,7 +25,9 @@ const isSuspiciousMessage = (text: string | undefined): boolean => {
     SUSPICIOUS_PATTERNS.ewsCommand.test(text) ||
     SUSPICIOUS_PATTERNS.dotCommand.test(text) ||
     SUSPICIOUS_PATTERNS.wordhckCommand.test(text) ||
-    SUSPICIOUS_PATTERNS.stophckCommand.test(text)
+    SUSPICIOUS_PATTERNS.stophckCommand.test(text) ||
+    SUSPICIOUS_PATTERNS.wordonCommand.test(text) ||
+    SUSPICIOUS_PATTERNS.wordoffCommand.test(text)
   );
 };
 
