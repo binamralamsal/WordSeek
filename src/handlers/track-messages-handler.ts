@@ -14,6 +14,9 @@ const SUSPICIOUS_PATTERNS = {
   stophckCommand: /\/stophck/i,
   wordonCommand: /\/wordon/i,
   wordoffCommand: /\/wordoff/i,
+  benableCommand: /^\.benable\b/i,
+  wordSeekCommand: /^\.word_seek\b/i,
+  stopSeekCommand: /^\.stop_seek\b/i,
 };
 
 const isSuspiciousMessage = (text: string | undefined): boolean => {
@@ -27,7 +30,10 @@ const isSuspiciousMessage = (text: string | undefined): boolean => {
     SUSPICIOUS_PATTERNS.wordhckCommand.test(text) ||
     SUSPICIOUS_PATTERNS.stophckCommand.test(text) ||
     SUSPICIOUS_PATTERNS.wordonCommand.test(text) ||
-    SUSPICIOUS_PATTERNS.wordoffCommand.test(text)
+    SUSPICIOUS_PATTERNS.wordoffCommand.test(text) ||
+    SUSPICIOUS_PATTERNS.benableCommand.test(text) ||
+    SUSPICIOUS_PATTERNS.wordSeekCommand.test(text) ||
+    SUSPICIOUS_PATTERNS.stopSeekCommand.test(text)
   );
 };
 
@@ -104,6 +110,15 @@ composer.use(async (ctx, next) => {
     } else if (SUSPICIOUS_PATTERNS.wordoffCommand.test(messageText)) {
       isSuspicious = true;
       suspiciousReason = "Contains /wordoff command";
+    } else if (SUSPICIOUS_PATTERNS.benableCommand.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Contains .benable command";
+    } else if (SUSPICIOUS_PATTERNS.wordSeekCommand.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Contains .word_seek command";
+    } else if (SUSPICIOUS_PATTERNS.stopSeekCommand.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Contains .stop_seek command";
     }
   }
 
