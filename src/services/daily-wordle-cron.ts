@@ -121,6 +121,41 @@ export function getCurrentGameDateString() {
   return getDateStringFromDate(baseDate);
 }
 
+async function resetStreaksForInactivePlayers(yesterdayDate: string) {
+  try {
+    console.log(
+      `Resetting streaks for players who didn't play on ${yesterdayDate}`,
+    );
+
+    const yesterdayDateTime = new Date(yesterdayDate + "T00:00:00");
+
+    const result = await db
+      .updateTable("userStats")
+      .set({ currentStreak: 0 })
+      .where("currentStreak", ">", 0)
+      .where((eb) =>
+        eb.or([
+          eb("lastGuessed", "is", null),
+          eb("lastGuessed", "<", yesterdayDateTime),
+        ]),
+      )
+      .execute();
+
+    const resetCount = result.reduce(
+      (sum, r) => sum + Number(r.numUpdatedRows || 0n),
+      0,
+    );
+
+    if (resetCount > 0) {
+      console.log(`Reset streaks for ${resetCount} inactive players`);
+    } else {
+      console.log("No inactive players found to reset");
+    }
+  } catch (error) {
+    console.error("Error resetting streaks for inactive players:", error);
+  }
+}
+
 async function generateDailyWordInternal(gameDate: string) {
   const existingWord = await db
     .selectFrom("dailyWords")
@@ -148,6 +183,12 @@ async function generateDailyWordInternal(gameDate: string) {
     .returningAll()
     .executeTakeFirstOrThrow();
 
+  const yesterday = new Date(gameDate);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayString = getDateStringFromDate(yesterday);
+
+  await resetStreaksForInactivePlayers(yesterdayString);
+
   console.log(`Successfully generated daily word: ${word} for ${gameDate}`);
   return insertedWord;
 }
@@ -161,6 +202,8 @@ async function generateDailyWord() {
       "at",
       new Date().toISOString(),
     );
+
+    // Generate today's word
     await generateDailyWordInternal(gameDate);
   } catch (error) {
     console.error("Error generating daily word:", error);

@@ -6,7 +6,6 @@ import { bot } from "../config/bot";
 import { db } from "../config/db";
 import { env } from "../config/env";
 import { redis } from "../config/redis";
-import { BroadcastChat } from "../database-schemas";
 import { formatDuration } from "../util/format-duration";
 
 const composer = new Composer();
@@ -173,7 +172,11 @@ Use /broadcast_status to check status or /broadcast_cancel to cancel.`,
     );
   }
 
-  const chats = await db.selectFrom("broadcastChats").selectAll().execute();
+  const chats = await db
+    .selectFrom("broadcastChats")
+    .selectAll()
+    .orderBy("broadcastChats.createdAt", "asc")
+    .execute();
 
   if (chats.length === 0) {
     await clearBroadcastState();
