@@ -1,5 +1,6 @@
 import { InlineKeyboard } from "grammy";
 
+import { formatActiveButton } from "../commands/help";
 import {
   DISCUSSION_GROUP,
   UPDATES_CHANNEL,
@@ -17,36 +18,47 @@ export function generateLeaderboardKeyboard(
   const keyboard = new InlineKeyboard();
 
   allowedChatSearchKeys.forEach((key) => {
-    keyboard.text(
-      generateButtonText(
-        searchKey,
-        key,
-        key === "group" ? "This chat" : "Global",
-      ),
-      `${callbackKey} ${key} ${timeKey}`,
-    );
+    keyboard
+      .text(
+        generateButtonText(
+          searchKey,
+          key,
+          key === "group" ? "This chat" : "Global",
+        ),
+        `${callbackKey} ${key} ${timeKey}`,
+      )
+      .style(searchKey === key ? "primary" : undefined);
   });
 
   keyboard.row();
 
   allowedChatTimeKeys.forEach((key, index) => {
-    keyboard.text(
-      generateButtonText(
-        timeKey,
-        key,
-        key === "all" ? "All time" : key === "today" ? "Today" : `This ${key}`,
-      ),
-      `${callbackKey} ${searchKey} ${key}`,
-    );
+    keyboard
+      .text(
+        generateButtonText(
+          timeKey,
+          key,
+          key === "all"
+            ? "All time"
+            : key === "today"
+              ? "Today"
+              : `This ${key}`,
+        ),
+        `${callbackKey} ${searchKey} ${key}`,
+      )
+      .style(timeKey === key ? "primary" : undefined);
+
     if ((index + 1) % 3 === 0) {
       keyboard.row();
     }
   });
 
   keyboard.row();
-  keyboard.url("Updates", UPDATES_CHANNEL);
-  keyboard.text("🔄 Refresh", `${callbackKey} ${searchKey} ${timeKey}`);
-  keyboard.url("Discussion", DISCUSSION_GROUP);
+  keyboard.url("📢 Updates", UPDATES_CHANNEL).danger();
+  keyboard
+    .text("🔄 Refresh", `${callbackKey} ${searchKey} ${timeKey}`)
+    .success();
+  keyboard.url("💬 Discussion", DISCUSSION_GROUP).danger();
 
   if (backButton) {
     keyboard.text(backButton.text, backButton.callback);
@@ -56,5 +68,5 @@ export function generateLeaderboardKeyboard(
 }
 
 function generateButtonText<T>(key: T, currentKey: T, label: string) {
-  return `${key === currentKey ? "✅ " : ""}${label}`;
+  return formatActiveButton(label, key === currentKey);
 }

@@ -1,5 +1,6 @@
 import { Composer, InlineKeyboard } from "grammy";
 
+import { DISCUSSION_GROUP, UPDATES_CHANNEL } from "../config/constants";
 import { env } from "../config/env";
 import { CommandsHelper } from "../util/commands-helper";
 
@@ -7,7 +8,7 @@ const composer = new Composer();
 
 type HelpSection = "howto" | "scores" | "group" | "other" | "admin";
 
-function formatHelpButton(label: string, active: boolean) {
+export function formatActiveButton(label: string, active: boolean) {
   return active ? `« ${label} »` : label;
 }
 
@@ -46,25 +47,39 @@ export function getMainHelpKeyboard(
   active: HelpSection = "howto",
 ) {
   const keyboard = new InlineKeyboard()
-    .text(formatHelpButton("How to Play", active === "howto"), "help_howto")
+    .text(formatActiveButton("How to Play", active === "howto"), "help_howto")
+    .style(active == "howto" ? "primary" : undefined)
     .text(
-      formatHelpButton("Leaderboard & Scores", active === "scores"),
+      formatActiveButton("Leaderboard & Scores", active === "scores"),
       "help_scores",
     )
+    .style(active == "scores" ? "primary" : undefined)
     .row()
-    .text(formatHelpButton("Group Settings", active === "group"), "help_group")
-    .text(formatHelpButton("Other Commands", active === "other"), "help_other");
-
-  keyboard
-    .row()
-    .url("GitHub Repo", "https://github.com/binamralamsal/WordSeek");
+    .text(
+      formatActiveButton("Group Settings", active === "group"),
+      "help_group",
+    )
+    .style(active == "group" ? "primary" : undefined)
+    .text(
+      formatActiveButton("Other Commands", active === "other"),
+      "help_other",
+    )
+    .style(active == "other" ? "primary" : undefined);
 
   if (shouldShowAdmin) {
-    keyboard.text(
-      formatHelpButton("👑 Admin Commands", active === "admin"),
-      "help_admin",
-    );
+    keyboard
+      .row()
+      .text(
+        formatActiveButton("👑 Admin Commands", active === "admin"),
+        "help_admin",
+      )
+      .style(active == "admin" ? "primary" : undefined);
   }
+  keyboard
+    .url("GitHub Repo", "https://github.com/binamralamsal/WordSeek")
+    .success();
+  keyboard.row().url("📢 Updates", UPDATES_CHANNEL).danger();
+  keyboard.url("💬 Discussion", DISCUSSION_GROUP).danger();
 
   return keyboard;
 }
