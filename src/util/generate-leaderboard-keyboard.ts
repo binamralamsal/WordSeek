@@ -54,11 +54,10 @@ export function generateLeaderboardKeyboard(
   });
 
   keyboard.row();
-  keyboard.url("📢 Updates", UPDATES_CHANNEL).danger();
+  keyboard.url("📢 Updates", UPDATES_CHANNEL);
   keyboard
-    .text("🔄 Refresh", `${callbackKey} ${searchKey} ${timeKey}`)
-    .success();
-  keyboard.url("💬 Discussion", DISCUSSION_GROUP).danger();
+    .text("🔄", `${callbackKey} ${searchKey} ${timeKey}`);
+  keyboard.url("💬 Discussion", DISCUSSION_GROUP);
 
   if (backButton) {
     keyboard.text(backButton.text, backButton.callback);

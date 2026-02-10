@@ -77,9 +77,8 @@ export function getMainHelpKeyboard(
   }
   keyboard
     .url("GitHub Repo", "https://github.com/binamralamsal/WordSeek")
-    .success();
-  keyboard.row().url("📢 Updates", UPDATES_CHANNEL).danger();
-  keyboard.url("💬 Discussion", DISCUSSION_GROUP).danger();
+  keyboard.row().url("📢 Updates", UPDATES_CHANNEL)
+  keyboard.url("💬 Discussion", DISCUSSION_GROUP)
 
   return keyboard;
 }
