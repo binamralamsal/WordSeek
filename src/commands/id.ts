@@ -5,6 +5,7 @@ import { CommandsHelper } from "../util/commands-helper";
 const composer = new Composer();
 
 composer.command("id", async (ctx) => {
+  if (!ctx.from || ctx.chat.type !== "private") return;
   const repliedMsg = ctx.message?.reply_to_message;
 
   if (!repliedMsg) {
