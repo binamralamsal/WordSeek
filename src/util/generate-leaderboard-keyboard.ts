@@ -1,17 +1,21 @@
 import { InlineKeyboard } from "grammy";
 
 import { formatActiveButton } from "../commands/help";
+import type { AllowedChatSearchKey, AllowedChatTimeKey } from "../types";
 import {
+  AllowedWordLength,
   DISCUSSION_GROUP,
   UPDATES_CHANNEL,
   allowedChatSearchKeys,
   allowedChatTimeKeys,
 } from "../config/constants";
-import type { AllowedChatSearchKey, AllowedChatTimeKey } from "../types";
+
+const allowedWordLengths: AllowedWordLength[] = [4, 5, 6];
 
 export function generateLeaderboardKeyboard(
   searchKey: AllowedChatSearchKey,
   timeKey: AllowedChatTimeKey,
+  wordLength: AllowedWordLength = 5,
   callbackKey: "leaderboard" | `score ${string | number}` = "leaderboard",
   backButton?: { text: string; callback: string },
 ) {
@@ -25,7 +29,7 @@ export function generateLeaderboardKeyboard(
           key,
           key === "group" ? "This chat" : "Global",
         ),
-        `${callbackKey} ${key} ${timeKey}`,
+        `${callbackKey} ${key} ${timeKey} ${wordLength}`,
       )
       .style(searchKey === key ? "primary" : undefined);
   });
@@ -44,22 +48,31 @@ export function generateLeaderboardKeyboard(
               ? "Today"
               : `This ${key}`,
         ),
-        `${callbackKey} ${searchKey} ${key}`,
+        `${callbackKey} ${searchKey} ${key} ${wordLength}`,
       )
       .style(timeKey === key ? "primary" : undefined);
 
-    if ((index + 1) % 3 === 0) {
-      keyboard.row();
-    }
+    if ((index + 1) % 3 === 0) keyboard.row();
+  });
+
+  keyboard.row();
+
+  allowedWordLengths.forEach((len) => {
+    keyboard
+      .text(
+        generateButtonText(wordLength, len, `${len} letters`),
+        `${callbackKey} ${searchKey} ${timeKey} ${len}`,
+      )
+      .style(wordLength === len ? "primary" : undefined);
   });
 
   keyboard.row();
   keyboard.url("📢 Updates", UPDATES_CHANNEL);
-  keyboard
-    .text("🔄", `${callbackKey} ${searchKey} ${timeKey}`);
+  keyboard.text("🔄", `${callbackKey} ${searchKey} ${timeKey} ${wordLength}`);
   keyboard.url("💬 Discussion", DISCUSSION_GROUP);
 
   if (backButton) {
+    keyboard.row();
     keyboard.text(backButton.text, backButton.callback);
   }
 

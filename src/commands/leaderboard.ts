@@ -15,26 +15,25 @@ composer.command("leaderboard", async (ctx) => {
   const guard = await runGuards(ctx, [requireAllowedTopic]);
   if (!guard.ok) return ctx.reply(guard.message);
 
-  const { searchKey, timeKey } = parseLeaderboardFilters(
+  const { searchKey, timeKey, wordLength } = parseLeaderboardFilters(
     ctx.match,
     ctx.chat.type === "private" ? "global" : undefined,
   );
 
-  const keyboard = generateLeaderboardKeyboard(searchKey, timeKey);
+  const keyboard = generateLeaderboardKeyboard(searchKey, timeKey, wordLength);
 
   const memberScores = await getLeaderboardScores({
     chatId,
     searchKey,
     timeKey,
+    wordLength,
   });
 
   ctx.reply(formatLeaderboardMessage(memberScores, searchKey), {
     disable_notification: true,
     reply_markup: keyboard,
     parse_mode: "HTML",
-    link_preview_options: {
-      is_disabled: true,
-    },
+    link_preview_options: { is_disabled: true },
   });
 });
 

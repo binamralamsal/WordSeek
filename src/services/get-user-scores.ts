@@ -1,6 +1,7 @@
 import { sql } from "kysely";
 
 import { db } from "../config/db";
+import { AllowedWordLength } from "../config/constants";
 import type { AllowedChatSearchKey, AllowedChatTimeKey } from "../types";
 
 export async function getUserScores({
@@ -8,11 +9,13 @@ export async function getUserScores({
   searchKey,
   userId,
   timeKey,
+  wordLength = 5,
 }: {
   chatId: string;
   searchKey: AllowedChatSearchKey;
   userId: string;
   timeKey: AllowedChatTimeKey;
+  wordLength?: AllowedWordLength;
 }) {
   const userQuery = db
     .selectFrom((eb) => {
@@ -25,6 +28,11 @@ export async function getUserScores({
           sql<number>`rank() over (order by sum(leaderboard.score) desc)`.as(
             "rank",
           ),
+        )
+        .where(
+          "leaderboard.wordLength",
+          "=",
+          wordLength.toString() as "4" | "5" | "6",
         );
 
       if (searchKey === "group") {

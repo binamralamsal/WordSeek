@@ -14,11 +14,13 @@ import { getLeaderboardScores } from "../services/get-leaderboard-scores";
 import { formatUserScoreMessage } from "../util/format-user-score-message";
 import { formatLeaderboardMessage } from "../util/format-leaderboard-message";
 import { generateLeaderboardKeyboard } from "../util/generate-leaderboard-keyboard";
+import { generateUserSelectionKeyboard } from "../util/generate-user-selection-keyboard";
 import {
+  AllowedWordLength,
   allowedChatSearchKeys,
   allowedChatTimeKeys,
+  allowedWordLengths,
 } from "../config/constants";
-import { generateUserSelectionKeyboard } from "../util/generate-user-selection-keyboard";
 import {
   getAdminCommandsMessage,
   getGroupSettingsMessage,
@@ -32,10 +34,14 @@ const composer = new Composer();
 
 composer.on("callback_query:data", async (ctx) => {
   condition: if (ctx.callbackQuery.data.startsWith("leaderboard")) {
-    const [, searchKey, timeKey] = ctx.callbackQuery.data.split(" ");
+    const [, searchKey, timeKey, wordLength] =
+      ctx.callbackQuery.data.split(" ");
+    console.log(searchKey, timeKey, wordLength);
     if (!allowedChatSearchKeys.includes(searchKey as AllowedChatSearchKey))
       break condition;
     if (!allowedChatTimeKeys.includes(timeKey as AllowedChatTimeKey))
+      break condition;
+    if (!allowedWordLengths.includes(parseInt(wordLength) as AllowedWordLength))
       break condition;
     if (!ctx.chat) break condition;
 
@@ -44,11 +50,13 @@ composer.on("callback_query:data", async (ctx) => {
       chatId,
       searchKey: searchKey as AllowedChatSearchKey,
       timeKey: timeKey as AllowedChatTimeKey,
+      wordLength: parseInt(wordLength) as AllowedWordLength,
     });
 
     const keyboard = generateLeaderboardKeyboard(
       searchKey as AllowedChatSearchKey,
       timeKey as AllowedChatTimeKey,
+      parseInt(wordLength) as AllowedWordLength,
     );
 
     await ctx
@@ -122,13 +130,14 @@ composer.on("callback_query:data", async (ctx) => {
         });
       }
 
-      const { searchKey, timeKey, hasAnyScores } = await getSmartDefaults({
-        userId,
-        chatId,
-        requestedSearchKey: undefined,
-        requestedTimeKey: undefined,
-        chatType: ctx.chat.type,
-      });
+      const { searchKey, timeKey, hasAnyScores, wordLength } =
+        await getSmartDefaults({
+          userId,
+          chatId,
+          requestedSearchKey: undefined,
+          requestedTimeKey: undefined,
+          chatType: ctx.chat.type,
+        });
 
       const userScore = await getUserScores({
         chatId,
@@ -156,6 +165,7 @@ composer.on("callback_query:data", async (ctx) => {
           ? generateLeaderboardKeyboard(
               searchKey,
               timeKey,
+              wordLength,
               `score ${userId}`,
               username ? backButtonDetails : undefined,
             )
@@ -179,6 +189,7 @@ composer.on("callback_query:data", async (ctx) => {
       const keyboard = generateLeaderboardKeyboard(
         searchKey,
         timeKey,
+        wordLength,
         `score ${userId}`,
         username
           ? {
@@ -203,10 +214,14 @@ composer.on("callback_query:data", async (ctx) => {
       !ctx.callbackQuery.data.startsWith("score_select") &&
       !ctx.callbackQuery.data.startsWith("score_list")
     ) {
-      const [, userId, searchKey, timeKey] = parts;
+      const [, userId, searchKey, timeKey, wordLength] = parts;
       if (!allowedChatSearchKeys.includes(searchKey as AllowedChatSearchKey))
         break condition;
       if (!allowedChatTimeKeys.includes(timeKey as AllowedChatTimeKey))
+        break condition;
+      if (
+        !allowedWordLengths.includes(parseInt(wordLength) as AllowedWordLength)
+      )
         break condition;
       if (!ctx.chat) break condition;
       if (!userId) break condition;
@@ -243,6 +258,7 @@ composer.on("callback_query:data", async (ctx) => {
         userId,
         searchKey: searchKey as AllowedChatSearchKey,
         timeKey: timeKey as AllowedChatTimeKey,
+        wordLength: parseInt(wordLength) as AllowedWordLength,
       });
 
       if (!userScore) {
@@ -258,6 +274,7 @@ composer.on("callback_query:data", async (ctx) => {
         const keyboard = generateLeaderboardKeyboard(
           searchKey as AllowedChatSearchKey,
           timeKey as AllowedChatTimeKey,
+          parseInt(wordLength) as AllowedWordLength,
           `score ${userId}`,
         );
 
@@ -277,6 +294,7 @@ composer.on("callback_query:data", async (ctx) => {
       const keyboard = generateLeaderboardKeyboard(
         searchKey as AllowedChatSearchKey,
         timeKey as AllowedChatTimeKey,
+        parseInt(wordLength) as AllowedWordLength,
         `score ${userId}`,
       );
 

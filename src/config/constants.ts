@@ -10,6 +10,9 @@ export const allowedChatTimeKeys = [
   "all",
 ] as const;
 
+export type AllowedWordLength = 4 | 5 | 6;
+export const allowedWordLengths: AllowedWordLength[] = [4, 5, 6];
+
 export const SYSTEM_PROMPT = `
 You are an expert English word master. Your task is to provide detailed information about a specific English word.
 

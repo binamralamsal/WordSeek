@@ -11,6 +11,8 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+export type WordLength = "4" | "5" | "6";
+
 export interface AuthorizedUser {
   authorizedBy: string;
   chatId: string;
@@ -67,6 +69,7 @@ export interface Game {
   createdAt: Generated<Timestamp>;
   id: Generated<number>;
   startedBy: string | null;
+  topicId: Generated<string>;
   updatedAt: Generated<Timestamp>;
   word: string;
 }
@@ -87,6 +90,7 @@ export interface Leaderboard {
   score: number;
   updatedAt: Generated<Timestamp>;
   userId: string;
+  wordLength: Generated<WordLength>;
 }
 
 export interface User {

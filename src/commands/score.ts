@@ -26,6 +26,7 @@ composer.command("score", async (ctx) => {
     target,
     searchKey: requestedSearchKey,
     timeKey: requestedTimeKey,
+    wordLength: requestedWordLength,
   } = parseLeaderboardInput(input, undefined, null);
 
   const isOwnScore = !target;
@@ -38,17 +39,20 @@ composer.command("score", async (ctx) => {
 
   const targetUsername = targetUser.username || targetUser.name;
 
-  const { searchKey, timeKey, hasAnyScores } = await getSmartDefaults({
-    userId: targetUser.id,
-    chatId,
-    requestedSearchKey,
-    requestedTimeKey,
-    chatType: ctx.chat.type,
-  });
+  const { searchKey, timeKey, wordLength, hasAnyScores } =
+    await getSmartDefaults({
+      userId: targetUser.id,
+      chatId,
+      requestedSearchKey,
+      requestedTimeKey,
+      requestedWordLength,
+      chatType: ctx.chat.type,
+    });
 
   const keyboard = generateLeaderboardKeyboard(
     searchKey,
     timeKey,
+    wordLength,
     `score ${targetUser.id}`,
   );
 
@@ -57,6 +61,7 @@ composer.command("score", async (ctx) => {
     chatId,
     searchKey,
     timeKey,
+    wordLength,
   });
 
   if (!userScore) {

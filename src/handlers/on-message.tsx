@@ -10,12 +10,33 @@ import { readFile } from "fs/promises";
 
 import { db } from "../config/db";
 import { redis } from "../config/redis";
+import allSixWords from "../data/all-six.json";
 import allFiveWords from "../data/all-five.json";
+import allFourWords from "../data/all-four.json";
 import { toFancyText } from "../util/to-fancy-text";
 import { formatDailyWordDetails } from "../util/format-word-details";
 import { getCurrentGameDateString } from "../services/daily-wordle-cron";
+import {
+  regularGameGuards,
+  requireAllowedTopic,
+  runGuards,
+} from "../util/guards";
 
 const composer = new Composer();
+
+type WordLength = 4 | 5 | 6;
+
+const ALL_WORDS: Record<WordLength, string[]> = {
+  4: allFourWords,
+  5: allFiveWords,
+  6: allSixWords,
+};
+
+const MODE_LABEL: Record<WordLength, string> = {
+  4: "4-letter mode",
+  5: "5-letter mode",
+  6: "6-letter mode",
+};
 
 export const dailyWordleSchema = z.object({
   dailyWordId: z.number(),
@@ -25,7 +46,7 @@ export const dailyWordleSchema = z.object({
 composer.on("message:text", async (ctx) => {
   const currentGuess = ctx.message.text?.toLowerCase();
 
-  const isValidWord = /^[a-z]{5}$/.test(currentGuess ?? "");
+  const isValidWord = /^[a-z]{4,6}$/.test(currentGuess ?? "");
 
   if (!isValidWord || currentGuess.startsWith("/")) {
     return;
@@ -33,36 +54,6 @@ composer.on("message:text", async (ctx) => {
 
   const userId = ctx.from.id.toString();
   const chatId = ctx.chat.id.toString();
-
-  const isUserBanned = await db
-    .selectFrom("bannedUsers")
-    .selectAll()
-    .where("userId", "=", ctx.from.id.toString())
-    .executeTakeFirst();
-
-  if (isUserBanned) {
-    const randomEmoji = (["🤡", "🤣"] as const)[Math.floor(Math.random() * 2)];
-    ctx.react(randomEmoji);
-    const me = ctx.me.id.toString();
-
-    const botMentioned =
-      ctx.message.reply_to_message?.from?.id.toString() === me;
-
-    if (botMentioned) {
-      const harshReplies = [
-        "Oh, you again? Didn't expect wisdom from you anyway. 🤡",
-        "The circus is back in town, and you're the main act! 🎪",
-        "Mentioning me won't make you any smarter. Try again. 😂",
-        "Still banned, still clueless. What's next? 🤡",
-      ];
-      const randomReply =
-        harshReplies[Math.floor(Math.random() * harshReplies.length)];
-      ctx.reply(randomReply, {
-        reply_parameters: { message_id: ctx.msgId },
-      });
-    }
-    return;
-  }
 
   if (ctx.chat.type === "private") {
     const dailyGameData = await redis.get(`daily_wordle:${userId}`);
@@ -83,28 +74,29 @@ composer.on("message:text", async (ctx) => {
     }
   }
 
+  const currentTopicId = ctx.msg.message_thread_id?.toString() || "general";
+
   const currentGame = await db
     .selectFrom("games")
     .selectAll()
     .where("activeChat", "=", ctx.chat.id.toString())
+    .where("topicId", "=", currentTopicId)
     .executeTakeFirst();
 
   if (!currentGame) return;
 
-  if (ctx.chat.is_forum) {
-    const topicData = await db
-      .selectFrom("chatGameTopics")
-      .where("chatId", "=", chatId.toString())
-      .selectAll()
-      .execute();
-    const topicIds = topicData.map((t) => t.topicId);
-    const currentTopicId = ctx.msg.message_thread_id?.toString() || "general";
+  const guard = await runGuards(ctx, [requireAllowedTopic]);
+  if (!guard.ok) return;
 
-    if (topicData.length > 0 && !topicIds.includes(currentTopicId)) return;
-  }
+  const wordLength = currentGame.word.length as WordLength;
+  const validWords = ALL_WORDS[wordLength];
 
-  if (!allFiveWords.includes(currentGuess))
-    return ctx.reply(`${currentGuess} is not a valid word.`);
+  if (currentGuess.length !== wordLength) return;
+
+  if (!validWords.includes(currentGuess))
+    return ctx.reply(
+      `${currentGuess} is not a valid ${wordLength}-letter word.`,
+    );
 
   const guessExists = await db
     .selectFrom("guesses")
@@ -127,9 +119,7 @@ composer.on("message:text", async (ctx) => {
         .execute();
 
       const score = 30 - allGuesses.length;
-      const additionalMessage = `Added ${
-        30 - allGuesses.length
-      } to the leaderboard.`;
+      const additionalMessage = `Added ${30 - allGuesses.length} to the leaderboard.`;
 
       await db
         .insertInto("leaderboard")
@@ -137,12 +127,9 @@ composer.on("message:text", async (ctx) => {
           score,
           chatId,
           userId,
+          wordLength: wordLength.toString() as "4" | "5" | "6",
         })
         .execute();
-
-      // const formattedResponse = `Congrats! You guessed it correctly.\n${additionalMessage}\nStart with /new\n${formatWordDetails(
-      //   currentGuess,
-      // )}`;
 
       const formattedResponse = `<blockquote>Congrats! You guessed it correctly.\nCorrect Word: <b>${currentGuess}</b>\n${additionalMessage}</blockquote>\nStart with /new`;
 
@@ -152,10 +139,6 @@ composer.on("message:text", async (ctx) => {
       });
     } else {
       const additionalMessage = `Anonymous admins or channels don't get points.`;
-
-      // const formattedResponse = `Congrats! You guessed it correctly.\n${additionalMessage}\nStart with /new\n${formatWordDetails(
-      //   currentGuess,
-      // )}`;
 
       const formattedResponse = `<blockquote>Congrats! You guessed it correctly.\nCorrect Word: <b>${currentGuess}</b>\n</blockquote>${additionalMessage}\nStart with /new`;
 
@@ -195,7 +178,10 @@ composer.on("message:text", async (ctx) => {
     );
   }
 
-  let responseMessage = toFancyText(getFeedback(allGuesses, currentGame.word));
+  const modeLabel = MODE_LABEL[wordLength];
+  let responseMessage =
+    `<i>${modeLabel} · ${allGuesses.length}/30</i>\n\n` +
+    toFancyText(getFeedback(allGuesses, currentGame.word));
 
   ctx.reply(responseMessage, {
     parse_mode: "HTML",

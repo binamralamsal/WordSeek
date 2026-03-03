@@ -1,15 +1,19 @@
 import { sql } from "kysely";
 
 import { db } from "../config/db";
+import { AllowedWordLength } from "../config/constants";
+import { AllowedChatSearchKey, AllowedChatTimeKey } from "../types";
 
 export async function getLeaderboardScores({
   chatId,
   searchKey,
   timeKey,
+  wordLength = 5,
 }: {
   chatId: string;
-  searchKey: "group" | "global";
-  timeKey: "today" | "week" | "month" | "year" | "all";
+  searchKey: AllowedChatSearchKey;
+  timeKey: AllowedChatTimeKey;
+  wordLength?: AllowedWordLength;
 }) {
   let leaderboardQuery = db
     .selectFrom("leaderboard")
@@ -24,6 +28,11 @@ export async function getLeaderboardScores({
     ])
     .groupBy("users.id")
     .orderBy(sql`sum(${sql.ref("leaderboard.score")}) desc`)
+    .where(
+      "leaderboard.wordLength",
+      "=",
+      wordLength.toString() as "4" | "5" | "6",
+    )
     .limit(20);
 
   if (searchKey === "group")
@@ -32,6 +41,7 @@ export async function getLeaderboardScores({
       "=",
       chatId,
     );
+
   if (timeKey !== "all") {
     leaderboardQuery = leaderboardQuery.where((eb) => {
       if (timeKey === "today")

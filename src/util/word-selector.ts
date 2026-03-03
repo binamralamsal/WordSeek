@@ -1,7 +1,17 @@
 import { randomInt } from "crypto";
 
 import { redis } from "../config/redis";
-import newCommonWords from "../data/common-five.json";
+import commonSixWords from "../data/common-six.json";
+import commonFiveWords from "../data/common-five.json";
+import commonFourWords from "../data/common-four.json";
+
+export type WordLength = 4 | 5 | 6;
+
+const WORD_LIST: Record<WordLength, string[]> = {
+  4: commonFourWords,
+  5: commonFiveWords,
+  6: commonSixWords,
+};
 
 export interface WordSelectorConfig {
   historySize: number;
@@ -16,12 +26,20 @@ export class WordSelector {
     this.config = {
       historySize: config.historySize ?? 50,
       resetThreshold: config.resetThreshold ?? 10,
-      ttlSeconds: config.ttlSeconds ?? 7 * 24 * 60 * 60, // 7 days
+      ttlSeconds: config.ttlSeconds ?? 7 * 24 * 60 * 60,
     };
   }
 
-  async getRandomWord(chatId: string | number): Promise<string> {
-    const historyKey = `h:${chatId}`;
+  private historyKey(chatId: string | number, wordLength: WordLength): string {
+    return `h:${chatId}:${wordLength}`;
+  }
+
+  async getRandomWord(
+    chatId: string | number,
+    wordLength: WordLength = 5,
+  ): Promise<string> {
+    const historyKey = this.historyKey(chatId, wordLength);
+    const wordList = WORD_LIST[wordLength];
 
     try {
       const pipeline = redis.pipeline();
@@ -36,7 +54,7 @@ export class WordSelector {
       const usedWords = results[0][1] as string[];
       const setSize = results[1][1] as number;
 
-      const availableWords = newCommonWords.filter(
+      const availableWords = wordList.filter(
         (word) => !usedWords.includes(word.toLowerCase()),
       );
 
@@ -48,7 +66,7 @@ export class WordSelector {
         if (recentWords.length > 0) {
           await redis.sadd(historyKey, ...recentWords);
         }
-        return this.getRandomWord(chatId);
+        return this.getRandomWord(chatId, wordLength);
       }
 
       const randomWord =
@@ -68,18 +86,19 @@ export class WordSelector {
       return randomWord;
     } catch (error) {
       console.error("Redis error, using fallback:", error);
-      return newCommonWords[randomInt(0, newCommonWords.length)].toLowerCase();
+      return wordList[randomInt(0, wordList.length)].toLowerCase();
     }
   }
 
-  async resetChat(chatId: string | number) {
-    await redis.del(`h:${chatId}`);
+  async resetChat(chatId: string | number, wordLength: WordLength = 5) {
+    await redis.del(this.historyKey(chatId, wordLength));
   }
 
-  async getChatStats(chatId: string | number) {
-    const totalCount = newCommonWords.length;
+  async getChatStats(chatId: string | number, wordLength: WordLength = 5) {
+    const wordList = WORD_LIST[wordLength];
+    const totalCount = wordList.length;
     try {
-      const usedCount = await redis.scard(`h:${chatId}`);
+      const usedCount = await redis.scard(this.historyKey(chatId, wordLength));
       return {
         usedCount,
         availableCount: totalCount - usedCount,
@@ -90,9 +109,9 @@ export class WordSelector {
     }
   }
 
-  async getRecentWords(chatId: string | number) {
+  async getRecentWords(chatId: string | number, wordLength: WordLength = 5) {
     try {
-      return await redis.smembers(`h:${chatId}`);
+      return await redis.smembers(this.historyKey(chatId, wordLength));
     } catch (error) {
       console.error("Error getting recent words:", error);
       return [];
