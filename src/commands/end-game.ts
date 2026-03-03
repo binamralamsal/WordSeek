@@ -25,10 +25,13 @@ export async function endGame(
   word: string,
   reason: string,
 ) {
-  await db
+  const game = await db
     .deleteFrom("games")
     .where("activeChat", "=", String(chatId))
-    .execute();
+    .returning("word")
+    .executeTakeFirst();
+
+  const wordLength = game?.word ? game.word.length : 5;
 
   //   await ctx.reply(
   //     `<blockquote>🎮 <b>Game Ended</b></blockquote>
@@ -38,7 +41,7 @@ export async function endGame(
 
   await ctx.reply(
     `<blockquote>🎮 <b>Game Ended</b>\nCorrect Word: <b>${word}</b></blockquote>
-<blockquote>${reason ? `${reason}\n` : ""}Start a new game with /new</blockquote>`,
+<blockquote>${reason ? `${reason}\n` : ""}Start a new game with /new${wordLength}</blockquote>`,
     { parse_mode: "HTML" },
   );
 }
