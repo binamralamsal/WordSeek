@@ -87,8 +87,8 @@ export function getHowToPlayMessage() {
 
   return `<b>▸ How to Play WordSeek</b>
 
-<blockquote>1. Start a game using /new command
-2. Guess the hidden word (default is 5 letters)
+<blockquote>1. Start a game using /new, /new4, /new5, or /new6
+2. Guess the hidden word
 3. After each guess, you'll get color hints:
    🟩 Correct letter in the right spot
    🟨 Correct letter in the wrong spot
@@ -98,11 +98,16 @@ export function getHowToPlayMessage() {
 
 <b>Word Length Modes:</b>
 <blockquote>• /new → Start default 5-letter game
-• /new 4 → Start 4-letter mode
-• /new 6 → Start 6-letter mode</blockquote>
+• /new 4 → Start specific length (4, 5, or 6)
+• /new4 → Start 4-letter game
+• /new5 → Start 5-letter game
+• /new6 → Start 6-letter game</blockquote>
 
 <b>Basic Commands:</b>
-• /new - Start a new game (5 letters by default)
+• /new - Start a new game (default 5 letters)
+• /new4 - Start a 4-letter game
+• /new5 - Start a 5-letter game
+• /new6 - Start a 6-letter game
 • /end - End current game (voting or admin only)
 • /help - Show this help menu
 • /daily - Play Daily WordSeek (private chat only)

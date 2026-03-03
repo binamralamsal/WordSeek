@@ -1,4 +1,4 @@
-import { Composer } from "grammy";
+import { CommandContext, Composer, Context } from "grammy";
 
 import { DatabaseError } from "pg";
 
@@ -11,7 +11,10 @@ const composer = new Composer();
 
 const VALID_WORD_LENGTHS: WordLength[] = [4, 5, 6];
 
-composer.command("new", async (ctx) => {
+async function startGame(
+  ctx: CommandContext<Context>,
+  forcedLength?: WordLength,
+) {
   if (!ctx.from) return;
 
   try {
@@ -20,16 +23,20 @@ composer.command("new", async (ctx) => {
 
     const lengthArg = ctx.match?.trim();
 
-    if (
-      lengthArg &&
-      !VALID_WORD_LENGTHS.includes(Number(lengthArg) as WordLength)
-    ) {
-      return ctx.reply("Invalid word length. Use /new 4, /new 5, or /new 6.");
-    }
+    let wordLength: WordLength;
 
-    const wordLength: WordLength = lengthArg
-      ? (Number(lengthArg) as WordLength)
-      : 5;
+    if (forcedLength) {
+      wordLength = forcedLength;
+    } else {
+      if (
+        lengthArg &&
+        !VALID_WORD_LENGTHS.includes(Number(lengthArg) as WordLength)
+      ) {
+        return ctx.reply("Invalid word length. Use /new 4, /new 5, or /new 6.");
+      }
+
+      wordLength = lengthArg ? (Number(lengthArg) as WordLength) : 5;
+    }
 
     const guard = await runGuards(ctx, regularGameGuards);
     if (!guard.ok) return ctx.reply(guard.message);
@@ -47,7 +54,7 @@ composer.command("new", async (ctx) => {
       })
       .execute();
 
-    ctx.reply(`Game started! Guess the ${wordLength} letter word!`);
+    return ctx.reply(`Game started! Guess the ${wordLength} letter word!`);
   } catch (error) {
     if (error instanceof DatabaseError && error.code === "23505") {
       return ctx.reply(
@@ -56,10 +63,19 @@ composer.command("new", async (ctx) => {
     }
 
     console.error(error);
-    ctx.reply("Something went wrong. Please try again.");
+    return ctx.reply("Something went wrong. Please try again.");
   }
-});
+}
+
+composer.command("new", (ctx) => startGame(ctx));
+
+composer.command("new4", (ctx) => startGame(ctx, 4));
+composer.command("new5", (ctx) => startGame(ctx, 5));
+composer.command("new6", (ctx) => startGame(ctx, 6));
 
 CommandsHelper.addNewCommand("new", "Start a new game. Usage: /new [4|5|6]");
+CommandsHelper.addNewCommand("new4", "Start a new 4-letter game.");
+CommandsHelper.addNewCommand("new5", "Start a new 5-letter game.");
+CommandsHelper.addNewCommand("new6", "Start a new 6-letter game.");
 
 export const newGameCommand = composer;
