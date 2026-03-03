@@ -26,6 +26,7 @@ bot.use(trackMessagesHandler);
 bot.use(
   sequentialize((ctx) => {
     if (ctx.callbackQuery) return undefined;
+    if (ctx.chat?.type === "private") return undefined;
 
     return ctx.chatId?.toString() || ctx.from?.id.toString();
   }),

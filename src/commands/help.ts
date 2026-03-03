@@ -195,9 +195,18 @@ After setting, the bot will only run games in that topic.
 Usage: <code>/unsetgametopic</code>
 After unsetting, the bot can run games in any topic in the group again. If there are other topics set, the bot will only run in those topics.
 
+<b>/allowonlylen</b> – Restrict allowed word lengths in this topic
+Usage: <code>/allowonlylen 4</code> or <code>/allowonlylen 5 6</code>
+Run this inside a game topic.
+
+You can allow one or more of: 4, 5, 6.
+The first number you specify becomes the default length for <code>/new</code> in that topic.
+
+If not configured, all lengths (4, 5, 6) are allowed by default.
+
 <b>/recreatetopic</b> – Auto-recreate topic when it expires
 Usage: <code>/recreatetopic on</code> or <code>/recreatetopic off</code>
-Run this command inside a game topic (not General).
+Run this command inside a game topic.
 
 When enabled, if the topic automatically expires (Telegram forum feature), the bot will recreate the same topic so games can continue.</blockquote>`;
 }

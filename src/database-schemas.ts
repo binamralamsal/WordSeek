@@ -36,6 +36,7 @@ export interface BroadcastChat {
 }
 
 export interface ChatGameTopic {
+  allowedLengths: Generated<number[]>;
   chatId: string;
   createdAt: Generated<Timestamp>;
   iconCustomEmojiId: string | null;

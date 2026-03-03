@@ -9,37 +9,63 @@ import { type WordLength, WordSelector } from "../util/word-selector";
 
 const composer = new Composer();
 
-const VALID_WORD_LENGTHS: WordLength[] = [4, 5, 6];
+const GLOBAL_VALID_LENGTHS: WordLength[] = [5, 4, 6];
 
 async function startGame(
   ctx: CommandContext<Context>,
   forcedLength?: WordLength,
 ) {
-  if (!ctx.from) return;
+  if (!ctx.from || !ctx.chat) return;
 
   try {
     const topicId = ctx.msg.message_thread_id?.toString() || "general";
     const chatId = ctx.chat.id;
 
-    const lengthArg = ctx.match?.trim();
+    const guard = await runGuards(ctx, regularGameGuards);
+    if (!guard.ok) return ctx.reply(guard.message);
+
+    const topicSettings = await db
+      .selectFrom("chatGameTopics")
+      .selectAll()
+      .where("chatId", "=", chatId.toString())
+      .where("topicId", "=", topicId)
+      .executeTakeFirst();
+
+    const allowedLengths: WordLength[] =
+      (topicSettings?.allowedLengths as WordLength[]) ?? GLOBAL_VALID_LENGTHS;
+
+    const defaultLength: WordLength = allowedLengths[0];
 
     let wordLength: WordLength;
 
     if (forcedLength) {
+      if (!allowedLengths.includes(forcedLength)) {
+        return ctx.reply(
+          `Only these lengths are allowed in this topic: ${allowedLengths.join(
+            ", ",
+          )}.`,
+        );
+      }
       wordLength = forcedLength;
     } else {
-      if (
-        lengthArg &&
-        !VALID_WORD_LENGTHS.includes(Number(lengthArg) as WordLength)
-      ) {
-        return ctx.reply("Invalid word length. Use /new 4, /new 5, or /new 6.");
+      const lengthArg = ctx.match?.trim();
+
+      if (lengthArg) {
+        const parsed = Number(lengthArg) as WordLength;
+
+        if (!allowedLengths.includes(parsed)) {
+          return ctx.reply(
+            `Only these lengths are allowed in this topic: ${allowedLengths.join(
+              ", ",
+            )}.`,
+          );
+        }
+
+        wordLength = parsed;
+      } else {
+        wordLength = defaultLength;
       }
-
-      wordLength = lengthArg ? (Number(lengthArg) as WordLength) : 5;
     }
-
-    const guard = await runGuards(ctx, regularGameGuards);
-    if (!guard.ok) return ctx.reply(guard.message);
 
     const wordSelector = new WordSelector();
     const randomWord = await wordSelector.getRandomWord(chatId, wordLength);
@@ -50,11 +76,11 @@ async function startGame(
         word: randomWord,
         activeChat: chatId.toString(),
         topicId,
-        startedBy: ctx.msg.from?.id.toString(),
+        startedBy: ctx.from.id.toString(),
       })
       .execute();
 
-    return ctx.reply(`Game started! Guess the ${wordLength} letter word!`);
+    return ctx.reply(`Game started! Guess the ${wordLength}-letter word!`);
   } catch (error) {
     if (error instanceof DatabaseError && error.code === "23505") {
       return ctx.reply(

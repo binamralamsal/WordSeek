@@ -17,6 +17,7 @@ import { transferCommand } from "./transfer";
 import { broadcastCommand } from "./broadcast";
 import { startMatchCommand } from "./startmatch";
 import { leaderboardCommand } from "./leaderboard";
+import { allowOnlyLenCommand } from "./allowonlylen";
 import { setGameTopicCommand } from "./setgametopic";
 import { recreateTopicCommand } from "./recreatetopic";
 import { unsetGameTopicCommand } from "./unsetgametopic";
@@ -43,6 +44,7 @@ composer.use(
   broadcastCommand,
   dailyWordleCommand,
   idCommand,
+  allowOnlyLenCommand,
   recreateTopicCommand,
 );
 
