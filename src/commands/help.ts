@@ -1,8 +1,8 @@
 import { Composer, InlineKeyboard } from "grammy";
 
-import { DISCUSSION_GROUP, UPDATES_CHANNEL } from "../config/constants";
 import { env } from "../config/env";
 import { CommandsHelper } from "../util/commands-helper";
+import { DISCUSSION_GROUP, UPDATES_CHANNEL } from "../config/constants";
 
 const composer = new Composer();
 
@@ -75,10 +75,9 @@ export function getMainHelpKeyboard(
       )
       .style(active == "admin" ? "primary" : undefined);
   }
-  keyboard
-    .url("GitHub Repo", "https://github.com/binamralamsal/WordSeek")
-  keyboard.row().url("📢 Updates", UPDATES_CHANNEL)
-  keyboard.url("💬 Discussion", DISCUSSION_GROUP)
+  keyboard.url("GitHub Repo", "https://github.com/binamralamsal/WordSeek");
+  keyboard.row().url("📢 Updates", UPDATES_CHANNEL);
+  keyboard.url("💬 Discussion", DISCUSSION_GROUP);
 
   return keyboard;
 }
@@ -89,7 +88,7 @@ export function getHowToPlayMessage() {
   return `<b>▸ How to Play WordSeek</b>
 
 <blockquote>1. Start a game using /new command
-2. Guess a random 5-letter word
+2. Guess the hidden word (default is 5 letters)
 3. After each guess, you'll get color hints:
    🟩 Correct letter in the right spot
    🟨 Correct letter in the wrong spot
@@ -97,8 +96,13 @@ export function getHowToPlayMessage() {
 4. First person to guess correctly wins!
 5. Maximum 30 guesses per game</blockquote>
 
+<b>Word Length Modes:</b>
+<blockquote>• /new → Start default 5-letter game
+• /new 4 → Start 4-letter mode
+• /new 6 → Start 6-letter mode</blockquote>
+
 <b>Basic Commands:</b>
-• /new - Start a new game
+• /new - Start a new game (5 letters by default)
 • /end - End current game (voting or admin only)
 • /help - Show this help menu
 • /daily - Play Daily WordSeek (private chat only)
@@ -119,38 +123,49 @@ export function getScoresMessage() {
   return `<b>▸ Leaderboard & Scores</b>
 
 <b>Quick Examples:</b>
-<blockquote><code>/leaderboard</code> - Group, today (default)
-<code>/leaderboard global week</code> - Global rankings this week
-<code>/leaderboard group month</code> - This group's rankings this month
+<blockquote><code>/leaderboard</code> - Group, today (default 5-letter)
+<code>/leaderboard 4</code> - 4-letter leaderboard (group, today)
+<code>/leaderboard global week 6</code> - Global rankings this week (6-letter mode)
+<code>/leaderboard month</code> - This group's monthly leaderboard
 
-<code>/score</code> - Your score (group, today by default)
-<code>/score @username group all</code> - Full history for a user in this group
-<code>/score 123456789 global month</code> - Monthly global stats for a user</blockquote>
+<code>/score</code> - Your score (group, today, 5-letter by default)
+<code>/score 6</code> - Your 6-letter stats
+<code>/score @username global all 4</code> - Full 4-letter global history for a user
+<code>/score 123456789 month</code> - Monthly stats for a user</blockquote>
 
 <b>Leaderboard Command</b>
-<blockquote><b>Syntax:</b> <code>/leaderboard [scope] [period]</code>
+<blockquote><b>Syntax:</b> <code>/leaderboard [scope] [period] [length]</code>
+
+All parameters are optional and can be used in any order.
 
 <b>Scope:</b>
 • <code>group</code> (default) - Current group only
 • <code>global</code> - All groups combined
 
 <b>Period:</b>
-• <code>today</code> (default) - Today's scores
-• <code>week</code> - This week
-• <code>month</code> - This month
-• <code>year</code> - This year
-• <code>all</code> - All time</blockquote>
+• <code>today</code> (default)
+• <code>week</code>
+• <code>month</code>
+• <code>year</code>
+• <code>all</code>
+
+<b>Length:</b>
+• <code>4</code> - 4-letter mode
+• <code>5</code> - 5-letter mode (default)
+• <code>6</code> - 6-letter mode</blockquote>
 
 <b>Score Command</b>
-<blockquote><b>Syntax:</b> <code>/score [target] [scope] [period]</code>
+<blockquote><b>Syntax:</b> <code>/score [target] [scope] [period] [length]</code>
+
+All parameters are optional and can be used in any order.
 
 <b>Target (optional):</b>
 • Leave empty for your own score
 • <code>@username</code> - Look up by username
 • <code>user_id</code> - Look up by Telegram user ID
 
-<b>Scope & period:</b>
-Same as for <code>/leaderboard</code> (group/global and today/week/month/year/all)</blockquote>`;
+<b>Scope, period & length:</b>
+Same as <code>/leaderboard</code></blockquote>`;
 }
 
 export function getGroupSettingsMessage() {
@@ -185,7 +200,9 @@ Reply to any message to see:
 • User information
 • Chat information
 • Forward information (if forwarded)
-• File IDs for media</blockquote>`;
+• File IDs for media
+
+<b>Only admins can use in case of a group</b></blockquote>`;
 }
 
 export function getAdminCommandsMessage() {
