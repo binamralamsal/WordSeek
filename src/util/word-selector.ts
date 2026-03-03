@@ -1,17 +1,7 @@
 import { randomInt } from "crypto";
 
 import { redis } from "../config/redis";
-import commonWords from "../data/commonWords.json";
-
-export interface WordData {
-  meaning: string;
-  pronunciation: string;
-  example: string;
-}
-
-interface CommonWords {
-  [word: string]: WordData;
-}
+import newCommonWords from "../data/common-five.json";
 
 export interface WordSelectorConfig {
   historySize: number;
@@ -31,7 +21,6 @@ export class WordSelector {
   }
 
   async getRandomWord(chatId: string | number): Promise<string> {
-    const allWords = Object.keys(commonWords);
     const historyKey = `h:${chatId}`;
 
     try {
@@ -47,7 +36,7 @@ export class WordSelector {
       const usedWords = results[0][1] as string[];
       const setSize = results[1][1] as number;
 
-      const availableWords = allWords.filter(
+      const availableWords = newCommonWords.filter(
         (word) => !usedWords.includes(word.toLowerCase()),
       );
 
@@ -79,15 +68,8 @@ export class WordSelector {
       return randomWord;
     } catch (error) {
       console.error("Redis error, using fallback:", error);
-      return allWords[randomInt(0, allWords.length)].toLowerCase();
+      return newCommonWords[randomInt(0, newCommonWords.length)].toLowerCase();
     }
-  }
-
-  getWordData(word: string) {
-    const wordKey = Object.keys(commonWords).find(
-      (key) => key.toLowerCase() === word.toLowerCase(),
-    );
-    return wordKey ? commonWords[wordKey as keyof typeof commonWords] : null;
   }
 
   async resetChat(chatId: string | number) {
@@ -95,7 +77,7 @@ export class WordSelector {
   }
 
   async getChatStats(chatId: string | number) {
-    const totalCount = Object.keys(commonWords).length;
+    const totalCount = newCommonWords.length;
     try {
       const usedCount = await redis.scard(`h:${chatId}`);
       return {

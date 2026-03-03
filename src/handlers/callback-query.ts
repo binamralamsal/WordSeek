@@ -1,8 +1,24 @@
-import { Composer, InlineKeyboard } from "grammy";
+import { Composer, GrammyError, InlineKeyboard } from "grammy";
 
 import { sql } from "kysely";
 
+import { db } from "../config/db";
+import { env } from "../config/env";
+import { redis } from "../config/redis";
+import { getUserScores } from "../services/get-user-scores";
+import { getSmartDefaults } from "../util/get-smart-defaults";
 import { endGame, isUserAuthorized } from "../commands/end-game";
+import { AllowedChatSearchKey, AllowedChatTimeKey } from "../types";
+import { formatNoScoresMessage } from "../util/format-no-scores-message";
+import { getLeaderboardScores } from "../services/get-leaderboard-scores";
+import { formatUserScoreMessage } from "../util/format-user-score-message";
+import { formatLeaderboardMessage } from "../util/format-leaderboard-message";
+import { generateLeaderboardKeyboard } from "../util/generate-leaderboard-keyboard";
+import {
+  allowedChatSearchKeys,
+  allowedChatTimeKeys,
+} from "../config/constants";
+import { generateUserSelectionKeyboard } from "../util/generate-user-selection-keyboard";
 import {
   getAdminCommandsMessage,
   getGroupSettingsMessage,
@@ -11,22 +27,6 @@ import {
   getOtherCommandsMessage,
   getScoresMessage,
 } from "../commands/help";
-import {
-  allowedChatSearchKeys,
-  allowedChatTimeKeys,
-} from "../config/constants";
-import { db } from "../config/db";
-import { env } from "../config/env";
-import { redis } from "../config/redis";
-import { getLeaderboardScores } from "../services/get-leaderboard-scores";
-import { getUserScores } from "../services/get-user-scores";
-import { AllowedChatSearchKey, AllowedChatTimeKey } from "../types";
-import { formatLeaderboardMessage } from "../util/format-leaderboard-message";
-import { formatNoScoresMessage } from "../util/format-no-scores-message";
-import { formatUserScoreMessage } from "../util/format-user-score-message";
-import { generateLeaderboardKeyboard } from "../util/generate-leaderboard-keyboard";
-import { generateUserSelectionKeyboard } from "../util/generate-user-selection-keyboard";
-import { getSmartDefaults } from "../util/get-smart-defaults";
 
 const composer = new Composer();
 
@@ -479,9 +479,14 @@ composer.on("callback_query:data", async (ctx) => {
 
     try {
       await ctx.editMessageText(message, commonOptions);
-    } catch {
-      await ctx.deleteMessage();
-      await ctx.reply(message, commonOptions);
+    } catch (err) {
+      if (
+        err instanceof GrammyError &&
+        !err.description.includes("message is not modified:")
+      ) {
+        await ctx.deleteMessage();
+        await ctx.reply(message, commonOptions);
+      }
     }
 
     await ctx.answerCallbackQuery();

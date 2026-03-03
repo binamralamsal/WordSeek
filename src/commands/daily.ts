@@ -2,12 +2,13 @@ import { Composer, InputFile } from "grammy";
 
 import { db } from "../config/db";
 import { redis } from "../config/redis";
+import { CommandsHelper } from "../util/commands-helper";
+import { dailyGameGuards, runGuards } from "../util/guards";
 import { generateWordleImage } from "../handlers/on-message";
 import {
   ensureDailyWordExists,
   getCurrentGameDateString,
 } from "../services/daily-wordle-cron";
-import { CommandsHelper } from "../util/commands-helper";
 
 const composer = new Composer();
 
@@ -15,25 +16,10 @@ composer.command("daily", async (ctx) => {
   if (!ctx.from) return;
 
   try {
-    if (ctx.chat.type !== "private") {
-      return ctx.reply(
-        "WordSeek of the Day can only be played in private chat with the bot. Send me a message directly!",
-      );
-    }
+    const guard = await runGuards(ctx, dailyGameGuards);
+    if (!guard.ok) return ctx.reply(guard.message);
 
     const userId = ctx.from.id.toString();
-
-    const activeRegularGame = await db
-      .selectFrom("games")
-      .selectAll()
-      .where("activeChat", "=", userId)
-      .executeTakeFirst();
-
-    if (activeRegularGame) {
-      return ctx.reply(
-        "⚠️ You have an active regular WordSeek game. Please complete or end that game with /end before starting WordSeek of the Day.",
-      );
-    }
 
     const gameDate = getCurrentGameDateString();
     const dailyWord = await ensureDailyWordExists(gameDate);

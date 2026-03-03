@@ -4,7 +4,8 @@ import { db } from "../config/db";
 import { env } from "../config/env";
 import { redis } from "../config/redis";
 import { CommandsHelper } from "../util/commands-helper";
-import { formatWordDetails } from "../util/format-word-details";
+// import { formatWordDetails } from "../util/format-word-details";
+import { requireAllowedTopic, runGuards } from "../util/guards";
 
 const composer = new Composer();
 
@@ -29,9 +30,15 @@ export async function endGame(
     .where("activeChat", "=", String(chatId))
     .execute();
 
+  //   await ctx.reply(
+  //     `<blockquote>🎮 <b>Game Ended</b></blockquote>
+  // ${formatWordDetails(word)}<blockquote>${reason ? `${reason}\n` : ""}Start a new game with /new</blockquote>`,
+  //     { parse_mode: "HTML" },
+  //   );
+
   await ctx.reply(
-    `<blockquote>🎮 <b>Game Ended</b></blockquote>
-${formatWordDetails(word)}<blockquote>${reason ? `${reason}\n` : ""}Start a new game with /new</blockquote>`,
+    `<blockquote>🎮 <b>Game Ended</b>\nCorrect Word: <b>${word}</b></blockquote>
+<blockquote>${reason ? `${reason}\n` : ""}Start a new game with /new</blockquote>`,
     { parse_mode: "HTML" },
   );
 }
@@ -40,20 +47,8 @@ composer.command("end", async (ctx) => {
   const chatId = ctx.chat.id;
   if (!ctx.message) return;
 
-  if (ctx.chat.is_forum) {
-    const topicData = await db
-      .selectFrom("chatGameTopics")
-      .where("chatId", "=", chatId.toString())
-      .selectAll()
-      .execute();
-    const topicIds = topicData.map((t) => t.topicId);
-    const currentTopicId = ctx.msg.message_thread_id?.toString() || "general";
-
-    if (topicData.length > 0 && !topicIds.includes(currentTopicId))
-      return await ctx.reply(
-        "This topic is not set for the game. Please play the game in the designated topic.",
-      );
-  }
+  const guard = await runGuards(ctx, [requireAllowedTopic]);
+  if (!guard.ok) return ctx.reply(guard.message);
 
   const currentGame = await db
     .selectFrom("games")

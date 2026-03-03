@@ -1,23 +1,19 @@
-import { Composer, Context, GrammyError } from "grammy";
 import { InputFile } from "grammy";
 import { ReactionTypeEmoji } from "grammy/types";
+import { Composer, Context, GrammyError } from "grammy";
 
-import { readFile } from "fs/promises";
+import z from "zod";
+import sharp from "sharp";
 import { join } from "path";
 import satori from "satori";
-import sharp from "sharp";
-import z from "zod";
+import { readFile } from "fs/promises";
 
 import { db } from "../config/db";
 import { redis } from "../config/redis";
-import allWords from "../data/allWords.json";
-import commonWords from "../data/commonWords.json";
-import { getCurrentGameDateString } from "../services/daily-wordle-cron";
-import {
-  formatDailyWordDetails,
-  formatWordDetails,
-} from "../util/format-word-details";
+import allFiveWords from "../data/all-five.json";
 import { toFancyText } from "../util/to-fancy-text";
+import { formatDailyWordDetails } from "../util/format-word-details";
+import { getCurrentGameDateString } from "../services/daily-wordle-cron";
 
 const composer = new Composer();
 
@@ -107,10 +103,7 @@ composer.on("message:text", async (ctx) => {
     if (topicData.length > 0 && !topicIds.includes(currentTopicId)) return;
   }
 
-  if (
-    !allWords.includes(currentGuess) &&
-    !Object.keys(commonWords).includes(currentGuess)
-  )
+  if (!allFiveWords.includes(currentGuess))
     return ctx.reply(`${currentGuess} is not a valid word.`);
 
   const guessExists = await db
@@ -147,9 +140,11 @@ composer.on("message:text", async (ctx) => {
         })
         .execute();
 
-      const formattedResponse = `Congrats! You guessed it correctly.\n${additionalMessage}\nStart with /new\n${formatWordDetails(
-        currentGuess,
-      )}`;
+      // const formattedResponse = `Congrats! You guessed it correctly.\n${additionalMessage}\nStart with /new\n${formatWordDetails(
+      //   currentGuess,
+      // )}`;
+
+      const formattedResponse = `<blockquote>Congrats! You guessed it correctly.\nCorrect Word: <b>${currentGuess}</b>\n${additionalMessage}</blockquote>\nStart with /new`;
 
       ctx.reply(formattedResponse, {
         reply_parameters: { message_id: ctx.message.message_id },
@@ -158,9 +153,11 @@ composer.on("message:text", async (ctx) => {
     } else {
       const additionalMessage = `Anonymous admins or channels don't get points.`;
 
-      const formattedResponse = `Congrats! You guessed it correctly.\n${additionalMessage}\nStart with /new\n${formatWordDetails(
-        currentGuess,
-      )}`;
+      // const formattedResponse = `Congrats! You guessed it correctly.\n${additionalMessage}\nStart with /new\n${formatWordDetails(
+      //   currentGuess,
+      // )}`;
+
+      const formattedResponse = `<blockquote>Congrats! You guessed it correctly.\nCorrect Word: <b>${currentGuess}</b>\n</blockquote>${additionalMessage}\nStart with /new`;
 
       ctx.reply(formattedResponse, {
         reply_parameters: { message_id: ctx.message.message_id },
@@ -200,15 +197,6 @@ composer.on("message:text", async (ctx) => {
 
   let responseMessage = toFancyText(getFeedback(allGuesses, currentGame.word));
 
-  if (allGuesses.length >= 20) {
-    const currentWord = currentGame.word;
-    const meaning =
-      commonWords[currentWord as keyof typeof commonWords]?.meaning;
-
-    if (meaning)
-      responseMessage += `\n\n<blockquote><strong>Hint:</strong> ${meaning}</blockquote>`;
-  }
-
   ctx.reply(responseMessage, {
     parse_mode: "HTML",
   });
@@ -217,10 +205,7 @@ composer.on("message:text", async (ctx) => {
 async function handleDailyWordleGuess(ctx: Context, currentGuess: string) {
   const userId = ctx.from!.id.toString();
 
-  if (
-    !allWords.includes(currentGuess) &&
-    !Object.keys(commonWords).includes(currentGuess)
-  ) {
+  if (!allFiveWords.includes(currentGuess)) {
     return ctx.reply(`${currentGuess.toUpperCase()} is not a valid word.`);
   }
 

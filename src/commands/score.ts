@@ -1,14 +1,14 @@
 import { Composer } from "grammy";
 
-import { db } from "../config/db";
-import { getUserScores } from "../services/get-user-scores";
+import { getTargetUser } from "./seekauth";
 import { CommandsHelper } from "../util/commands-helper";
+import { getUserScores } from "../services/get-user-scores";
+import { getSmartDefaults } from "../util/get-smart-defaults";
+import { requireAllowedTopic, runGuards } from "../util/guards";
+import { parseLeaderboardInput } from "../util/parse-leaderboard-input";
 import { formatNoScoresMessage } from "../util/format-no-scores-message";
 import { formatUserScoreMessage } from "../util/format-user-score-message";
 import { generateLeaderboardKeyboard } from "../util/generate-leaderboard-keyboard";
-import { getSmartDefaults } from "../util/get-smart-defaults";
-import { parseLeaderboardInput } from "../util/parse-leaderboard-input";
-import { getTargetUser } from "./seekauth";
 
 const composer = new Composer();
 
@@ -17,20 +17,8 @@ composer.command("score", async (ctx) => {
 
   const chatId = ctx.chat.id.toString();
 
-  if (ctx.chat.is_forum) {
-    const topicData = await db
-      .selectFrom("chatGameTopics")
-      .where("chatId", "=", chatId.toString())
-      .selectAll()
-      .execute();
-    const topicIds = topicData.map((t) => t.topicId);
-    const currentTopicId = ctx.msg.message_thread_id?.toString() || "general";
-
-    if (topicData.length > 0 && !topicIds.includes(currentTopicId))
-      return await ctx.reply(
-        "This topic is not set for the game. Please play the game in the designated topic.",
-      );
-  }
+  const guard = await runGuards(ctx, [requireAllowedTopic]);
+  if (!guard.ok) return ctx.reply(guard.message);
 
   const input = ctx.match.trim();
 

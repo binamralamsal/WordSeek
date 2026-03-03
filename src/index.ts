@@ -1,22 +1,21 @@
 import { autoRetry } from "@grammyjs/auto-retry";
 import { run, sequentialize } from "@grammyjs/runner";
 
-import { commands } from "./commands";
-import { getBroadcastState, performBroadcast } from "./commands/broadcast";
 import { bot } from "./config/bot";
-import { db } from "./config/db";
-import { callbackQueryHandler } from "./handlers/callback-query";
+import { commands } from "./commands";
 import { errorHandler } from "./handlers/error-handler";
-import { onBotAddedInChat } from "./handlers/on-bot-added-in-chat";
 import { onMessageHander } from "./handlers/on-message";
+import { CommandsHelper } from "./util/commands-helper";
+import { resumeBroadcast } from "./util/resume-broadcast";
+import { callbackQueryHandler } from "./handlers/callback-query";
+import { handleBannedUsers } from "./handlers/handle-banned-users";
+import { onBotAddedInChat } from "./handlers/on-bot-added-in-chat";
 import { trackMessagesHandler } from "./handlers/track-messages-handler";
 import { userAndChatSyncHandler } from "./handlers/user-and-chat-sync-handler";
 import {
   dailyWordleCron,
   ensureDailyWordExists,
 } from "./services/daily-wordle-cron";
-import { CommandsHelper } from "./util/commands-helper";
-import { resumeBroadcast } from "./util/resume-broadcast";
 
 bot.api.config.use(autoRetry());
 bot.use(userAndChatSyncHandler);
@@ -29,6 +28,8 @@ bot.use(
     return ctx.chatId?.toString() || ctx.from?.id.toString();
   }),
 );
+
+bot.use(handleBannedUsers);
 
 bot.use(commands);
 bot.use(callbackQueryHandler);

@@ -5,7 +5,15 @@ import { CommandsHelper } from "../util/commands-helper";
 const composer = new Composer();
 
 composer.command("id", async (ctx) => {
-  if (!ctx.from || ctx.chat.type !== "private") return;
+  if (!ctx.from) return;
+
+  const userId = ctx.from.id;
+  const chatMember = await ctx.getChatMember(userId);
+  const isAdmin =
+    chatMember.status === "administrator" || chatMember.status === "creator";
+  const isNotPrivate = ctx.chat.type !== "private";
+  if (isNotPrivate && !isAdmin) return;
+
   const repliedMsg = ctx.message?.reply_to_message;
 
   if (!repliedMsg) {

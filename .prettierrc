@@ -7,5 +7,5 @@
   "importOrder": ["^grammy", "^@grammyjs", "^@?\\w", "^#/(.*)$", "^[./]"],
   "importOrderSeparation": true,
   "importOrderSortSpecifiers": true,
-  "importOrderSortByLength": true
+  "importOrderSortByLength": "asc"
 }

@@ -1,4 +1,3 @@
-import commonWords from "../data/commonWords.json";
 import { escapeHtmlEntities } from "./escape-html-entities";
 
 interface WordDetailsInput {
@@ -36,20 +35,20 @@ function renderWordDetails(input: WordDetailsInput, escape = true) {
   return `<blockquote>${parts.join("\n")}</blockquote>`;
 }
 
-export function formatWordDetails(word: string) {
-  const wordDetails = commonWords[word] ?? {
-    meaning: null,
-    pronunciation: null,
-    example: null,
-  };
+// export function formatWordDetails(word: string) {
+//   const wordDetails = commonWords[word] ?? {
+//     meaning: null,
+//     pronunciation: null,
+//     example: null,
+//   };
 
-  return renderWordDetails({
-    word,
-    meaning: wordDetails.meaning,
-    phonetic: wordDetails.pronunciation,
-    sentence: wordDetails.example,
-  });
-}
+//   return renderWordDetails({
+//     word,
+//     meaning: wordDetails.meaning,
+//     phonetic: wordDetails.pronunciation,
+//     sentence: wordDetails.example,
+//   });
+// }
 
 export function formatDailyWordDetails(data: WordDetailsInput) {
   return renderWordDetails(
