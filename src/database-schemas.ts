@@ -38,6 +38,9 @@ export interface BroadcastChat {
 export interface ChatGameTopic {
   chatId: string;
   createdAt: Generated<Timestamp>;
+  iconCustomEmojiId: string | null;
+  name: string | null;
+  shouldRecreateOnExpire: Generated<boolean>;
   topicId: string;
   updatedAt: Generated<Timestamp>;
 }

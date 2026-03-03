@@ -10,6 +10,7 @@ import { resumeBroadcast } from "./util/resume-broadcast";
 import { callbackQueryHandler } from "./handlers/callback-query";
 import { handleBannedUsers } from "./handlers/handle-banned-users";
 import { onBotAddedInChat } from "./handlers/on-bot-added-in-chat";
+import { topicEditedHandler } from "./handlers/topic-edited-handler";
 import { trackMessagesHandler } from "./handlers/track-messages-handler";
 import { userAndChatSyncHandler } from "./handlers/user-and-chat-sync-handler";
 import {
@@ -19,6 +20,7 @@ import {
 
 bot.api.config.use(autoRetry());
 bot.use(userAndChatSyncHandler);
+bot.use(topicEditedHandler);
 bot.use(trackMessagesHandler);
 
 bot.use(

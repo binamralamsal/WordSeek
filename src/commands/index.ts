@@ -1,23 +1,24 @@
 import { Composer } from "grammy";
 
-import { banCommand } from "./ban-user";
-import { broadcastCommand } from "./broadcast";
-import { dailyWordleCommand } from "./daily";
-import { endGameCommand } from "./end-game";
-import { helpCommand } from "./help";
 import { idCommand } from "./id";
-import { leaderboardCommand } from "./leaderboard";
-import { myScoreCommand } from "./my-score";
-import { newGameCommand } from "./new-game";
+import { helpCommand } from "./help";
 import { scoreCommand } from "./score";
-import { seekAuthCommand } from "./seekauth";
-import { setGameTopicCommand } from "./setgametopic";
 import { startCommand } from "./start";
-import { startMatchCommand } from "./startmatch";
 import { statsCommand } from "./stats";
 import { trackCommand } from "./track";
-import { transferCommand } from "./transfer";
+import { banCommand } from "./ban-user";
+import { endGameCommand } from "./end-game";
+import { myScoreCommand } from "./my-score";
+import { newGameCommand } from "./new-game";
 import { unbanCommand } from "./unban-user";
+import { dailyWordleCommand } from "./daily";
+import { seekAuthCommand } from "./seekauth";
+import { transferCommand } from "./transfer";
+import { broadcastCommand } from "./broadcast";
+import { startMatchCommand } from "./startmatch";
+import { leaderboardCommand } from "./leaderboard";
+import { setGameTopicCommand } from "./setgametopic";
+import { recreateTopicCommand } from "./recreatetopic";
 import { unsetGameTopicCommand } from "./unsetgametopic";
 
 const composer = new Composer();
@@ -42,6 +43,7 @@ composer.use(
   broadcastCommand,
   dailyWordleCommand,
   idCommand,
+  recreateTopicCommand,
 );
 
 export const commands = composer;

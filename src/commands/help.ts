@@ -193,7 +193,13 @@ After setting, the bot will only run games in that topic.
 
 <b>/unsetgametopic</b> – Remove topic restriction
 Usage: <code>/unsetgametopic</code>
-After unsetting, the bot can run games in any topic in the group again. If there are other topics set, the bot will only run in those topics.</blockquote>`;
+After unsetting, the bot can run games in any topic in the group again. If there are other topics set, the bot will only run in those topics.
+
+<b>/recreatetopic</b> – Auto-recreate topic when it expires
+Usage: <code>/recreatetopic on</code> or <code>/recreatetopic off</code>
+Run this command inside a game topic (not General).
+
+When enabled, if the topic automatically expires (Telegram forum feature), the bot will recreate the same topic so games can continue.</blockquote>`;
 }
 
 export function getOtherCommandsMessage() {

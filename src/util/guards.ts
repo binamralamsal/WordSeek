@@ -79,6 +79,34 @@ export async function requireAllowedTopic(ctx: Context): Promise<GuardResult> {
   return { ok: true };
 }
 
+export async function requireAdmin(ctx: Context): Promise<GuardResult> {
+  if (!ctx.chat || !ctx.from) return { ok: true };
+
+  if (ctx.chat.type === "private") return { ok: true };
+
+  try {
+    const chatMember = await ctx.api.getChatMember(ctx.chat.id, ctx.from.id);
+
+    const allowedStatus = ["administrator", "creator"];
+
+    if (!allowedStatus.includes(chatMember.status)) {
+      return {
+        ok: false,
+        message: "Only admins can use this command.",
+      };
+    }
+
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      message:
+        "⚠️ I couldn't verify admin rights.\n" +
+        "👉 Please make sure I’m an admin in this group.",
+    };
+  }
+}
+
 type Guard = (ctx: Context) => Promise<GuardResult>;
 
 export async function runGuards(
@@ -98,3 +126,5 @@ export const regularGameGuards = [
   requireAllowedTopic,
   requireNoActiveDailyGame,
 ];
+
+export const adminOnlyGuards = [requireAdmin];

@@ -14,13 +14,9 @@ import allSixWords from "../data/all-six.json";
 import allFiveWords from "../data/all-five.json";
 import allFourWords from "../data/all-four.json";
 import { toFancyText } from "../util/to-fancy-text";
+import { requireAllowedTopic, runGuards } from "../util/guards";
 import { formatDailyWordDetails } from "../util/format-word-details";
 import { getCurrentGameDateString } from "../services/daily-wordle-cron";
-import {
-  regularGameGuards,
-  requireAllowedTopic,
-  runGuards,
-} from "../util/guards";
 
 const composer = new Composer();
 
@@ -131,7 +127,7 @@ composer.on("message:text", async (ctx) => {
         })
         .execute();
 
-      const formattedResponse = `<blockquote>Congrats! You guessed it correctly.\nCorrect Word: <b>${currentGuess}</b>\n${additionalMessage}</blockquote>\nStart with /new`;
+      const formattedResponse = `<blockquote>Congrats! You guessed it correctly.\nCorrect Word: <b>${currentGuess}</b>\n${additionalMessage}</blockquote>\nStart with /new${wordLength}`;
 
       ctx.reply(formattedResponse, {
         reply_parameters: { message_id: ctx.message.message_id },
@@ -140,7 +136,7 @@ composer.on("message:text", async (ctx) => {
     } else {
       const additionalMessage = `Anonymous admins or channels don't get points.`;
 
-      const formattedResponse = `<blockquote>Congrats! You guessed it correctly.\nCorrect Word: <b>${currentGuess}</b>\n</blockquote>${additionalMessage}\nStart with /new`;
+      const formattedResponse = `<blockquote>Congrats! You guessed it correctly.\nCorrect Word: <b>${currentGuess}</b>\n</blockquote>${additionalMessage}\nStart with /new${wordLength}`;
 
       ctx.reply(formattedResponse, {
         reply_parameters: { message_id: ctx.message.message_id },
@@ -174,7 +170,7 @@ composer.on("message:text", async (ctx) => {
     return ctx.reply(
       "Game Over! The word was " +
         currentGame.word +
-        "\nYou can start a new game with /new",
+        `\nYou can start a new game with /new${wordLength}`,
     );
   }
 
