@@ -62,6 +62,7 @@ export async function errorHandler(error: BotError<Context>) {
             topicId: createdTopic.message_thread_id.toString(),
             iconCustomEmojiId: createdTopic.icon_custom_emoji_id,
             shouldRecreateOnExpire: true,
+            allowedLengths: topic.allowedLengths,
             name: topic.name,
           })
           .execute();
