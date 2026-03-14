@@ -26,6 +26,16 @@ export async function getLeaderboardScores({
         "totalScore",
       ),
     ])
+    .where((eb) =>
+      eb.not(
+        eb.exists(
+          eb
+            .selectFrom("bannedUsers")
+            .select("userId")
+            .whereRef("bannedUsers.userId", "=", "leaderboard.userId"),
+        ),
+      ),
+    )
     .groupBy("users.id")
     .orderBy(sql`sum(${sql.ref("leaderboard.score")}) desc`)
     .where(
