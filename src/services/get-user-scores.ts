@@ -21,6 +21,16 @@ export async function getUserScores({
     .selectFrom((eb) => {
       let innerQuery = eb
         .selectFrom("leaderboard")
+        .where((eb) =>
+          eb.not(
+            eb.exists(
+              eb
+                .selectFrom("bannedUsers")
+                .select("userId")
+                .whereRef("bannedUsers.userId", "=", "leaderboard.userId"),
+            ),
+          ),
+        )
         .select("leaderboard.userId")
         .select(sql<number>`sum(leaderboard.score)`.as("totalScore"))
         .groupBy("leaderboard.userId")
