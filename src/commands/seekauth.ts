@@ -31,7 +31,11 @@ export async function getTargetUser(
   const replyToMessage = ctx.message?.reply_to_message;
   const replyToMessageFrom = replyToMessage?.from;
 
-  if (replyToMessageFrom && !replyToMessageFrom.is_bot && !replyToMessage.is_topic_message) {
+  if (
+    replyToMessageFrom &&
+    !replyToMessageFrom.is_bot &&
+    !replyToMessage.is_topic_message
+  ) {
     const user = replyToMessageFrom;
 
     return {
@@ -172,7 +176,7 @@ composer.command("seekauth", async (ctx) => {
       .join("\n");
 
     return await ctx.reply(
-      `<b>🔐 Authorized Users for Hush Game</b>\n\n${userList}`,
+      `<b>🔐 Authorized Users for Seek Game</b>\n\n${userList}`,
       replyConfig,
     );
   }
@@ -247,7 +251,7 @@ composer.command("seekauth", async (ctx) => {
 
 CommandsHelper.addNewCommand(
   "seekauth",
-  "Manage users authorized to end the hush game (admin only)",
+  "Manage users authorized to end the seek game (admin only)",
 );
 
 export const seekAuthCommand = composer;
