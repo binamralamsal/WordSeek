@@ -1,5 +1,6 @@
 export const UPDATES_CHANNEL = "https://t.me/WordSeek";
 export const DISCUSSION_GROUP = "https://t.me/WordGuesser";
+export const DONATION_LINK = "https://buymemomo.com/binamra";
 
 export const allowedChatSearchKeys = ["global", "group"] as const;
 export const allowedChatTimeKeys = [

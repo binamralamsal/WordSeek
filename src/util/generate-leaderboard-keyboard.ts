@@ -5,6 +5,7 @@ import type { AllowedChatSearchKey, AllowedChatTimeKey } from "../types";
 import {
   AllowedWordLength,
   DISCUSSION_GROUP,
+  DONATION_LINK,
   UPDATES_CHANNEL,
   allowedChatSearchKeys,
   allowedChatTimeKeys,
@@ -20,8 +21,16 @@ export function generateLeaderboardKeyboard(
   backButton?: { text: string; callback: string },
 ) {
   const keyboard = new InlineKeyboard();
+  const mid = Math.floor(allowedChatSearchKeys.length / 2);
 
-  allowedChatSearchKeys.forEach((key) => {
+  allowedChatSearchKeys.forEach((key, index) => {
+    if (index === mid) {
+      keyboard.text(
+        "🔄",
+        `${callbackKey} ${searchKey} ${timeKey} ${wordLength}`,
+      );
+    }
+
     keyboard
       .text(
         generateButtonText(
@@ -68,7 +77,7 @@ export function generateLeaderboardKeyboard(
 
   keyboard.row();
   keyboard.url("📢 Updates", UPDATES_CHANNEL);
-  keyboard.text("🔄", `${callbackKey} ${searchKey} ${timeKey} ${wordLength}`);
+  keyboard.url("💓 Donate", DONATION_LINK).success();
   keyboard.url("💬 Discussion", DISCUSSION_GROUP);
 
   if (backButton) {

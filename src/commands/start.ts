@@ -2,8 +2,12 @@ import { Composer, InlineKeyboard, InputFile } from "grammy";
 
 import { createReadStream } from "fs";
 
-import { DISCUSSION_GROUP, UPDATES_CHANNEL } from "../config/constants";
 import { CommandsHelper } from "../util/commands-helper";
+import {
+  DISCUSSION_GROUP,
+  DONATION_LINK,
+  UPDATES_CHANNEL,
+} from "../config/constants";
 
 const composer = new Composer();
 
@@ -16,7 +20,10 @@ composer.command("start", async (ctx) => {
     .row()
     .url("Updates", UPDATES_CHANNEL)
     .text("Help", "help_howto")
-    .url("Discussion", DISCUSSION_GROUP);
+    .url("Discussion", DISCUSSION_GROUP)
+    .row()
+    .url("💓 Donate", DONATION_LINK)
+    .success();
 
   const caption = `<b>Welcome to WordSeek!</b>
 

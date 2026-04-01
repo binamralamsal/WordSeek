@@ -2,7 +2,11 @@ import { Composer, InlineKeyboard } from "grammy";
 
 import { env } from "../config/env";
 import { CommandsHelper } from "../util/commands-helper";
-import { DISCUSSION_GROUP, UPDATES_CHANNEL } from "../config/constants";
+import {
+  DISCUSSION_GROUP,
+  DONATION_LINK,
+  UPDATES_CHANNEL,
+} from "../config/constants";
 
 const composer = new Composer();
 
@@ -77,6 +81,7 @@ export function getMainHelpKeyboard(
   }
   keyboard.url("GitHub Repo", "https://github.com/binamralamsal/WordSeek");
   keyboard.row().url("📢 Updates", UPDATES_CHANNEL);
+  keyboard.url("💓 Donate", DONATION_LINK).success();
   keyboard.url("💬 Discussion", DISCUSSION_GROUP);
 
   return keyboard;
