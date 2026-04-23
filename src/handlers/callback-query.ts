@@ -529,19 +529,12 @@ composer.on("callback_query:data", async (ctx) => {
 
     if (!raw) {
       return ctx.answerCallbackQuery({
-        text: "Captcha expired.",
+        text: "Captcha expired or, this captcha isn't for you.",
         show_alert: true,
       });
     }
 
     const session = captchaSchema.parse(JSON.parse(raw));
-
-    if (session.userId !== userId) {
-      return ctx.answerCallbackQuery({
-        text: "Not your captcha.",
-        show_alert: true,
-      });
-    }
 
     const mentionText = formatUserMention({
       id: userId,
