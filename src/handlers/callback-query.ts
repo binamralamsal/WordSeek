@@ -5,6 +5,7 @@ import { sql } from "kysely";
 import { db } from "../config/db";
 import { env } from "../config/env";
 import { redis } from "../config/redis";
+import { captchaSchema } from "../schemas";
 import { getUserScores } from "../services/get-user-scores";
 import { getSmartDefaults } from "../util/get-smart-defaults";
 import { endGame, isUserAuthorized } from "../commands/end-game";
@@ -16,7 +17,13 @@ import { formatLeaderboardMessage } from "../util/format-leaderboard-message";
 import { generateLeaderboardKeyboard } from "../util/generate-leaderboard-keyboard";
 import { generateUserSelectionKeyboard } from "../util/generate-user-selection-keyboard";
 import {
+  buildCaptchaKeyboard,
+  buildMessage,
+  formatUserMention,
+} from "../commands/captcha";
+import {
   AllowedWordLength,
+  SLOT_SYMBOLS,
   allowedChatSearchKeys,
   allowedChatTimeKeys,
   allowedWordLengths,
@@ -508,6 +515,148 @@ composer.on("callback_query:data", async (ctx) => {
     }
 
     await ctx.answerCallbackQuery();
+  } else if (ctx.callbackQuery.data.startsWith("captcha_")) {
+    const data = ctx.callbackQuery.data;
+    const userId = ctx.from.id.toString();
+    const chatId = ctx.chat?.id.toString();
+    const name = ctx.from.first_name;
+    const username = ctx.from.username;
+
+    if (!chatId) return;
+
+    const key = `captcha:${chatId}:${userId}`;
+    const raw = await redis.get(key);
+
+    if (!raw) {
+      return ctx.answerCallbackQuery({
+        text: "Captcha expired.",
+        show_alert: true,
+      });
+    }
+
+    const session = captchaSchema.parse(JSON.parse(raw));
+
+    if (session.userId !== userId) {
+      return ctx.answerCallbackQuery({
+        text: "Not your captcha.",
+        show_alert: true,
+      });
+    }
+
+    const mentionText = formatUserMention({
+      id: userId,
+      name,
+      username,
+    });
+
+    if (data === "captcha_clear") {
+      session.progress = [];
+    } else if (data === "captcha_back") {
+      session.progress.pop();
+    }
+
+    if (data.startsWith("captcha_pick")) {
+      const emoji = data.split(" ")[1];
+
+      if (session.progress.length < 3) {
+        session.progress.push(emoji);
+      }
+    }
+    const keyboard = buildCaptchaKeyboard(session.progress);
+
+    if (session.progress.length === 3) {
+      const success =
+        JSON.stringify(session.progress) === JSON.stringify(session.answer);
+
+      if (success) {
+        await redis.del(key);
+
+        await ctx.api.sendMessage(
+          session.adminId,
+          `✅ ${mentionText} passed the captcha.`,
+          { parse_mode: "HTML" },
+        );
+
+        return ctx
+          .editMessageText(
+            buildMessage({
+              mention: mentionText,
+              progress: session.progress,
+              attempts: session.attempts,
+              maxAttempts: 3,
+              status: "Verification successful ✅",
+            }),
+            { parse_mode: "HTML" },
+          )
+          .catch(() => {});
+      }
+
+      session.attempts += 1;
+
+      if (session.attempts >= 3) {
+        await redis.del(key);
+
+        await ctx.api.sendMessage(
+          session.adminId,
+          `❌ ${mentionText} failed the captcha.\nExpected: ${session.answer.join(
+            " ",
+          )}\nGot: ${session.progress.join(" ")}`,
+          { parse_mode: "HTML" },
+        );
+
+        return ctx
+          .editMessageText(
+            buildMessage({
+              mention: mentionText,
+              progress: session.answer,
+              attempts: session.attempts,
+              maxAttempts: 3,
+              status: "Verification failed ❌",
+            }),
+            { parse_mode: "HTML" },
+          )
+          .catch(() => {});
+      }
+
+      session.progress = [];
+
+      await redis.set(key, JSON.stringify(session), "KEEPTTL");
+
+      return ctx
+        .editMessageText(
+          buildMessage({
+            mention: mentionText,
+            progress: [],
+            attempts: session.attempts,
+            maxAttempts: 3,
+            status: "Incorrect selection. Try again.",
+          }),
+          {
+            reply_markup: keyboard,
+            parse_mode: "HTML",
+          },
+        )
+        .catch(() => {});
+    }
+
+    await redis.set(key, JSON.stringify(session), "KEEPTTL");
+
+    await ctx
+      .editMessageText(
+        buildMessage({
+          mention: mentionText,
+          progress: session.progress,
+          attempts: session.attempts,
+          maxAttempts: 3,
+        }),
+        {
+          reply_markup: keyboard,
+          parse_mode: "HTML",
+        },
+      )
+      .catch(() => {});
+
+    return ctx.answerCallbackQuery();
   }
 });
 

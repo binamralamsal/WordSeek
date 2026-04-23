@@ -7,6 +7,7 @@ import { startCommand } from "./start";
 import { statsCommand } from "./stats";
 import { trackCommand } from "./track";
 import { banCommand } from "./ban-user";
+import { captchaCommand } from "./captcha";
 import { endGameCommand } from "./end-game";
 import { myScoreCommand } from "./my-score";
 import { newGameCommand } from "./new-game";
@@ -46,6 +47,7 @@ composer.use(
   idCommand,
   allowOnlyLenCommand,
   recreateTopicCommand,
+  captchaCommand,
 );
 
 export const commands = composer;

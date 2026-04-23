@@ -3,6 +3,7 @@ import { run, sequentialize } from "@grammyjs/runner";
 
 import { bot } from "./config/bot";
 import { commands } from "./commands";
+import { captchaQueue } from "./queues/captcha-queue";
 import { errorHandler } from "./handlers/error-handler";
 import { onMessageHander } from "./handlers/on-message";
 import { CommandsHelper } from "./util/commands-helper";
