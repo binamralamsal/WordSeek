@@ -1,2 +1,2 @@
 worker: bun run start
-release: bun run db:migrate
+release: bun run db:migrate latest
