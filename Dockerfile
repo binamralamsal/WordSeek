@@ -1,12 +1,12 @@
 # ─────────────────────────────────────────────
 # Stage 1: Install dependencies
 # ─────────────────────────────────────────────
-FROM oven/bun:1-debian AS deps
+FROM oven/bun:1.3.13-debian AS deps
 
 WORKDIR /app
 
 # Copy only the files needed for install (better layer caching)
-COPY package.json bun.lockb ./
+COPY package.json bun.lockb bunfig.toml ./
 
 # Install production dependencies only
 RUN bun install --frozen-lockfile --production
@@ -14,7 +14,7 @@ RUN bun install --frozen-lockfile --production
 # ─────────────────────────────────────────────
 # Stage 2: Final runtime image
 # ─────────────────────────────────────────────
-FROM oven/bun:1-debian AS runner
+FROM oven/bun:1.3.13-debian AS runner
 
 WORKDIR /app
 
@@ -31,6 +31,8 @@ COPY src/ ./src/
 COPY migrations/ ./migrations/
 COPY kysely.config.ts ./
 COPY package.json ./
+COPY bunfig.toml ./
+COPY .bun-version ./
 
 # Use non-root user for security (bun image ships with this user)
 USER bun
