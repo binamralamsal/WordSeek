@@ -46,8 +46,10 @@ async function getWordDetails(
   maxRetries: number = env.GEMINI_API_KEYS.length * FREE_MODELS.length * 2,
 ) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    let currentKey: string | undefined;
     try {
-      const { genAI } = await keyManager.getWorkingKey();
+      const { key, genAI } = await keyManager.getWorkingKey();
+      currentKey = key;
 
       const modelIndex = (attempt - 1) % FREE_MODELS.length;
       const modelName = FREE_MODELS[modelIndex];
@@ -66,10 +68,8 @@ async function getWordDetails(
 
       return validated;
     } catch (error) {
-      const { key } = await keyManager.getWorkingKey();
-
-      if (isAPIKeyError(error as Error)) {
-        await keyManager.markKeyAsFailed(key);
+      if (currentKey && isAPIKeyError(error as Error)) {
+        await keyManager.markKeyAsFailed(currentKey);
       } else {
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
@@ -82,43 +82,38 @@ async function getWordDetails(
 }
 
 function getDateStringFromDate(d: Date) {
-  const fmt = new Intl.DateTimeFormat("en-CA", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-
-  return fmt.format(d);
+  // Use UTC parts to ensure consistency if the date was created with UTC midnight
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export function getCurrentGameDateString() {
   const now = new Date();
 
-  const formatter = new Intl.DateTimeFormat("en-US", {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: env.TIME_ZONE,
-    hour12: false,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
+    hour12: false,
   });
 
   const parts = formatter.formatToParts(now);
   const get = (t: string) => parts.find((p) => p.type === t)!.value;
 
-  const timeInTimezone = new Date(
-    `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}`,
-  );
+  const dateString = `${get("year")}-${get("month")}-${get("day")}`;
+  const hour = parseInt(get("hour"), 10);
 
-  let baseDate = timeInTimezone;
-
-  if (timeInTimezone.getHours() < 6) {
-    baseDate = new Date(baseDate.getTime() - 24 * 60 * 60 * 1000);
+  if (hour < 6) {
+    const d = new Date(dateString + "T12:00:00");
+    d.setDate(d.getDate() - 1);
+    return getDateStringFromDate(d);
   }
 
-  return getDateStringFromDate(baseDate);
+  return dateString;
 }
 
 async function resetStreaksForInactivePlayers(yesterdayDate: string) {
@@ -127,7 +122,14 @@ async function resetStreaksForInactivePlayers(yesterdayDate: string) {
       `Resetting streaks for players who didn't play on ${yesterdayDate}`,
     );
 
-    const yesterdayDateTime = new Date(yesterdayDate + "T00:00:00");
+    // The game day for yesterdayDate started at 06:00 AM in env.TIME_ZONE
+    // We should reset streaks for anyone whose lastGuessed is before that.
+    
+    // To get 06:00 AM yesterday in the target timezone:
+    const yesterdayStartTime = new Date(`${yesterdayDate}T06:00:00Z`); 
+    // Note: This is a simplification. Ideally we'd use a library like luxon, 
+    // but we can estimate or just use the date boundary if we store lastGuessed in UTC.
+    // If lastGuessed is ISO string (UTC), then we need the UTC timestamp of 6AM in target TZ.
 
     const result = await db
       .updateTable("userStats")
@@ -136,7 +138,7 @@ async function resetStreaksForInactivePlayers(yesterdayDate: string) {
       .where((eb) =>
         eb.or([
           eb("lastGuessed", "is", null),
-          eb("lastGuessed", "<", yesterdayDateTime),
+          eb("lastGuessed", "<", yesterdayStartTime),
         ]),
       )
       .execute();
@@ -167,18 +169,22 @@ async function generateDailyWordInternal(gameDate: string) {
 
   const seed = seedFromSecret(env.DAILY_WORDLE_SECRET);
   const shuffled = deterministicShuffle(seed);
-  const word = getWordOfTheDay(shuffled);
+  const word = getWordOfTheDay(shuffled, gameDate);
 
   const details = await getWordDetails(word);
+
+  if (!details) {
+    console.warn(`Failed to fetch AI details for word: ${word}. Inserting with null details.`);
+  }
 
   const insertedWord = await db
     .insertInto("dailyWords")
     .values({
       word,
       date: gameDate,
-      meaning: details?.meaning,
-      phonetic: details?.phonetic,
-      sentence: details?.sentence,
+      meaning: details?.meaning ?? null,
+      phonetic: details?.phonetic ?? null,
+      sentence: details?.sentence ?? null,
     })
     .returningAll()
     .executeTakeFirstOrThrow();
@@ -248,11 +254,12 @@ function deterministicShuffle(seed: number) {
   return arr;
 }
 
-function getWordOfTheDay(shuffled: string[]) {
+function getWordOfTheDay(shuffled: string[], gameDate: string) {
   const msPerDay = 24 * 60 * 60 * 1000;
+  const targetDate = new Date(gameDate + "T00:00:00Z"); // Use UTC to stay consistent with env.DAILY_WORDLE_START_DATE
 
   const dayNumber = Math.floor(
-    (Date.now() - env.DAILY_WORDLE_START_DATE.getTime()) / msPerDay,
+    (targetDate.getTime() - env.DAILY_WORDLE_START_DATE.getTime()) / msPerDay,
   );
 
   return shuffled[

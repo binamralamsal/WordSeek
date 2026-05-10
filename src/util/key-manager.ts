@@ -9,29 +9,41 @@ const RETRY_AFTER_MINUTES = 30;
 export class APIKeyManager {
   private currentKeyIndex = 0;
   private failedKeys = new Set<string>();
+  private initializationPromise: Promise<void> | null = null;
 
   async initialize() {
-    const failedKeysData = await redis.get(FAILED_KEYS_KEY);
-    if (failedKeysData) {
-      const parsed = JSON.parse(failedKeysData);
-      const now = Date.now();
-      this.failedKeys = new Set(
-        Object.entries(parsed)
-          .filter(
-            ([, timestamp]) =>
-              now - (timestamp as number) < RETRY_AFTER_MINUTES * 60 * 1000,
-          )
-          .map(([key]) => key),
-      );
-    }
+    if (this.initializationPromise) return this.initializationPromise;
+
+    this.initializationPromise = (async () => {
+      const failedKeysData = await redis.get(FAILED_KEYS_KEY);
+      if (failedKeysData) {
+        const parsed = JSON.parse(failedKeysData);
+        const now = Date.now();
+        this.failedKeys = new Set(
+          Object.entries(parsed)
+            .filter(
+              ([, timestamp]) =>
+                now - (timestamp as number) < RETRY_AFTER_MINUTES * 60 * 1000,
+            )
+            .map(([key]) => key),
+        );
+      }
+    })();
+
+    return this.initializationPromise;
   }
 
   async getWorkingKey(): Promise<{ key: string; genAI: GoogleGenerativeAI }> {
+    await this.initialize();
+
     const availableKeys = env.GEMINI_API_KEYS.filter(
       (key) => !this.failedKeys.has(key),
     );
 
     if (availableKeys.length === 0) {
+      if (env.GEMINI_API_KEYS.length === 0) {
+        throw new Error("No API keys configured in environment");
+      }
       await this.resetFailedKeys();
       return this.getWorkingKey();
     }
@@ -41,7 +53,7 @@ export class APIKeyManager {
     this.currentKeyIndex++;
 
     if (!selectedKey) {
-      throw new Error("No API keys available");
+      throw new Error("No API keys available after filtering");
     }
 
     const genAI = new GoogleGenerativeAI(selectedKey);
