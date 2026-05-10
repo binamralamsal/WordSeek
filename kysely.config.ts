@@ -12,6 +12,8 @@ const dialect = new PostgresDialect({
   pool: new Pool({
     connectionString: env.DATABASE_URL,
     max: 10,
+    ssl:
+      env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
   }),
 });
 
