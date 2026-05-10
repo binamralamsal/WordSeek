@@ -1,16 +1,37 @@
 # WordSeek
 <img width="1173" alt="Group 40 5" src="https://github.com/user-attachments/assets/bf444d36-2eea-4ad5-83e7-4a99acda2bfe" />
 
+## Tech Stack
+
+<p align="left">
+  <a href="https://bun.sh"><img src="https://skillicons.dev/icons?i=bun" height="40" alt="bun logo"  /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://skillicons.dev/icons?i=ts" height="40" alt="typescript logo"  /></a>
+  <a href="https://grammy.dev/"><img src="https://raw.githubusercontent.com/grammyjs/website/main/logos/grammY.png" height="40" alt="grammy logo"  /></a>
+  <a href="https://www.postgresql.org/"><img src="https://skillicons.dev/icons?i=postgres" height="40" alt="postgresql logo"  /></a>
+  <a href="https://redis.io/"><img src="https://skillicons.dev/icons?i=redis" height="40" alt="redis logo"  /></a>
+  <a href="https://zod.dev/"><img src="https://skillicons.dev/icons?i=zod" height="40" alt="zod logo"  /></a>
+</p>
+
+- **[grammY](https://grammy.dev/)** - Telegram Bot Framework
+- **[Kysely](https://kysely.dev/)** - Type-safe SQL query builder
+- **[PostgreSQL](https://www.postgresql.org/)** - Relational database
+- **[Redis](https://redis.io/)** & **[BullMQ](https://docs.bullmq.io/)** - Caching and job queues
+- **[Bun.js](https://bun.sh/)** - JavaScript runtime & package manager
+- **[Zod](https://zod.dev/)** - Schema validation and type safety
+
 ## Features
 - Play the Wordle-inspired word guessing game in private chats or group chats.
-- Supports multiplayer gameplay in groups, with admin tools for game management.
+- Multiple word length modes (4, 5, or 6-letter words).
+- Play the **Daily WordSeek** mode in private chats.
+- Supports multiplayer gameplay in groups, with advanced admin tools for game management.
+- Set up dedicated forum topics for games using Game Topic settings.
 - Keep track of scores with group and global leaderboards.
 - Commands to view personal scores and leaderboard rankings filtered by time (today, week, month, etc.).
 - Flexible game settings: customizable limits for attempts and group admin permissions.
 
 ## How to Play
 1. **Start a game**: Use the `/new` command in a group or private chat.
-2. **Guess the word**: Players try to guess a random 5-letter word.
+2. **Guess the word**: Players try to guess a random hidden word.
 3. **Hints after each guess**:
    - 🟩 - Correct letter in the right spot.
    - 🟨 - Correct letter in the wrong spot.
@@ -21,19 +42,100 @@
 5. The first person to guess the word correctly wins!
 
 ## Commands
-- **/new** - Start a new game.
-- **/end** - End the current game (admins only in group chats).
-- **/help** - Get help with commands and game rules.
-- **/leaderboard** - View leaderboards for the group or globally. Example:
-  ```
-  /leaderboard global week
-  ```
-- **/score** - View your score. Example:
-  ```
-  /score group all
-  /score @username group
-  ```
-- **/stats** - View bot usage stats (admin users only).
+
+### Basic Commands
+- **/new** - Start a new game (default 5 letters).
+- **/new4** - Start a 4-letter game.
+- **/new5** - Start a 5-letter game.
+- **/new6** - Start a 6-letter game.
+- **/end** - End the current game (voting or admin only).
+- **/help** - Show the help menu.
+- **/daily** - Play Daily WordSeek (private chat only).
+- **/pausedaily** - Pause Daily mode and go back to normal games.
+
+### Leaderboard & Scores
+- **/leaderboard** - View leaderboards. Syntax: `/leaderboard [scope] [period] [length]`
+  Example: `/leaderboard global week 6`
+- **/score** - View your score or someone else's. Syntax: `/score [target] [scope] [period] [length]`
+  Example: `/score @username global all 4`
+
+### Group Settings (Admin Only)
+- **/seekauth** - Manage users who can end games without a vote.
+- **/setgametopic** - Restrict games to specific topics (in forum groups).
+- **/unsetgametopic** - Remove topic restriction.
+- **/allowonlylen** - Restrict allowed word lengths in a topic (e.g., `/allowonlylen 5 6`).
+- **/recreatetopic** - Auto-recreate topic when it expires.
+
+### Bot Admin Commands (Owner Only)
+- **/ban** & **/unban** - Manage user bans globally.
+- **/stats** - View bot usage statistics.
+- **/transfer** - Transfer scores between users.
+- **/broadcast** - Broadcast a message to all chats.
+- **/track**, **/untrack**, **/tracklist** - Manage tracking for chats (to detect cheaters).
+
+## Deployment
+
+### Deploy to Heroku
+
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/binamralamsal/WordSeek)
+
+If you prefer to deploy manually using the Heroku CLI:
+
+1. Clone this repository and navigate to the directory:
+   ```bash
+   git clone https://github.com/binamralamsal/WordSeek
+   cd WordSeek
+   ```
+2. Login to Heroku and create a new container-based app:
+   ```bash
+   heroku login
+   heroku create your-app-name --manifest
+   ```
+3. Provision the required PostgreSQL and Redis add-ons:
+   ```bash
+   heroku addons:create heroku-postgresql:mini
+   heroku addons:create heroku-redis:mini
+   ```
+4. Set the necessary environment variables:
+   ```bash
+   heroku config:set BOT_TOKEN=your_bot_token
+   heroku config:set DAILY_WORDLE_SECRET=your_random_secret_string
+   heroku config:set NODE_ENV=production
+   heroku config:set UPDATES_CHANNEL=https://t.me/YourChannel
+   heroku config:set DISCUSSION_GROUP=https://t.me/YourGroup
+   # Ensure REDIS_URI matches the provided REDIS_URL from the add-on
+   heroku config:set REDIS_URI=$(heroku config:get REDIS_URL)
+   ```
+5. Deploy the application:
+   ```bash
+   git push heroku main
+   ```
+6. Scale the worker dyno to start the bot:
+   ```bash
+   heroku ps:scale worker=1
+   ```
+
+### Deploy using Docker
+
+1. **Build the Docker image**:
+   ```bash
+   docker build -t wordseek-bot .
+   ```
+
+2. **Run the container**:
+   Ensure you have PostgreSQL and Redis running, then run the container with your environment variables:
+   ```bash
+   docker run -d \
+     --name wordseek \
+     -e BOT_TOKEN=your_bot_token \
+     -e DATABASE_URL=postgresql://user:pass@host:5432/db \
+     -e REDIS_URI=redis://host:6379 \
+     -e DAILY_WORDLE_SECRET=your_secret \
+     -e ADMIN_USERS=your_id \
+     wordseek-bot
+   ```
+
+   *Note: If running databases in other containers, ensure they are on the same network or use the appropriate host address.*
 
 ## Installation & Setup
 
@@ -41,7 +143,7 @@
 - Bun.js Runtime (or Node.js)
 - Telegram Bot Token (create one via [BotFather](https://core.telegram.org/bots#botfather))
 - PostgreSQL database
-- Redis server (for caching and session management)
+- Redis server (for caching, session management, and job queues)
 
 ### Steps
 1. **Clone the repository**:
@@ -60,14 +162,19 @@
    ```env
    BOT_TOKEN=your-telegram-bot-token
    DATABASE_URL=your-postgresql-database-url
+   DAILY_WORDLE_SECRET=your-random-secret-string
    NODE_ENV=development
    REDIS_URI=redis://127.0.0.1:6379
+   ADMIN_USERS=your-telegram-user-id
+   TIME_ZONE=UTC
+   UPDATES_CHANNEL=https://t.me/YourChannel
+   DISCUSSION_GROUP=https://t.me/YourGroup
    ```
 
 4. **Set up the database**:
    Run the database migrations to set up the required tables:
    ```bash
-   bun run db:migrate latest
+   bun run db:migrate
    ```
 
 5. **Start the bot**:
@@ -81,27 +188,15 @@
      ```
 
 ### Additional Database Commands
-- **Create new migrations** (after schema changes):
+- **Seed the database**:
   ```bash
-  bun run db:migrate make migration-name
+  bun run db:seed
+  ```
+- **Generate types for database schemas**:
+  ```bash
+  bun run db:codegen
   ```
 
-## Environment Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `BOT_TOKEN` | Your Telegram bot token from BotFather | `123456789:ABCdefGHIjklMNOpqrsTUVwxyz` |
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:password@localhost:5432/wordseek` |
-| `NODE_ENV` | Environment mode | `development` or `production` |
-| `REDIS_URI` | Redis connection string | `redis://127.0.0.1:6379` |
-
-## Technologies Used
-- **[grammy](https://grammy.dev/)**: Telegram Bot API framework.
-- **Drizzle ORM**: Simplified database queries and migrations.
-- **PostgreSQL**: Persistent storage for game data and leaderboards.
-- **Redis**: Caching and session management.
-- **Bun.js**: Blazing fast JavaScript runtime and package manager.
-- **Zod**: Schema validation and type safety.
 
 ## Try the Bot
 - **[WordSeek I](https://t.me/WordSeekBot)** *(Main bot)*

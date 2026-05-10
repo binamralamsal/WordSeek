@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowJs": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*", "kysely.config.ts", "drizzle.config.ts"]
+}

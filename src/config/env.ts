@@ -33,5 +33,13 @@ export const env = z
       .transform((val) => val.split(" ").filter(Boolean))
       .optional()
       .default([]),
+    UPDATES_CHANNEL: z
+      .string()
+      .url()
+      .default("https://t.me/WordSeek"),
+    DISCUSSION_GROUP: z
+      .string()
+      .url()
+      .default("https://t.me/WordGuesser"),
   })
   .parse(process.env);

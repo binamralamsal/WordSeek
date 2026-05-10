@@ -8,7 +8,6 @@ release:
     - bun
     - run
     - db:migrate
-    - latest
 
 run:
   worker: bun run src/index.ts

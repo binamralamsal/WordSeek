@@ -1,0 +1,55 @@
+{
+  "name": "WordSeek",
+  "description": "A fun and competitive Wordle-style game for Telegram",
+  "repository": "https://github.com/binamralamsal/WordSeek",
+  "logo": "https://github.com/user-attachments/assets/bf444d36-2eea-4ad5-83e7-4a99acda2bfe",
+  "keywords": [
+    "telegram",
+    "bot",
+    "wordle",
+    "game",
+    "wordseek",
+    "word game",
+    "grammyjs",
+    "typescript",
+    "binamra",
+    "postgres",
+    "redis"
+  ],
+  "env": {
+    "BOT_TOKEN": {
+      "description": "Your Telegram Bot Token from @BotFather",
+      "required": true
+    },
+    "DAILY_WORDLE_SECRET": {
+      "description": "Secret key for generating daily wordles",
+      "generator": "secret"
+    },
+    "NODE_ENV": {
+      "description": "Environment setting",
+      "value": "production"
+    },
+    "ADMIN_USERS": {
+      "description": "Telegram User IDs of bot admins (comma-separated)",
+      "required": true,
+      "example": "123456789,987654321"
+    },
+    "TIME_ZONE": {
+      "description": "Timezone for daily reset",
+      "value": "UTC"
+    },
+    "UPDATES_CHANNEL": {
+      "description": "Link to the updates channel",
+      "value": "https://t.me/WordSeek"
+    },
+    "DISCUSSION_GROUP": {
+      "description": "Link to the discussion group",
+      "value": "https://t.me/WordGuesser"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "https://github.com/bisug/heroku-buildpack-bun"
+    }
+  ]
+}
