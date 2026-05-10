@@ -4,6 +4,7 @@ import {
   Kysely,
   PostgresDialect,
 } from "kysely";
+import type { LogEvent } from "kysely";
 import pg from "pg";
 
 import type { DB } from "../database-schemas";
@@ -11,7 +12,7 @@ import { env } from "./env";
 
 const { Pool } = pg;
 
-// treats as `verify-full`, overriding any ssl option we pass. Strip it from the URL
+// Strip sslmode from the URL
 // so our explicit ssl config is the only one pg sees.
 function getDbConnectionString() {
   try {
@@ -33,7 +34,7 @@ const dialect = new PostgresDialect({
 
 export const db = new Kysely<DB>({
   dialect,
-  log: (event) => {
+  log: (event: LogEvent) => {
     if (env.NODE_ENV === "development") {
       if (event.level === "query") {
         console.log("SQL:", event.query.sql);
