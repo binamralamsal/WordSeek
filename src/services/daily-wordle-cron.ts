@@ -13,11 +13,11 @@ const keyManager = new APIKeyManager();
 keyManager.initialize();
 
 const FREE_MODELS = [
-  "gemini-3-flash-preview",
+  "gemini-3.1-flash",
+  "gemini-3.1-flash-lite",
+  "gemini-3-flash",
   "gemini-2.5-flash",
   "gemini-2.5-pro",
-  "gemini-2.5-flash-preview-09-2025",
-  "gemini-2.0-flash",
 ];
 
 const allowedTags = ["b", "i", "u"];

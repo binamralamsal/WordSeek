@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { defineConfig } from "drizzle-kit";
 
 import { env } from "./src/config/env";

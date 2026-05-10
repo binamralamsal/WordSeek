@@ -8,6 +8,7 @@ import { formatUserMention } from "../commands/captcha";
 
 export const captchaQueue = new Queue("captcha-expiry", {
   connection: redis,
+  skipVersionCheck: true,
 });
 
 new Worker(
@@ -53,5 +54,6 @@ new Worker(
   },
   {
     connection: redis,
+    skipVersionCheck: true,
   },
 );

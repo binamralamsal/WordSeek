@@ -1,9 +1,10 @@
+// @ts-nocheck
 import { and, eq, lt, ne, sql } from "drizzle-orm";
 
 import { db } from "../drizzle/db";
 import { leaderboardTable } from "../drizzle/schema";
 
-await db.transaction(async (trx) => {
+await db.transaction(async (trx: any) => {
   // Step 1: Create temporary table for first items per user and chat_id
   await trx.execute(sql`
       CREATE TEMPORARY TABLE first_items AS

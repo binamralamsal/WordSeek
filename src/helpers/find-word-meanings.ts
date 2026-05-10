@@ -25,7 +25,7 @@ async function fetchWordDetails(word: string) {
       example: example,
     };
   } catch (error) {
-    console.error(`Error fetching details for ${word}:`, error.message);
+    console.error(`Error fetching details for ${word}:`, (error as any).message);
     return {
       meaning: "",
       pronunciation: "",
@@ -41,7 +41,7 @@ async function delay(ms: number) {
 async function processWords() {
   try {
     const words = JSON.parse(await fs.readFile(inputFilePath, "utf-8"));
-    let result = {};
+    let result: Record<string, any> = {};
 
     try {
       result = JSON.parse(await fs.readFile(outputFilePath, "utf-8"));
