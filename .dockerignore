@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+
+# Env files (never send secrets to Docker build context)
+.env
+.env.*
+!.env.example
+
+# Dev tooling / configs not needed at runtime
+.prettierrc
+vercel.json
+drizzle.config.ts
+README.md
+LICENSE
+
+# Logs
+logs/
+*.log
+
+# Local node_modules (will be installed fresh in Docker)
+node_modules/
+
+# Bun lock (copied explicitly in Dockerfile)
+# bun.lockb is included — do NOT ignore it
+
+# OS artifacts
+.DS_Store
+Thumbs.db

@@ -1,0 +1,13 @@
+build:
+  docker:
+    worker: Dockerfile
+
+release:
+  image: worker
+  command:
+    - bun
+    - run
+    - db:migrate
+
+run:
+  worker: bun run src/index.ts
