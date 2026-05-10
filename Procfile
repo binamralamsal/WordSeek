@@ -1,2 +1,1 @@
-worker: bun run start
-release: bun run db:migrate latest
+worker: bun run src/index.ts
