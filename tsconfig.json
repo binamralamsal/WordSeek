@@ -15,5 +15,5 @@
     },
     "jsx": "react-jsx"
   },
-  "include": ["src/**/*", "kysely.config.ts", "drizzle.config.ts"]
+  "include": ["src/**/*", "migrations/**/*", "kysely.config.ts", "drizzle.config.ts"]
 }
