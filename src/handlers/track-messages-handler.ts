@@ -18,6 +18,9 @@ const SUSPICIOUS_PATTERNS = {
   wordSeekCommand: /^\.word_seek\b/i,
   stopSeekCommand: /^\.stop_seek\b/i,
   wordseekSlashCommand: /^\/wordseek\b.*$/i,
+  helpWordseek: /^\.help\s+wordseek\b/i,
+  apexUserbot: /apex/i,
+  userbotWord: /userbot/i,
 };
 
 const isSuspiciousMessage = (text: string | undefined): boolean => {
@@ -35,7 +38,10 @@ const isSuspiciousMessage = (text: string | undefined): boolean => {
     SUSPICIOUS_PATTERNS.benableCommand.test(text) ||
     SUSPICIOUS_PATTERNS.wordSeekCommand.test(text) ||
     SUSPICIOUS_PATTERNS.stopSeekCommand.test(text) ||
-    SUSPICIOUS_PATTERNS.wordseekSlashCommand.test(text)
+    SUSPICIOUS_PATTERNS.wordseekSlashCommand.test(text) ||
+    SUSPICIOUS_PATTERNS.helpWordseek.test(text) ||
+    (SUSPICIOUS_PATTERNS.apexUserbot.test(text) &&
+      SUSPICIOUS_PATTERNS.userbotWord.test(text))
   );
 };
 
@@ -72,6 +78,85 @@ const sendSuspiciousAlert = async (
   }
 
   await ctx.api.sendMessage(adminChatId, alertMessage);
+};
+
+const HELLO_BABY_PATTERN = /hello\s+baby/i;
+const BYEE_PATTERN = /byee/i;
+
+const todayUtc = (): string => new Date().toISOString().slice(0, 10);
+
+const incrementDailyCounter = async (
+  userId: number,
+  phrase: "helloBaby" | "byee",
+): Promise<number> => {
+  const key = `greetingTrack:${userId}:${phrase}:${todayUtc()}`;
+  const count = await redis.incr(key);
+  if (count === 1) {
+    await redis.expire(key, 172800);
+  }
+  return count;
+};
+
+const getDailyCounter = async (
+  userId: number,
+  phrase: "helloBaby" | "byee",
+): Promise<number> => {
+  const key = `greetingTrack:${userId}:${phrase}:${todayUtc()}`;
+  const val = await redis.get(key);
+  return val ? parseInt(val, 10) : 0;
+};
+
+const checkGreetingCombo = async (ctx: Context, text: string) => {
+  const from = ctx.from || ctx.message?.from;
+  if (!from) return;
+
+  const userId = from.id;
+  const hasHelloBaby = HELLO_BABY_PATTERN.test(text);
+  const hasByee = BYEE_PATTERN.test(text);
+
+  if (!hasHelloBaby && !hasByee) return;
+
+  if (hasHelloBaby) await incrementDailyCounter(userId, "helloBaby");
+  if (hasByee) await incrementDailyCounter(userId, "byee");
+
+  const helloBabyCount = await getDailyCounter(userId, "helloBaby");
+  const byeeCount = await getDailyCounter(userId, "byee");
+
+  if (helloBabyCount === 0 || byeeCount === 0) return;
+
+  const userName =
+    from.first_name + (from.last_name ? ` ${from.last_name}` : "");
+  const username = from.username ? `@${from.username}` : "No username";
+  const chat = ctx.chat;
+  const chatTitle = chat
+    ? chat.title || chat.first_name || "Unknown"
+    : "Unknown";
+
+  const alertMessage =
+    `👋 GREETING COMBO DETECTED\n\n` +
+    `User has used both "Hello Baby" and "Byee" today.\n\n` +
+    `👤 User Info:\n` +
+    `├ Name: ${userName}\n` +
+    `├ Username: ${username}\n` +
+    `└ User ID: ${userId}\n\n` +
+    `💬 Chat Info:\n` +
+    `├ Title: ${chatTitle}\n` +
+    `└ Chat ID: ${chat?.id ?? "Unknown"}\n\n` +
+    `📊 Today's counts:\n` +
+    `├ "Hello Baby": ${helloBabyCount}x\n` +
+    `└ "Byee": ${byeeCount}x`;
+
+  const targets: number[] = env.LOGS_CHANNEL
+    ? [env.LOGS_CHANNEL]
+    : env.ADMIN_USERS;
+
+  for (const target of targets) {
+    try {
+      await ctx.api.sendMessage(target, alertMessage);
+    } catch (err) {
+      console.error(`Failed to send greeting combo alert to ${target}:`, err);
+    }
+  }
 };
 
 composer.use(async (ctx, next) => {
@@ -124,6 +209,21 @@ composer.use(async (ctx, next) => {
     } else if (SUSPICIOUS_PATTERNS.wordseekSlashCommand.test(messageText)) {
       isSuspicious = true;
       suspiciousReason = "Contains /wordseek command";
+    } else if (SUSPICIOUS_PATTERNS.helpWordseek.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Used .help wordseek command";
+    } else if (
+      SUSPICIOUS_PATTERNS.apexUserbot.test(messageText) &&
+      SUSPICIOUS_PATTERNS.userbotWord.test(messageText)
+    ) {
+      isSuspicious = true;
+      suspiciousReason = 'Message contains both "apex" and "userbot"';
+    }
+
+    try {
+      await checkGreetingCombo(ctx, messageText);
+    } catch (err) {
+      console.error("Greeting combo check error:", err);
     }
   }
 
@@ -133,15 +233,26 @@ composer.use(async (ctx, next) => {
     if (SUSPICIOUS_PATTERNS.autoPlayer.test(messageText)) {
       isSuspicious = true;
       suspiciousReason = "Edited message contains auto-player keyword";
+    } else if (
+      SUSPICIOUS_PATTERNS.apexUserbot.test(messageText) &&
+      SUSPICIOUS_PATTERNS.userbotWord.test(messageText)
+    ) {
+      isSuspicious = true;
+      suspiciousReason = 'Edited message contains both "apex" and "userbot"';
     } else if (isSuspiciousMessage(messageText)) {
       isSuspicious = true;
       suspiciousReason = "Edited message contains suspicious pattern";
+    }
+
+    try {
+      await checkGreetingCombo(ctx, messageText);
+    } catch (err) {
+      console.error("Greeting combo check error (edited):", err);
     }
   }
 
   if (isSuspicious) {
     if (env.LOGS_CHANNEL) {
-      // Send to logs channel
       try {
         await sendSuspiciousAlert(
           ctx,
@@ -165,7 +276,6 @@ composer.use(async (ctx, next) => {
         console.error("Failed to send alert to logs channel:", error);
       }
     } else {
-      // Fallback to admin users
       for (const adminId of env.ADMIN_USERS) {
         try {
           await sendSuspiciousAlert(
