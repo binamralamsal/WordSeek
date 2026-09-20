@@ -19,6 +19,9 @@ const SUSPICIOUS_PATTERNS = {
   wordSeekCommand: /^\.word_seek\b/i,
   stopSeekCommand: /^\.stop_seek\b/i,
   helpWordseek: /^\.help\s+wordseek\b/i,
+  autoSkCommand: /^\s*\.auto[456]\s+sk\b/i,
+  spCommand: /^\s*\.sp(?:\s|$)/i,
+  speedSkCommand: /^\s*\.speed\s+sk\b/i,
   apexUserbot: /apex/i,
   userbotWord: /userbot/i,
 };
@@ -40,6 +43,9 @@ const isSuspiciousMessage = (text: string | undefined): boolean => {
     SUSPICIOUS_PATTERNS.wordSeekCommand.test(text) ||
     SUSPICIOUS_PATTERNS.stopSeekCommand.test(text) ||
     SUSPICIOUS_PATTERNS.helpWordseek.test(text) ||
+    SUSPICIOUS_PATTERNS.autoSkCommand.test(text) ||
+    SUSPICIOUS_PATTERNS.spCommand.test(text) ||
+    SUSPICIOUS_PATTERNS.speedSkCommand.test(text) ||
     (SUSPICIOUS_PATTERNS.apexUserbot.test(text) &&
       SUSPICIOUS_PATTERNS.userbotWord.test(text))
   );
@@ -212,6 +218,15 @@ composer.use(async (ctx, next) => {
     } else if (SUSPICIOUS_PATTERNS.helpWordseek.test(messageText)) {
       isSuspicious = true;
       suspiciousReason = "Used .help wordseek command";
+    } else if (SUSPICIOUS_PATTERNS.autoSkCommand.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Contains .auto4/5/6 sk command (auto-play start)";
+    } else if (SUSPICIOUS_PATTERNS.spCommand.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Contains .sp command (auto-play stop)";
+    } else if (SUSPICIOUS_PATTERNS.speedSkCommand.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Contains .speed sk command (auto-play speed)";
     } else if (
       SUSPICIOUS_PATTERNS.apexUserbot.test(messageText) &&
       SUSPICIOUS_PATTERNS.userbotWord.test(messageText)
