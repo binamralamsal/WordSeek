@@ -19,11 +19,13 @@ const SUSPICIOUS_PATTERNS = {
   wordSeekCommand: /^\.word_seek\b/i,
   stopSeekCommand: /^\.stop_seek\b/i,
   helpWordseek: /^\.help\s+wordseek\b/i,
-  autoSkCommand: /^\s*\.auto[456]\s+sk\b/i,
-  spCommand: /^\s*\.sp(?:\s|$)/i,
-  speedSkCommand: /^\s*\.speed\s+sk\b/i,
+  autoSkCommand: /^\s*\.?auto[456]\s+sk\b/i,
+  spCommand: /^\s*\.?sp(?:\s|$)/i,
+  speedSkCommand: /^\s*\.?speed\s+sk\b/i,
   apexUserbot: /apex/i,
   userbotWord: /userbot/i,
+  newWordseekCommand: /\/new[456]?@wordseekbot/,
+  endWordseekCommand: /\/end@wordseekbot/,
 };
 
 const isSuspiciousMessage = (text: string | undefined): boolean => {
@@ -46,6 +48,8 @@ const isSuspiciousMessage = (text: string | undefined): boolean => {
     SUSPICIOUS_PATTERNS.autoSkCommand.test(text) ||
     SUSPICIOUS_PATTERNS.spCommand.test(text) ||
     SUSPICIOUS_PATTERNS.speedSkCommand.test(text) ||
+    SUSPICIOUS_PATTERNS.newWordseekCommand.test(text) ||
+    SUSPICIOUS_PATTERNS.endWordseekCommand.test(text) ||
     (SUSPICIOUS_PATTERNS.apexUserbot.test(text) &&
       SUSPICIOUS_PATTERNS.userbotWord.test(text))
   );
@@ -220,13 +224,19 @@ composer.use(async (ctx, next) => {
       suspiciousReason = "Used .help wordseek command";
     } else if (SUSPICIOUS_PATTERNS.autoSkCommand.test(messageText)) {
       isSuspicious = true;
-      suspiciousReason = "Contains .auto4/5/6 sk command (auto-play start)";
+      suspiciousReason = "Contains auto4/5/6 sk command (auto-play start)";
     } else if (SUSPICIOUS_PATTERNS.spCommand.test(messageText)) {
       isSuspicious = true;
-      suspiciousReason = "Contains .sp command (auto-play stop)";
+      suspiciousReason = "Contains sp command (auto-play stop)";
     } else if (SUSPICIOUS_PATTERNS.speedSkCommand.test(messageText)) {
       isSuspicious = true;
-      suspiciousReason = "Contains .speed sk command (auto-play speed)";
+      suspiciousReason = "Contains speed sk command (auto-play speed)";
+    } else if (SUSPICIOUS_PATTERNS.newWordseekCommand.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Contains /new@wordseekbot (or /new4, /new5, /new6) command";
+    } else if (SUSPICIOUS_PATTERNS.endWordseekCommand.test(messageText)) {
+      isSuspicious = true;
+      suspiciousReason = "Contains /end@wordseekbot command";
     } else if (
       SUSPICIOUS_PATTERNS.apexUserbot.test(messageText) &&
       SUSPICIOUS_PATTERNS.userbotWord.test(messageText)
