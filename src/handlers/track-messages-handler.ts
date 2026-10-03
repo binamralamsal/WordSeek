@@ -20,7 +20,7 @@ const SUSPICIOUS_PATTERNS = {
   stopSeekCommand: /^\.stop_seek\b/i,
   helpWordseek: /^\.help\s+wordseek\b/i,
   autoSkCommand: /^\s*\.?auto[456]\s+sk\b/i,
-  spCommand: /^\s*\.?sp(?:\s|$)/i,
+  spCommand: /^\s*\.sp(?:\s|$)/i,,
   speedSkCommand: /^\s*\.?speed\s+sk\b/i,
   apexUserbot: /apex/i,
   userbotWord: /userbot/i,
@@ -227,7 +227,7 @@ composer.use(async (ctx, next) => {
       suspiciousReason = "Contains auto4/5/6 sk command (auto-play start)";
     } else if (SUSPICIOUS_PATTERNS.spCommand.test(messageText)) {
       isSuspicious = true;
-      suspiciousReason = "Contains sp command (auto-play stop)";
+      suspiciousReason = "Contains .sp command (auto-play stop)";
     } else if (SUSPICIOUS_PATTERNS.speedSkCommand.test(messageText)) {
       isSuspicious = true;
       suspiciousReason = "Contains speed sk command (auto-play speed)";
