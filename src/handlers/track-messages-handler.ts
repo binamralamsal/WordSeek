@@ -20,7 +20,7 @@ const SUSPICIOUS_PATTERNS = {
   stopSeekCommand: /^\.stop_seek\b/i,
   helpWordseek: /^\.help\s+wordseek\b/i,
   autoSkCommand: /^\s*\.?auto[456]\s+sk\b/i,
-  spCommand: /^\s*\.sp(?:\s|$)/i,,
+  spCommand: /^\s*\.sp(?:\s|$)/i,
   speedSkCommand: /^\s*\.?speed\s+sk\b/i,
   apexUserbot: /apex/i,
   userbotWord: /userbot/i,
