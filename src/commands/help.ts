@@ -90,8 +90,8 @@ export function getMainHelpKeyboard(
 
 const EXAMPLE_STYLE: Record<LetterState, string> = {
   correct: ` style="success"`, // green
-  present: ` style="danger"`, // red
-  absent: "", // default
+  present: "", // default
+  absent: ` style="danger"`, // red
 };
 
 // Same buttons and callback data as in a real game, so tapping explains them
@@ -115,9 +115,9 @@ export function getHowToPlayMessage() {
 
 <h4>Reading the colors</h4>
 <p>${exampleButton("correct", "S")} <b>Green</b>: right letter, right spot</p>
-<p>${exampleButton("present", "T")} <b>Red</b>: right letter, wrong spot</p>
-<p>${exampleButton("absent", "X")} <b>No color</b>: letter isn't in the word</p>
-<p><i>Tap any letter button to see what it means.</i></p>
+<p>${exampleButton("present", "T")} <b>No color</b>: right letter, wrong spot</p>
+<p>${exampleButton("absent", "X")} <b>Red</b>: letter isn't in the word</p>
+<p><i>Tap any letter button to see what it means. The no color button follows your Telegram theme.</i></p>
 
 <p><b>Example guess:</b></p>
 <p>${exampleButton("correct", "S")}${exampleButton("present", "T")}${exampleButton("absent", "A")}${exampleButton("absent", "R")}${exampleButton("correct", "E")}</p>
