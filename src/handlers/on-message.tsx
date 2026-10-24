@@ -175,12 +175,9 @@ composer.on("message:text", async (ctx) => {
   }
 
   const modeLabel = MODE_LABEL[wordLength];
-  let responseMessage =
-    `<i>${modeLabel} · ${allGuesses.length}/30</i>\n\n` +
-    toFancyText(getFeedback(allGuesses, currentGame.word));
 
-  ctx.reply(responseMessage, {
-    parse_mode: "HTML",
+  await ctx.replyWithRichMessage({
+    html: buildRichFeedback(allGuesses, currentGame.word, modeLabel),
   });
 });
 
@@ -430,36 +427,73 @@ interface GuessEntry {
   updatedAt: Date;
 }
 
-function getFeedback(data: GuessEntry[], solution: string) {
-  return data
-    .map((entry) => {
-      let feedback = "";
-      const guess = entry.guess.toUpperCase();
-      const solutionCount: Record<string, number> = {};
+type LetterState = "correct" | "present" | "absent";
 
-      for (const char of solution.toUpperCase()) {
-        solutionCount[char] = (solutionCount[char] || 0) + 1;
-      }
+const BUTTON_STYLE: Record<LetterState, string | null> = {
+  correct: "success",
+  present: null,
+  absent: "danger",
+};
 
-      const result = Array(guess.length).fill("🟥");
-      for (let i = 0; i < guess.length; i++) {
-        if (guess[i] === solution[i].toUpperCase()) {
-          result[i] = "🟩";
-          solutionCount[guess[i]]--;
-        }
-      }
+const HINT_TEXT: Record<LetterState, (letter: string) => string> = {
+  correct: (l) => `🟩 "${l}" is in the word and in the right spot.`,
+  present: (l) => `🟨 "${l}" is in the word, but in a different spot.`,
+  absent: (l) => `🟥 "${l}" isn't in the word.`,
+};
 
-      for (let i = 0; i < guess.length; i++) {
-        if (result[i] === "🟥" && solutionCount[guess[i]] > 0) {
-          result[i] = "🟨";
-          solutionCount[guess[i]]--;
-        }
-      }
+const VISIBLE_ROWS = 6;
 
-      feedback = result.join(" ");
-      return `${feedback} ${guess}`;
+function evaluateGuess(guess: string, solution: string): LetterState[] {
+  const g = guess.toUpperCase();
+  const s = solution.toUpperCase();
+
+  const remaining: Record<string, number> = {};
+  for (const c of s) remaining[c] = (remaining[c] || 0) + 1;
+
+  const result: LetterState[] = Array(g.length).fill("absent");
+
+  for (let i = 0; i < g.length; i++) {
+    if (g[i] === s[i]) {
+      result[i] = "correct";
+      remaining[g[i]]--;
+    }
+  }
+
+  for (let i = 0; i < g.length; i++) {
+    if (result[i] === "absent" && remaining[g[i]] > 0) {
+      result[i] = "present";
+      remaining[g[i]]--;
+    }
+  }
+
+  return result;
+}
+
+function renderGuessRow(guess: string, solution: string): string {
+  const states = evaluateGuess(guess, solution);
+
+  const buttons = guess
+    .toUpperCase()
+    .split("")
+    .map((letter, i) => {
+      const state = states[i];
+      const style = BUTTON_STYLE[state];
+      const styleAttr = style ? ` style="${style}"` : "";
+      return `<tg-button type="callback_data"${styleAttr} data="wh:${state}:${letter}">${letter}</tg-button>`;
     })
-    .join("\n");
+    .join("");
+
+  return `<p>${buttons}</p>`;
+}
+
+function buildRichFeedback(
+  guesses: GuessEntry[],
+  solution: string,
+  modeLabel: string,
+): string {
+  const rows = guesses.map((g) => renderGuessRow(g.guess, solution)).join("");
+
+  return `<h3>${modeLabel}</h3><p><i>${guesses.length}/30 guesses</i></p>${rows}`;
 }
 
 export async function generateWordleImage(

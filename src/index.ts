@@ -19,6 +19,16 @@ import {
   ensureDailyWordExists,
 } from "./services/daily-wordle-cron";
 
+// bot.on(":text", async (ctx) => {
+//   await ctx.replyWithRichMessage({
+//     html: `<blockquote>
+//     <ul>
+//       <li>Help</li>
+//     </ul>
+//     </blockquote>`,
+//   });
+// });
+
 bot.api.config.use(autoRetry());
 bot.use(userAndChatSyncHandler);
 bot.use(topicEditedHandler);

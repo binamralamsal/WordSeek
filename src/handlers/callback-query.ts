@@ -40,7 +40,19 @@ import {
 const composer = new Composer();
 
 composer.on("callback_query:data", async (ctx) => {
-  condition: if (ctx.callbackQuery.data.startsWith("leaderboard")) {
+  condition: if (ctx.callbackQuery.data.startsWith("wh:")) {
+    const [, state, letter] = ctx.callbackQuery.data.split(":");
+
+    const hints: Record<string, string> = {
+      correct: `🟩 "${letter}" is in the word and in the right spot.`,
+      present: `🟨 "${letter}" is in the word, but in a different spot.`,
+      absent: `🟥 "${letter}" isn't in the word.`,
+    };
+
+    return ctx.answerCallbackQuery({
+      text: hints[state] ?? "Unknown hint.",
+    });
+  } else if (ctx.callbackQuery.data.startsWith("leaderboard")) {
     const [, searchKey, timeKey, wordLength] =
       ctx.callbackQuery.data.split(" ");
     console.log(searchKey, timeKey, wordLength);
@@ -497,24 +509,23 @@ composer.on("callback_query:data", async (ctx) => {
       activeSection,
     );
 
-    const commonOptions = {
-      parse_mode: "HTML" as const,
-      reply_markup: keyboard,
-    };
-
     try {
-      await ctx.editMessageText(message, commonOptions);
+      await ctx.editMessageText({ html: message }, { reply_markup: keyboard });
     } catch (err) {
       if (
         err instanceof GrammyError &&
-        !err.description.includes("message is not modified:")
+        !err.description.includes("message is not modified")
       ) {
         await ctx.deleteMessage();
-        await ctx.reply(message, commonOptions);
+        await ctx.replyWithRichMessage(
+          { html: message },
+          { reply_markup: keyboard },
+        );
       }
     }
 
     await ctx.answerCallbackQuery();
+    return;
   } else if (ctx.callbackQuery.data.startsWith("captcha_")) {
     const data = ctx.callbackQuery.data;
     const userId = ctx.from.id.toString();
