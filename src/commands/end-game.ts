@@ -62,23 +62,14 @@ composer.command("end", async (ctx) => {
   if (!currentGame) return ctx.reply("There is no game in progress.");
 
   const userId = ctx.from.id.toString();
-  const isPrivate = ctx.chat.type === "private";
+  const chatMember = await ctx.getChatMember(parseInt(userId));
 
-  let isAdmin = false;
-  if (!isPrivate) {
-    try {
-      const chatMember = await ctx.getChatMember(ctx.from.id);
-      isAdmin =
-        chatMember.status === "administrator" ||
-        chatMember.status === "creator";
-    } catch {
-      isAdmin = false;
-    }
-  }
-
+  const isAdmin =
+    chatMember.status === "administrator" || chatMember.status === "creator";
   const isSystemAdmin = env.ADMIN_USERS.includes(ctx.from.id);
   const isGameStarter = currentGame.startedBy === userId;
   const isAuthorized = await isUserAuthorized(userId, chatId.toString());
+  const isPrivate = ctx.chat.type === "private";
 
   const isPermitted =
     isAdmin || isSystemAdmin || isGameStarter || isAuthorized || isPrivate;
