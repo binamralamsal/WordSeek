@@ -6,6 +6,7 @@ import z from "zod";
 import sharp from "sharp";
 import { join } from "path";
 import satori from "satori";
+import { randomInt } from "crypto";
 import { readFile } from "fs/promises";
 
 import { db } from "../config/db";
@@ -469,6 +470,23 @@ function evaluateGuess(guess: string, solution: string): LetterState[] {
   return result;
 }
 
+const ZERO_WIDTH = [
+  "\u200B", // zero width space
+  "\u200C", // zero width non-joiner
+  "\u200D", // zero width joiner
+  "\u2060", // word joiner
+  "\uFEFF", // zero width no-break space
+];
+
+function zeroWidthNoise(min = 1, max = 6): string {
+  const count = randomInt(min, max + 1);
+  let out = "";
+  for (let i = 0; i < count; i++) {
+    out += ZERO_WIDTH[randomInt(ZERO_WIDTH.length)];
+  }
+  return out;
+}
+
 function renderGuessRow(guess: string, solution: string): string {
   const states = evaluateGuess(guess, solution);
 
@@ -479,7 +497,8 @@ function renderGuessRow(guess: string, solution: string): string {
       const state = states[i];
       const style = BUTTON_STYLE[state];
       const styleAttr = style ? ` style="${style}"` : "";
-      return `<tg-button type="callback_data"${styleAttr} data="wh:${state}:${letter}">${letter}</tg-button>`;
+      const label = `${zeroWidthNoise()}${letter}${zeroWidthNoise()}`;
+      return `<tg-button type="callback_data"${styleAttr} data="wh:${state}:${letter}">${label}</tg-button>`;
     })
     .join("");
 
