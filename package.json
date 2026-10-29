@@ -5,7 +5,8 @@
     "dev": "bun run --watch src/index.ts",
     "db:migrate": "kysely migrate",
     "db:seed": "kysely seed",
-    "db:codegen": "kysely-codegen --out-file ./src/database-schemas.ts --singularize --camel-case"
+    "db:codegen": "kysely-codegen --out-file ./src/database/schema.ts --singularize --camel-case",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",

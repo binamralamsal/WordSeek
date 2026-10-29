@@ -1,0 +1,93 @@
+import { sql } from "kysely";
+
+import { db } from "#/config/db";
+import { toDbWordLength } from "#/types";
+import type { LeaderboardPeriod, LeaderboardScope, WordLength } from "#/types";
+
+export async function getUserScores({
+  chatId,
+  searchKey,
+  userId,
+  timeKey,
+  wordLength = 5,
+}: {
+  chatId: string;
+  searchKey: LeaderboardScope;
+  userId: string;
+  timeKey: LeaderboardPeriod;
+  wordLength?: WordLength;
+}) {
+  const userQuery = db
+    .selectFrom((eb) => {
+      let innerQuery = eb
+        .selectFrom("leaderboard")
+        .where((eb) =>
+          eb.not(
+            eb.exists(
+              eb
+                .selectFrom("bannedUsers")
+                .select("userId")
+                .whereRef("bannedUsers.userId", "=", "leaderboard.userId"),
+            ),
+          ),
+        )
+        .select("leaderboard.userId")
+        .select(sql<number>`sum(leaderboard.score)`.as("totalScore"))
+        .groupBy("leaderboard.userId")
+        .select(
+          sql<number>`rank() over (order by sum(leaderboard.score) desc)`.as(
+            "rank",
+          ),
+        )
+        .where("leaderboard.wordLength", "=", toDbWordLength(wordLength));
+
+      if (searchKey === "group") {
+        innerQuery = innerQuery.where("leaderboard.chatId", "=", chatId);
+      }
+
+      if (timeKey !== "all") {
+        innerQuery = innerQuery.where((eb) => {
+          if (timeKey === "today")
+            return eb(
+              sql`date_trunc('day', ${eb.ref("leaderboard.createdAt")})`,
+              "=",
+              sql<Date>`date_trunc('day', now())`,
+            );
+          else if (timeKey === "week")
+            return eb(
+              sql`date_trunc('week', ${eb.ref("leaderboard.createdAt")})`,
+              "=",
+              sql<Date>`date_trunc('week', now())`,
+            );
+          else if (timeKey === "month")
+            return eb(
+              sql`date_trunc('month', ${eb.ref("leaderboard.createdAt")})`,
+              "=",
+              sql<Date>`date_trunc('month', now())`,
+            );
+          else
+            return eb(
+              sql`date_trunc('year', ${eb.ref("leaderboard.createdAt")})`,
+              "=",
+              sql<Date>`date_trunc('year', now())`,
+            );
+        });
+      }
+
+      return innerQuery.as("lb");
+    })
+    .innerJoin("users", "users.id", "lb.userId")
+    .leftJoin("userStats", "userStats.userId", "users.id")
+    .select([
+      "users.id",
+      "users.name",
+      "users.username",
+      "lb.totalScore",
+      "lb.rank",
+      "userStats.highestStreak",
+      "userStats.currentStreak",
+    ])
+    .where("users.id", "=", userId);
+
+  return await userQuery.executeTakeFirst();
+}

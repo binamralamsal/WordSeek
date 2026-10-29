@@ -1,28 +1,25 @@
 import { autoRetry } from "@grammyjs/auto-retry";
 import { run, sequentialize } from "@grammyjs/runner";
 
-import { bot } from "./config/bot";
-import { commands } from "./commands";
-import { captchaQueue } from "./queues/captcha-queue";
-import { errorHandler } from "./handlers/error-handler";
-import { onMessageHander } from "./handlers/on-message";
-import { CommandsHelper } from "./util/commands-helper";
-import { resumeBroadcast } from "./util/resume-broadcast";
-import { callbackQueryHandler } from "./handlers/callback-query";
-import { handleBannedUsers } from "./handlers/handle-banned-users";
-import { onBotAddedInChat } from "./handlers/on-bot-added-in-chat";
-import { topicEditedHandler } from "./handlers/topic-edited-handler";
-import { trackMessagesHandler } from "./handlers/track-messages-handler";
-import { userAndChatSyncHandler } from "./handlers/user-and-chat-sync-handler";
-import {
-  dailyWordleCron,
-  ensureDailyWordExists,
-} from "./services/daily-wordle-cron";
+import { bot } from "#/config/bot";
+import { commands } from "#/features/commands";
+import { callbacks } from "#/features/callbacks";
+import { CommandRegistry } from "#/core/command-registry";
+import { errorHandler } from "#/core/middleware/error-handler";
+import { dailyWordleCron } from "#/features/wordle/daily/cron";
+import { wordleTextHandler } from "#/features/wordle/text-handler";
+import { resumeBroadcast } from "#/features/admin/broadcast/service";
+import { bannedUsersMiddleware } from "#/core/middleware/banned-users";
+import { topicEditedMiddleware } from "#/core/middleware/topic-edited";
+import { syncUserChatMiddleware } from "#/core/middleware/sync-user-chat";
+import { botMembershipMiddleware } from "#/core/middleware/bot-membership";
+import { trackMessagesMiddleware } from "#/core/middleware/track-messages";
+import { ensureDailyWordExists } from "#/features/wordle/daily/daily-word";
 
 bot.api.config.use(autoRetry());
-bot.use(userAndChatSyncHandler);
-bot.use(topicEditedHandler);
-bot.use(trackMessagesHandler);
+bot.use(syncUserChatMiddleware);
+bot.use(topicEditedMiddleware);
+bot.use(trackMessagesMiddleware);
 
 bot.use(
   sequentialize((ctx) => {
@@ -33,12 +30,12 @@ bot.use(
   }),
 );
 
-bot.use(handleBannedUsers);
+bot.use(bannedUsersMiddleware);
 
 bot.use(commands);
-bot.use(callbackQueryHandler);
-bot.use(onMessageHander);
-bot.use(onBotAddedInChat);
+bot.use(callbacks);
+bot.use(wordleTextHandler);
+bot.use(botMembershipMiddleware);
 
 bot.catch(errorHandler);
 dailyWordleCron.start();
@@ -47,9 +44,8 @@ await ensureDailyWordExists();
 await bot.api.deleteWebhook({ drop_pending_updates: true });
 
 // Resume any pending broadcast before starting the bot
-
 run(bot);
 console.log("Bot started");
 
-await CommandsHelper.setCommands();
+await CommandRegistry.sync();
 await resumeBroadcast();
