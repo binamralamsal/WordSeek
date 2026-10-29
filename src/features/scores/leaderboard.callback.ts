@@ -2,10 +2,10 @@ import { Composer } from "grammy";
 
 import { editMessageTextSafe } from "#/core/telegram/edit-message.helper";
 
-import { getLeaderboardScores } from "./services/get-leaderboard-scores.service";
-import { formatLeaderboardMessage } from "./helpers/format-leaderboard-message.helper";
-import { generateLeaderboardKeyboard } from "./helpers/leaderboard-keyboard.helper";
 import { parseLeaderboardCallback } from "./helpers/callback-data.helper";
+import { getLeaderboardScores } from "./services/get-leaderboard-scores.service";
+import { generateLeaderboardKeyboard } from "./helpers/leaderboard-keyboard.helper";
+import { formatLeaderboardMessage } from "./helpers/format-leaderboard-message.helper";
 
 const composer = new Composer();
 

@@ -231,6 +231,8 @@ export class PipelineMock {
   }
 }
 
-export function createRedisMock(instance: RedisMock = new RedisMock()): IORedis {
+export function createRedisMock(
+  instance: RedisMock = new RedisMock(),
+): IORedis {
   return instance as unknown as IORedis;
 }

@@ -6,9 +6,13 @@ import { redis } from "#/config/redis";
 import { redisKeys } from "#/core/redis-keys.constants";
 import { formatUserMention } from "#/core/format/mention.helper";
 
-import { enqueueCaptchaExpiry } from "./captcha-queue.service";
 import { captchaSchema } from "./captcha.schema";
-import { buildCaptchaKeyboard, buildMessage, decodeSlot } from "./captcha-ui.helper";
+import { enqueueCaptchaExpiry } from "./captcha-queue.service";
+import {
+  buildCaptchaKeyboard,
+  buildMessage,
+  decodeSlot,
+} from "./captcha-ui.helper";
 
 const composer = new Composer();
 

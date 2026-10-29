@@ -7,7 +7,6 @@ import {
 } from "kysely";
 
 import type { DB } from "#/database/schema";
-
 import { createLogger } from "#/core/logging/logger.service";
 
 import { env } from "./env";

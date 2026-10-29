@@ -3,9 +3,9 @@ import { describe, expect, test } from "bun:test";
 import { redisKeys } from "#/core/redis-keys.constants";
 import { ALL_WORDS } from "#/features/wordle/shared/helpers/words.helper";
 
+import { TestBot } from "../helpers/harness";
 import { setupTestEnvironment } from "../helpers/env";
 import { seedChatTopic, seedGame, seedUser } from "../helpers/fixtures";
-import { TestBot } from "../helpers/harness";
 
 const env = setupTestEnvironment();
 
@@ -39,8 +39,12 @@ describe("/new", () => {
     await bot.sendText("/new4", { id: PLAYER_ID });
     expect(bot.lastText()).toContain("4-letter");
     expect(
-      (await env.db.selectFrom("games").select("word").executeTakeFirstOrThrow())
-        .word,
+      (
+        await env.db
+          .selectFrom("games")
+          .select("word")
+          .executeTakeFirstOrThrow()
+      ).word,
     ).toHaveLength(4);
   });
 

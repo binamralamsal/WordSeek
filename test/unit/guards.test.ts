@@ -1,12 +1,12 @@
-import { describe, expect, test } from "bun:test";
-
 import type { Context } from "grammy";
 
+import { describe, expect, test } from "bun:test";
+
 import {
+  type Guard,
   adminOnlyGuards,
   requireAdmin,
   runGuards,
-  type Guard,
 } from "#/core/guards/admin.guard";
 
 function context(overrides: Record<string, unknown>): Context {
@@ -61,7 +61,9 @@ describe("requireAdmin", () => {
 
     const result = await requireAdmin(ctx);
     expect(result.ok).toBe(false);
-    expect(result.ok ? "" : result.message).toContain("couldn't verify admin rights");
+    expect(result.ok ? "" : result.message).toContain(
+      "couldn't verify admin rights",
+    );
   });
 
   test("returns ok when chat or sender is missing", async () => {

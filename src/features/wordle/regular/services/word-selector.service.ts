@@ -2,13 +2,15 @@ import { randomInt } from "crypto";
 
 import { redis } from "#/config/redis";
 import type { WordLength } from "#/types";
-import { redisKeys } from "#/core/redis-keys.constants";
 import commonSixWords from "#/data/common-six.json";
 import commonFiveWords from "#/data/common-five.json";
-import { createLogger } from "#/core/logging/logger.service";
 import commonFourWords from "#/data/common-four.json";
+import { redisKeys } from "#/core/redis-keys.constants";
+import { createLogger } from "#/core/logging/logger.service";
 
-const log = createLogger("features.wordle.regular.services.word-selector.service");
+const log = createLogger(
+  "features.wordle.regular.services.word-selector.service",
+);
 
 const WORD_LIST: Record<WordLength, string[]> = {
   4: commonFourWords,

@@ -2,7 +2,10 @@ import { Composer, GrammyError } from "grammy";
 
 import { env } from "#/config/env";
 
-import { type HelpSection, getMainHelpKeyboard } from "./helpers/keyboard.helper";
+import {
+  type HelpSection,
+  getMainHelpKeyboard,
+} from "./helpers/keyboard.helper";
 import {
   getAdminCommandsMessage,
   getGroupSettingsMessage,

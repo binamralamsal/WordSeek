@@ -1,12 +1,15 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  ALL_WORDS,
+  MODE_LABEL,
+} from "#/features/wordle/shared/helpers/words.helper";
+import {
   buildRichFeedback,
   evaluateGuess,
   getHint,
   renderGuessRow,
 } from "#/features/wordle/shared/helpers/board.helper";
-import { ALL_WORDS, MODE_LABEL } from "#/features/wordle/shared/helpers/words.helper";
 
 describe("evaluateGuess", () => {
   test("marks exact matches as correct", () => {
@@ -104,9 +107,9 @@ describe("word lists", () => {
   test("exposes words and labels for every supported length", () => {
     for (const length of [4, 5, 6] as const) {
       expect(ALL_WORDS[length].length).toBeGreaterThan(100);
-      expect(
-        ALL_WORDS[length].every((word) => word.length === length),
-      ).toBe(true);
+      expect(ALL_WORDS[length].every((word) => word.length === length)).toBe(
+        true,
+      );
       expect(MODE_LABEL[length]).toBe(`${length}-letter mode`);
     }
   });

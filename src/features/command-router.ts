@@ -2,24 +2,24 @@ import { Composer } from "grammy";
 
 import { CommandRegistry } from "#/core/services/command-registry.service";
 
-import { helpCommand } from "./help/help.command";
 import { banCommand } from "./admin/ban.command";
 import { idCommand } from "./general/id.command";
+import { helpCommand } from "./help/help.command";
 import { statsCommand } from "./admin/stats.command";
 import { trackCommand } from "./admin/track.command";
 import { unbanCommand } from "./admin/unban.command";
 import { scoreCommand } from "./scores/score.command";
 import { startCommand } from "./general/start.command";
-import { captchaCommand } from "./admin/captcha/captcha.command";
 import { transferCommand } from "./admin/transfer.command";
 import { myScoreCommand } from "./general/my-score.command";
-import { broadcastCommand } from "./admin/broadcast/broadcast.command";
+import { captchaCommand } from "./admin/captcha/captcha.command";
 import { startMatchCommand } from "./general/startmatch.command";
 import { leaderboardCommand } from "./scores/leaderboard.command";
 import { dailyWordleCommand } from "./wordle/daily/daily.command";
 import { endGameCommand } from "./wordle/regular/end-game.command";
 import { newGameCommand } from "./wordle/regular/new-game.command";
 import { seekAuthCommand } from "./group-settings/seekauth.command";
+import { broadcastCommand } from "./admin/broadcast/broadcast.command";
 import { allowOnlyLenCommand } from "./group-settings/allowonlylen.command";
 import { setGameTopicCommand } from "./group-settings/setgametopic.command";
 import { recreateTopicCommand } from "./group-settings/recreatetopic.command";

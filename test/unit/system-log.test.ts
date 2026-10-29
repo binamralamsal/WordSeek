@@ -25,7 +25,9 @@ describe("formatSystemLogMessage", () => {
   });
 
   test("omits the metadata block when none is provided", () => {
-    expect(formatSystemLogMessage("error", "x").match(/<pre>/g)).toHaveLength(1);
+    expect(formatSystemLogMessage("error", "x").match(/<pre>/g)).toHaveLength(
+      1,
+    );
   });
 
   test("truncates very long messages", () => {

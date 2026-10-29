@@ -1,9 +1,9 @@
-import { describe, expect, test } from "bun:test";
-
 import type { Message } from "grammy/types";
 
-import { setupTestEnvironment } from "../helpers/env";
+import { describe, expect, test } from "bun:test";
+
 import { TestBot } from "../helpers/harness";
+import { setupTestEnvironment } from "../helpers/env";
 
 setupTestEnvironment();
 
@@ -28,8 +28,8 @@ function repliedMessage(): Message {
 }
 
 function richTexts(bot: TestBot): string[] {
-  return bot
-    .calls.filter(
+  return bot.calls
+    .filter(
       (call) =>
         call.method === "sendRichMessage" ||
         (call.method === "editMessageText" && call.payload.rich_message),
@@ -68,12 +68,13 @@ describe("/help", () => {
     expect(html).toContain("How to Play WordSeek");
 
     const buttons =
-      bot.lastCall("sendRichMessage")?.payload.reply_markup.inline_keyboard.flat() ??
-      [];
+      bot
+        .lastCall("sendRichMessage")
+        ?.payload.reply_markup.inline_keyboard.flat() ?? [];
     // Regular users do not get the admin-only section.
-    expect(buttons.some((button: any) => button.callback_data === "help_admin")).toBe(
-      false,
-    );
+    expect(
+      buttons.some((button: any) => button.callback_data === "help_admin"),
+    ).toBe(false);
   });
 
   test("shows the admin section to system admins in private chats", async () => {
@@ -82,11 +83,12 @@ describe("/help", () => {
     await bot.sendText("/help", { id: 999 });
 
     const buttons =
-      bot.lastCall("sendRichMessage")?.payload.reply_markup.inline_keyboard.flat() ??
-      [];
-    expect(buttons.some((button: any) => button.callback_data === "help_admin")).toBe(
-      true,
-    );
+      bot
+        .lastCall("sendRichMessage")
+        ?.payload.reply_markup.inline_keyboard.flat() ?? [];
+    expect(
+      buttons.some((button: any) => button.callback_data === "help_admin"),
+    ).toBe(true);
   });
 
   test("hides the admin section outside private chats", async () => {
@@ -95,11 +97,12 @@ describe("/help", () => {
     await bot.sendText("/help", { id: 999, chatType: "group" });
 
     const buttons =
-      bot.lastCall("sendRichMessage")?.payload.reply_markup.inline_keyboard.flat() ??
-      [];
-    expect(buttons.some((button: any) => button.callback_data === "help_admin")).toBe(
-      false,
-    );
+      bot
+        .lastCall("sendRichMessage")
+        ?.payload.reply_markup.inline_keyboard.flat() ?? [];
+    expect(
+      buttons.some((button: any) => button.callback_data === "help_admin"),
+    ).toBe(false);
   });
 });
 
@@ -120,7 +123,9 @@ describe("help callbacks", () => {
     await bot.click("help_admin");
 
     const answer = bot.lastCall("answerCallbackQuery");
-    expect(answer?.payload.text).toBe("You don't have permission to view this.");
+    expect(answer?.payload.text).toBe(
+      "You don't have permission to view this.",
+    );
     expect(answer?.payload.show_alert).toBe(true);
     expect(richTexts(bot)).toHaveLength(0);
   });

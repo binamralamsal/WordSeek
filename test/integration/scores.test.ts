@@ -1,15 +1,21 @@
 ﻿import { describe, expect, test } from "bun:test";
 
+import { TestBot } from "../helpers/harness";
 import { setupTestEnvironment } from "../helpers/env";
 import { seedScore, seedUser } from "../helpers/fixtures";
-import { TestBot } from "../helpers/harness";
 
 const env = setupTestEnvironment();
 
 const CHAT_ID = 7_001;
 const GROUP_CHAT_ID = -1_000_007_001;
 
-async function seedAda(options: { chatId?: string; score?: number; wordLength?: "4" | "5" | "6" } = {}) {
+async function seedAda(
+  options: {
+    chatId?: string;
+    score?: number;
+    wordLength?: "4" | "5" | "6";
+  } = {},
+) {
   await seedUser(env.db, { id: "4242", name: "Ada Lovelace", username: "ada" });
   await seedScore(env.db, {
     userId: "4242",
@@ -29,8 +35,16 @@ function keyboardCallbacks(bot: TestBot): string[] {
 describe("/leaderboard", () => {
   test("renders global scores in private chats", async () => {
     await seedAda({ score: 42 });
-    await seedUser(env.db, { id: "5252", name: "Grace Hopper", username: "grace" });
-    await seedScore(env.db, { userId: "5252", chatId: String(CHAT_ID), score: 100 });
+    await seedUser(env.db, {
+      id: "5252",
+      name: "Grace Hopper",
+      username: "grace",
+    });
+    await seedScore(env.db, {
+      userId: "5252",
+      chatId: String(CHAT_ID),
+      score: 100,
+    });
 
     const bot = new TestBot();
     await bot.sendText("/leaderboard");
@@ -44,7 +58,11 @@ describe("/leaderboard", () => {
   });
 
   test("defaults to the current group", async () => {
-    await seedUser(env.db, { id: "5151", name: "Group Player", username: "gp" });
+    await seedUser(env.db, {
+      id: "5151",
+      name: "Group Player",
+      username: "gp",
+    });
     await seedScore(env.db, {
       userId: "5151",
       chatId: String(GROUP_CHAT_ID),
@@ -74,10 +92,7 @@ describe("/leaderboard", () => {
 
   test("excludes banned users", async () => {
     await seedAda();
-    await env.db
-      .insertInto("bannedUsers")
-      .values({ userId: "4242" })
-      .execute();
+    await env.db.insertInto("bannedUsers").values({ userId: "4242" }).execute();
 
     const bot = new TestBot();
     await bot.sendText("/leaderboard");

@@ -1,6 +1,7 @@
-import { describe, expect, test } from "bun:test";
-
 import { Context } from "grammy";
+import type { Message } from "grammy/types";
+
+import { describe, expect, test } from "bun:test";
 
 import { bot as configBot } from "#/config/bot";
 import { redisKeys } from "#/core/redis-keys.constants";
@@ -10,12 +11,11 @@ import {
   getBroadcastState,
   saveBroadcastState,
 } from "#/features/admin/broadcast/broadcast-state.service";
-import type { Message } from "grammy/types";
 
 import { flushAsyncWork, setupTestEnvironment } from "../helpers/env";
 import {
-  TestBot,
   TEST_BOT_INFO,
+  TestBot,
   privateMessageUpdate,
 } from "../helpers/harness";
 

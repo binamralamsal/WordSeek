@@ -1,10 +1,10 @@
+import { Pool } from "pg";
+import { defineConfig } from "kysely-ctl";
 import {
   CamelCasePlugin,
   DeduplicateJoinsPlugin,
   PostgresDialect,
 } from "kysely";
-import { defineConfig } from "kysely-ctl";
-import { Pool } from "pg";
 
 import { env } from "./src/config/env";
 

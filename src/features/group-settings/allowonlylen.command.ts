@@ -2,9 +2,9 @@ import { Composer } from "grammy";
 
 import { db } from "#/config/db";
 import { WORD_LENGTHS, type WordLength } from "#/types";
+import { createLogger } from "#/core/logging/logger.service";
 import { adminOnlyGuards, runGuards } from "#/core/guards/admin.guard";
 
-import { createLogger } from "#/core/logging/logger.service";
 import { getCurrentTopicId, isForumGroup } from "./topic.service";
 
 const log = createLogger("features.group-settings.allowonlylen.command");

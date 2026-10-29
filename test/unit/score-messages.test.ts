@@ -1,9 +1,9 @@
 ﻿import { describe, expect, test } from "bun:test";
 
-import { formatLeaderboardMessage } from "#/features/scores/helpers/format-leaderboard-message.helper";
 import { formatNoScoresMessage } from "#/features/scores/helpers/format-no-scores-message.helper";
 import { formatUserScoreMessage } from "#/features/scores/helpers/format-user-score-message.helper";
 import { generateLeaderboardKeyboard } from "#/features/scores/helpers/leaderboard-keyboard.helper";
+import { formatLeaderboardMessage } from "#/features/scores/helpers/format-leaderboard-message.helper";
 import { generateUserSelectionKeyboard } from "#/features/scores/helpers/user-selection-keyboard.helper";
 
 function callbackData(button: unknown): string | undefined {
@@ -53,7 +53,9 @@ describe("formatNoScoresMessage", () => {
   };
 
   test("suggests switching to global when no scores exist in chat", () => {
-    expect(formatNoScoresMessage(base)).toContain("no scores recorded in this chat");
+    expect(formatNoScoresMessage(base)).toContain(
+      "no scores recorded in this chat",
+    );
     expect(formatNoScoresMessage(base)).toContain("Global");
   });
 
@@ -86,9 +88,9 @@ describe("formatNoScoresMessage", () => {
   });
 
   test("handles the implicit-time edge case", () => {
-    expect(
-      formatNoScoresMessage({ ...base, hasAnyScores: true }),
-    ).toContain("Try switching");
+    expect(formatNoScoresMessage({ ...base, hasAnyScores: true })).toContain(
+      "Try switching",
+    );
   });
 });
 
@@ -143,8 +145,7 @@ describe("keyboards", () => {
     for (const scope of ["global", "group"]) {
       expect(
         buttons.some(
-          (button) =>
-            callbackData(button) === `leaderboard ${scope} month 5`,
+          (button) => callbackData(button) === `leaderboard ${scope} month 5`,
         ),
       ).toBe(true);
     }
@@ -153,8 +154,7 @@ describe("keyboards", () => {
     for (const period of ["today", "week", "month", "year", "all"]) {
       expect(
         buttons.some(
-          (button) =>
-            callbackData(button) === `leaderboard global ${period} 5`,
+          (button) => callbackData(button) === `leaderboard global ${period} 5`,
         ),
       ).toBe(true);
     }
@@ -180,12 +180,12 @@ describe("keyboards", () => {
     );
     const buttons = keyboard.inline_keyboard.flat();
 
-    expect(buttons.some((button) => callbackData(button) === "score 42 group all 4")).toBe(
-      true,
-    );
-    expect(buttons.some((button) => callbackData(button) === "score_list ada")).toBe(
-      true,
-    );
+    expect(
+      buttons.some((button) => callbackData(button) === "score 42 group all 4"),
+    ).toBe(true);
+    expect(
+      buttons.some((button) => callbackData(button) === "score_list ada"),
+    ).toBe(true);
   });
 
   test("user selection keyboard lists each candidate", () => {

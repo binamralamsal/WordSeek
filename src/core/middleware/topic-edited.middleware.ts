@@ -1,7 +1,7 @@
 import { Composer } from "grammy";
 
-import { createLogger } from "#/core/logging/logger.service";
 import { db } from "#/config/db";
+import { createLogger } from "#/core/logging/logger.service";
 
 const log = createLogger("core.middleware.topic-edited.middleware");
 

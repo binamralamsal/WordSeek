@@ -40,7 +40,9 @@ describe("parseLeaderboardInput", () => {
   });
 
   test("accepts a null default time key as 'unset'", () => {
-    expect(parseLeaderboardInput("ada", "global", null).timeKey).toBeUndefined();
+    expect(
+      parseLeaderboardInput("ada", "global", null).timeKey,
+    ).toBeUndefined();
   });
 
   test("ignores invalid word lengths", () => {

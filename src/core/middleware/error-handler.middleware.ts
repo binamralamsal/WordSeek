@@ -36,7 +36,10 @@ export async function errorHandler(error: BotError<Context>) {
     ) {
       try {
         if (ctx.chat) {
-          log.info({ chatId: ctx.chat.id }, "Leaving chat due to missing rights");
+          log.info(
+            { chatId: ctx.chat.id },
+            "Leaving chat due to missing rights",
+          );
           await ctx.api.leaveChat(ctx.chat.id);
         }
       } catch (leaveErr) {
@@ -126,7 +129,10 @@ export async function errorHandler(error: BotError<Context>) {
       chatId: ctx.chatId,
       name: e instanceof Error ? e.name : typeof e,
       message: e instanceof Error ? e.message : String(e),
-      stack: e instanceof Error ? e.stack?.split("\n").slice(0, 6).join("\n") : undefined,
+      stack:
+        e instanceof Error
+          ? e.stack?.split("\n").slice(0, 6).join("\n")
+          : undefined,
     });
   }
 }

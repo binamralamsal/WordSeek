@@ -4,9 +4,9 @@ import { runGuards } from "#/core/guards/admin.guard";
 import { requireAllowedTopic } from "#/features/wordle/shared/guards/wordle.guard";
 
 import { parseLeaderboardFilters } from "./helpers/parse-filters.helper";
+import { getLeaderboardScores } from "./services/get-leaderboard-scores.service";
 import { generateLeaderboardKeyboard } from "./helpers/leaderboard-keyboard.helper";
 import { formatLeaderboardMessage } from "./helpers/format-leaderboard-message.helper";
-import { getLeaderboardScores } from "./services/get-leaderboard-scores.service";
 
 const composer = new Composer();
 

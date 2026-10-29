@@ -1,13 +1,12 @@
-import { afterAll, beforeAll, beforeEach } from "bun:test";
-
 import type IORedis from "ioredis";
 import type { Kysely } from "kysely";
+import { afterAll, beforeAll, beforeEach } from "bun:test";
 
 import { setRedis } from "#/config/redis";
 import type { DB } from "#/database/schema";
 
-import { createTestDatabase, type TestDatabase } from "./pglite";
-import { createRedisMock, RedisMock } from "./redis-mock";
+import { RedisMock, createRedisMock } from "./redis-mock";
+import { type TestDatabase, createTestDatabase } from "./pglite";
 
 export interface TestEnvironment {
   readonly db: Kysely<DB>;

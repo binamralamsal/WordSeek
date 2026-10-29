@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 import { redis } from "#/config/redis";
-import { createLogger } from "#/core/logging/logger.service";
 import { redisKeys } from "#/core/redis-keys.constants";
+import { createLogger } from "#/core/logging/logger.service";
 
 const log = createLogger("features.admin.broadcast.broadcast-state.service");
 

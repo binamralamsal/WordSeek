@@ -1,12 +1,12 @@
 import { afterAll, describe, expect, test } from "bun:test";
 
-import { setCaptchaEnqueuer } from "#/features/admin/captcha/captcha-queue.service";
-import { captchaSchema } from "#/features/admin/captcha/captcha.schema";
 import { redisKeys } from "#/core/redis-keys.constants";
+import { captchaSchema } from "#/features/admin/captcha/captcha.schema";
+import { setCaptchaEnqueuer } from "#/features/admin/captcha/captcha-queue.service";
 
-import { flushAsyncWork, setupTestEnvironment } from "../helpers/env";
-import { seedScore, seedUser } from "../helpers/fixtures";
 import { TestBot } from "../helpers/harness";
+import { seedScore, seedUser } from "../helpers/fixtures";
+import { flushAsyncWork, setupTestEnvironment } from "../helpers/env";
 
 const env = setupTestEnvironment();
 

@@ -6,12 +6,15 @@ import { redisKeys } from "#/core/redis-keys.constants";
 import { formatDailyWordDetails } from "#/core/format/word-details.helper";
 
 import { ALL_WORDS } from "../shared/helpers/words.helper";
+import type { DailyWord, GuessEntry } from "../shared/types";
 import { evaluateGuess } from "../shared/helpers/board.helper";
 import { getCurrentGameDateString } from "./helpers/date.helper";
 import { reactWithRandom } from "../shared/helpers/reactions.helper";
 import { recordWinStreak, resetStreak } from "./services/streaks.service";
-import type { DailyWord, GuessEntry } from "../shared/types";
-import { generateWordleImage, wordleImageFile } from "../shared/helpers/image.helper";
+import {
+  generateWordleImage,
+  wordleImageFile,
+} from "../shared/helpers/image.helper";
 
 const DAILY_ATTEMPTS = 6;
 

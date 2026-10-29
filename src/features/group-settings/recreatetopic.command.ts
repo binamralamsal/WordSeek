@@ -1,9 +1,9 @@
 import { Composer } from "grammy";
 
 import { db } from "#/config/db";
+import { createLogger } from "#/core/logging/logger.service";
 import { adminOnlyGuards, runGuards } from "#/core/guards/admin.guard";
 
-import { createLogger } from "#/core/logging/logger.service";
 import { isForumGroup } from "./topic.service";
 
 const log = createLogger("features.group-settings.recreatetopic.command");

@@ -1,16 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
 import { redisKeys } from "#/core/redis-keys.constants";
-import { getCurrentGameDateString } from "#/features/wordle/daily/helpers/date.helper";
 import { ALL_WORDS } from "#/features/wordle/shared/helpers/words.helper";
+import { getCurrentGameDateString } from "#/features/wordle/daily/helpers/date.helper";
 
-import { setupTestEnvironment } from "../helpers/env";
-import {
-  seedDailyWord,
-  seedGame,
-  seedUser,
-} from "../helpers/fixtures";
 import { TestBot } from "../helpers/harness";
+import { setupTestEnvironment } from "../helpers/env";
+import { seedDailyWord, seedGame, seedUser } from "../helpers/fixtures";
 
 const env = setupTestEnvironment();
 
@@ -57,9 +53,9 @@ describe("/daily", () => {
     await bot.sendText("/daily", { id: PLAYER_ID });
 
     expect(bot.lastText()).toContain("WordSeek of the Day started");
-    expect(
-      await env.redis.get(redisKeys.dailySession(PLAYER_ID)),
-    ).toContain('"dailyWordId"');
+    expect(await env.redis.get(redisKeys.dailySession(PLAYER_ID))).toContain(
+      '"dailyWordId"',
+    );
   });
 
   test("blocks group chats", async () => {

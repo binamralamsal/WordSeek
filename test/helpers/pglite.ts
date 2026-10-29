@@ -1,8 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-
 import { PGlite } from "@electric-sql/pglite";
+import {
+  type Migration,
+  type MigrationProvider,
+  Migrator,
+} from "kysely/migration";
 import {
   CamelCasePlugin,
   DeduplicateJoinsPlugin,
@@ -10,11 +14,6 @@ import {
   PGliteDialect,
   sql,
 } from "kysely";
-import {
-  Migrator,
-  type Migration,
-  type MigrationProvider,
-} from "kysely/migration";
 
 import { setDatabase } from "#/config/db";
 import type { DB } from "#/database/schema";

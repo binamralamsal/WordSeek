@@ -1,13 +1,13 @@
 import { afterAll, describe, expect, test } from "bun:test";
 
-import { setCaptchaEnqueuer } from "#/features/admin/captcha/captcha-queue.service";
-import { captchaSchema } from "#/features/admin/captcha/captcha.schema";
 import { SLOT_SYMBOLS } from "#/config/constants";
 import { redisKeys } from "#/core/redis-keys.constants";
+import { captchaSchema } from "#/features/admin/captcha/captcha.schema";
+import { setCaptchaEnqueuer } from "#/features/admin/captcha/captcha-queue.service";
 
-import { setupTestEnvironment } from "../helpers/env";
-import { seedUser } from "../helpers/fixtures";
 import { TestBot } from "../helpers/harness";
+import { seedUser } from "../helpers/fixtures";
+import { setupTestEnvironment } from "../helpers/env";
 
 const env = setupTestEnvironment();
 
@@ -30,7 +30,9 @@ async function createCaptcha() {
   const creator = new TestBot();
   await creator.sendText(`/captcha ${CHAT_ID} ${TARGET_ID}`, { id: ADMIN_ID });
 
-  const raw = await env.redis.get(redisKeys.captcha(String(CHAT_ID), String(TARGET_ID)));
+  const raw = await env.redis.get(
+    redisKeys.captcha(String(CHAT_ID), String(TARGET_ID)),
+  );
   const session = captchaSchema.parse(JSON.parse(raw!));
 
   return { creator, session };
@@ -63,7 +65,9 @@ describe("captcha callbacks", () => {
       .find((call) => String(call.payload.chat_id) === String(ADMIN_ID));
     expect(adminMessage?.payload.text).toContain("passed the captcha");
     expect(
-      await env.redis.get(redisKeys.captcha(String(CHAT_ID), String(TARGET_ID))),
+      await env.redis.get(
+        redisKeys.captcha(String(CHAT_ID), String(TARGET_ID)),
+      ),
     ).toBeNull();
   });
 
@@ -126,7 +130,9 @@ describe("captcha callbacks", () => {
       .find((call) => String(call.payload.chat_id) === String(ADMIN_ID));
     expect(failure?.payload.text).toContain("failed the captcha");
     expect(
-      await env.redis.get(redisKeys.captcha(String(CHAT_ID), String(TARGET_ID))),
+      await env.redis.get(
+        redisKeys.captcha(String(CHAT_ID), String(TARGET_ID)),
+      ),
     ).toBeNull();
   });
 

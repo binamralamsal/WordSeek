@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { DailyFileStream } from "#/core/logging/daily-file.stream";
@@ -74,7 +73,11 @@ describe("DailyFileStream", () => {
     const oldTime = new Date("2025-01-01T00:00:00Z");
     fs.utimesSync(oldFile, oldTime, oldTime);
 
-    const stream = new DailyFileStream(dir, 7, () => new Date("2025-06-01T10:00:00Z"));
+    const stream = new DailyFileStream(
+      dir,
+      7,
+      () => new Date("2025-06-01T10:00:00Z"),
+    );
     await writeLine(stream, "fresh");
     await closeStream(stream);
 
@@ -86,7 +89,11 @@ describe("DailyFileStream", () => {
     const unrelated = path.join(dir, "notes.txt");
     fs.writeFileSync(unrelated, "keep me");
 
-    const stream = new DailyFileStream(dir, 7, () => new Date("2025-06-01T10:00:00Z"));
+    const stream = new DailyFileStream(
+      dir,
+      7,
+      () => new Date("2025-06-01T10:00:00Z"),
+    );
     await writeLine(stream, "line");
     await closeStream(stream);
 

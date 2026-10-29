@@ -58,7 +58,10 @@ export class DailyFileStream extends Writable {
     const cutoff = now.getTime() - this.retentionDays * DAY_MS;
 
     for (const entry of fs.readdirSync(this.directory)) {
-      if (!entry.startsWith(`${FILE_PREFIX}-`) || !entry.endsWith(FILE_EXTENSION)) {
+      if (
+        !entry.startsWith(`${FILE_PREFIX}-`) ||
+        !entry.endsWith(FILE_EXTENSION)
+      ) {
         continue;
       }
 

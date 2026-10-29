@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
+import { TestBot } from "../helpers/harness";
 import { setupTestEnvironment } from "../helpers/env";
 import { seedChatTopic, seedUser } from "../helpers/fixtures";
-import { TestBot } from "../helpers/harness";
 
 const env = setupTestEnvironment();
 

@@ -2,8 +2,8 @@ import { Composer, Context } from "grammy";
 
 import { env } from "#/config/env";
 import { redis } from "#/config/redis";
-import { createLogger } from "#/core/logging/logger.service";
 import { redisKeys } from "#/core/redis-keys.constants";
+import { createLogger } from "#/core/logging/logger.service";
 
 const log = createLogger("core.middleware.track-messages.middleware");
 
@@ -319,7 +319,10 @@ composer.use(async (ctx, next) => {
             } catch (e) {}
           }
         } catch (error) {
-          log.error({ err: error, adminId }, `Failed to alert admin ${adminId}`);
+          log.error(
+            { err: error, adminId },
+            `Failed to alert admin ${adminId}`,
+          );
         }
       }
     }

@@ -1,8 +1,7 @@
-import type { Message, Update, User, UserFromGetMe } from "grammy/types";
 import { Bot } from "grammy";
+import type { Message, Update, User, UserFromGetMe } from "grammy/types";
 
 import { env } from "#/config/env";
-
 import { createAppComposer } from "#/app";
 
 export const TEST_BOT_INFO: UserFromGetMe = {
@@ -22,12 +21,7 @@ export const TEST_BOT_INFO: UserFromGetMe = {
 };
 
 export type ChatMemberStatus =
-  | "creator"
-  | "administrator"
-  | "member"
-  | "restricted"
-  | "left"
-  | "kicked";
+  "creator" | "administrator" | "member" | "restricted" | "left" | "kicked";
 
 export interface RecordedCall {
   method: string;
@@ -78,7 +72,11 @@ function commandEntities(text: string): Message["entities"] {
   const mention = /(^|\s)@([a-zA-Z0-9_]{3,})/g;
   for (const match of text.matchAll(mention)) {
     const offset = (match.index ?? 0) + match[1]!.length;
-    entities.push({ type: "mention", offset, length: match[0].length - match[1]!.length });
+    entities.push({
+      type: "mention",
+      offset,
+      length: match[0].length - match[1]!.length,
+    });
   }
 
   return entities.length > 0 ? entities : undefined;
@@ -94,14 +92,12 @@ interface MessageOptions extends TestUserOptions {
   date?: number;
 }
 
-function baseMessage(
-  text: string,
-  options: MessageOptions,
-): Update {
+function baseMessage(text: string, options: MessageOptions): Update {
   const from = testUser(options);
   const chatType = options.chatType ?? "private";
   const chatId =
-    options.chatId ?? (chatType === "private" ? from.id : -1_000_000_000 - from.id);
+    options.chatId ??
+    (chatType === "private" ? from.id : -1_000_000_000 - from.id);
 
   const chat = (
     chatType === "private"
@@ -147,7 +143,11 @@ export function groupMessageUpdate(
   text: string,
   options: Omit<MessageOptions, "chatType"> = {},
 ): Update {
-  return baseMessage(text, { ...options, chatType: "supergroup", isForum: false });
+  return baseMessage(text, {
+    ...options,
+    chatType: "supergroup",
+    isForum: false,
+  });
 }
 
 export function forumMessageUpdate(
@@ -176,7 +176,8 @@ export function callbackQueryUpdate(
   const from = testUser(options);
   const chatType = options.chatType ?? "private";
   const chatId =
-    options.chatId ?? (chatType === "private" ? from.id : -1_000_000_000 - from.id);
+    options.chatId ??
+    (chatType === "private" ? from.id : -1_000_000_000 - from.id);
 
   const chat =
     chatType === "private"
@@ -242,9 +243,12 @@ export function myChatMemberUpdate(
   } as Update;
 }
 
-export function forumTopicEditedUpdate(
-  options: { chatId: number; messageThreadId: number; name?: string; iconCustomEmojiId?: string },
-): Update {
+export function forumTopicEditedUpdate(options: {
+  chatId: number;
+  messageThreadId: number;
+  name?: string;
+  iconCustomEmojiId?: string;
+}): Update {
   return {
     update_id: nextUpdateId(),
     message: {
@@ -290,7 +294,10 @@ export class TestBot {
 
       return Promise.resolve({
         ok: true,
-        result: this.resultFor(method as string, payload as Record<string, any>),
+        result: this.resultFor(
+          method as string,
+          payload as Record<string, any>,
+        ),
       }) as never;
     });
 
@@ -370,10 +377,7 @@ export class TestBot {
     await this.bot.handleUpdate(update);
   }
 
-  async sendText(
-    text: string,
-    options: MessageOptions = {},
-  ): Promise<void> {
+  async sendText(text: string, options: MessageOptions = {}): Promise<void> {
     const { chatType = "private", ...rest } = options;
     const update =
       chatType === "private"

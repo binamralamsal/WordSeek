@@ -4,7 +4,8 @@
  */
 process.env.NODE_ENV = "test";
 process.env.BOT_TOKEN = "123456:TEST-TOKEN";
-process.env.DATABASE_URL = "postgres://wordseek:wordseek@127.0.0.1:5432/wordseek_test";
+process.env.DATABASE_URL =
+  "postgres://wordseek:wordseek@127.0.0.1:5432/wordseek_test";
 process.env.REDIS_URI = "redis://127.0.0.1:6399";
 process.env.DAILY_WORDLE_SECRET = "test-daily-wordle-secret";
 process.env.DAILY_WORDLE_START_DATE = "2025-01-01";

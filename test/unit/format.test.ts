@@ -2,12 +2,12 @@ import { describe, expect, test } from "bun:test";
 
 import { escapeHtml } from "#/core/format/escape-html.helper";
 import { formatDuration } from "#/core/format/duration.helper";
+import { formatActiveButton } from "#/core/ui/format-active-button.helper";
 import {
   formatDisplayName,
   formatUserLink,
   formatUserMention,
 } from "#/core/format/mention.helper";
-import { formatActiveButton } from "#/core/ui/format-active-button.helper";
 
 describe("escapeHtml", () => {
   test("escapes every HTML-sensitive character", () => {
@@ -24,9 +24,9 @@ describe("escapeHtml", () => {
 describe("mention helpers", () => {
   test("formatDisplayName includes the last name when present", () => {
     expect(formatDisplayName({ first_name: "Ada" })).toBe("Ada");
-    expect(formatDisplayName({ first_name: "Ada", last_name: "Lovelace" })).toBe(
-      "Ada Lovelace",
-    );
+    expect(
+      formatDisplayName({ first_name: "Ada", last_name: "Lovelace" }),
+    ).toBe("Ada Lovelace");
   });
 
   test("formatUserLink creates a tg link", () => {

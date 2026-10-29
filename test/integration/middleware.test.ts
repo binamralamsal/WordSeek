@@ -1,26 +1,19 @@
-﻿import { afterEach, describe, expect, test } from "bun:test";
+﻿import type { Message, Update } from "grammy/types";
+import { BotError, Context, GrammyError, HttpError } from "grammy";
 
-import {
-  BotError,
-  Context,
-  GrammyError,
-  HttpError,
-} from "grammy";
-import type { Message, Update } from "grammy/types";
+import { afterEach, describe, expect, test } from "bun:test";
 
-import { bot as configBot } from "#/config/bot";
 import { env } from "#/config/env";
+import { bot as configBot } from "#/config/bot";
 import { redisKeys } from "#/core/redis-keys.constants";
 import { errorHandler } from "#/core/middleware/error-handler.middleware";
-import {
-  resetSystemLogState,
-} from "#/core/logging/system-log.service";
+import { resetSystemLogState } from "#/core/logging/system-log.service";
 
-import { flushAsyncWork, setupTestEnvironment } from "../helpers/env";
 import { seedChatTopic, seedUser } from "../helpers/fixtures";
+import { flushAsyncWork, setupTestEnvironment } from "../helpers/env";
 import {
-  TestBot,
   TEST_BOT_INFO,
+  TestBot,
   forumMessageUpdate,
   forumTopicEditedUpdate,
   groupMessageUpdate,
@@ -81,7 +74,10 @@ function chatMemberUpdate(): Update {
   } as unknown as Update;
 }
 
-function editedUpdate(text: string, chatType: "private" | "group" = "group"): Update {
+function editedUpdate(
+  text: string,
+  chatType: "private" | "group" = "group",
+): Update {
   const base =
     chatType === "private"
       ? ({ update_id: 90_003, message: {} } as unknown as Update)
@@ -90,7 +86,11 @@ function editedUpdate(text: string, chatType: "private" | "group" = "group"): Up
 
   return {
     update_id: 90_004,
-    edited_message: { ...message, text, edit_date: Math.floor(Date.now() / 1000) },
+    edited_message: {
+      ...message,
+      text,
+      edit_date: Math.floor(Date.now() / 1000),
+    },
   } as Update;
 }
 
@@ -147,8 +147,9 @@ describe("banned users middleware", () => {
 
     expect(bot.lastText()).toContain("You have been banned");
     const buttons =
-      bot.lastCall("sendMessage")?.payload.reply_markup.inline_keyboard.flat() ??
-      [];
+      bot
+        .lastCall("sendMessage")
+        ?.payload.reply_markup.inline_keyboard.flat() ?? [];
     expect(buttons[0].url).toBe("t.me/binamralamsal");
   });
 
@@ -242,8 +243,9 @@ describe("bot membership middleware", () => {
 
     expect(bot.lastText()).toContain("Thanks for adding WordSeek");
     const buttons =
-      bot.lastCall("sendMessage")?.payload.reply_markup.inline_keyboard.flat() ??
-      [];
+      bot
+        .lastCall("sendMessage")
+        ?.payload.reply_markup.inline_keyboard.flat() ?? [];
     expect(buttons.length).toBeGreaterThan(0);
   });
 
@@ -373,9 +375,9 @@ describe("tracked chat forwarding", () => {
     const bot = new TestBot();
 
     await bot.send(editedUpdate("edited text"));
-    expect(
-      bot.callsTo("sendMessage").at(-1)?.payload.text,
-    ).toContain("Message edited");
+    expect(bot.callsTo("sendMessage").at(-1)?.payload.text).toContain(
+      "Message edited",
+    );
 
     await bot.send(channelPostUpdate("hello"));
     const channelForward = bot
@@ -396,9 +398,9 @@ describe("tracked chat forwarding", () => {
     ).toContain("Button clicked");
 
     await bot.send(chatMemberUpdate());
-    expect(
-      bot.callsTo("sendMessage").at(-1)?.payload.text,
-    ).toContain("Member status change");
+    expect(bot.callsTo("sendMessage").at(-1)?.payload.text).toContain(
+      "Member status change",
+    );
   });
 });
 
@@ -409,10 +411,7 @@ describe("error handler", () => {
 
   test("leaves a group that denies text permissions", async () => {
     const bot = new TestBot();
-    const ctx = contextFor(
-      bot,
-      groupMessageUpdate("hello", { id: PLAYER_ID }),
-    );
+    const ctx = contextFor(bot, groupMessageUpdate("hello", { id: PLAYER_ID }));
 
     const error = new GrammyError(
       "Call to 'sendMessage' failed!",
@@ -473,9 +472,9 @@ describe("error handler", () => {
     expect(topics).toHaveLength(1);
     expect(topics[0]!.topicId).not.toBe("5");
     expect(topics[0]!.shouldRecreateOnExpire).toBe(true);
-    expect(
-      bot.callsTo("sendMessage").at(-1)?.payload.text,
-    ).toContain("Topic recreated successfully");
+    expect(bot.callsTo("sendMessage").at(-1)?.payload.text).toContain(
+      "Topic recreated successfully",
+    );
   });
 
   test("does not recreate topics that opt out", async () => {
@@ -521,7 +520,10 @@ describe("error handler", () => {
     const ctx = contextFor(bot, groupMessageUpdate("hello", { id: PLAYER_ID }));
 
     await errorHandler(
-      new BotError(new HttpError("Network request failed", new Error("boom")), ctx),
+      new BotError(
+        new HttpError("Network request failed", new Error("boom")),
+        ctx,
+      ),
     );
 
     const sent = systemCalls.filter((call) => call.method === "sendMessage");
@@ -531,7 +533,10 @@ describe("error handler", () => {
 
     // Duplicate reports are suppressed inside the dedupe window.
     await errorHandler(
-      new BotError(new HttpError("Network request failed", new Error("boom")), ctx),
+      new BotError(
+        new HttpError("Network request failed", new Error("boom")),
+        ctx,
+      ),
     );
     expect(
       systemCalls.filter((call) => call.method === "sendMessage"),

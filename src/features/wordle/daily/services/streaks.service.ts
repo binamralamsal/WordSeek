@@ -1,6 +1,6 @@
 import { db } from "#/config/db";
-
 import { createLogger } from "#/core/logging/logger.service";
+
 import { getCurrentGameDateString } from "../helpers/date.helper";
 
 const log = createLogger("features.wordle.daily.services.streaks.service");
