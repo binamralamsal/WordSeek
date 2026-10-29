@@ -92,8 +92,63 @@
 |----------|-------------|---------|
 | `BOT_TOKEN` | Your Telegram bot token from BotFather | `123456789:ABCdefGHIjklMNOpqrsTUVwxyz` |
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:password@localhost:5432/wordseek` |
-| `NODE_ENV` | Environment mode | `development` or `production` |
+| `NODE_ENV` | Environment mode | `development`, `production` or `test` |
 | `REDIS_URI` | Redis connection string | `redis://127.0.0.1:6379` |
+| `ADMIN_USERS` | Comma-separated Telegram user IDs with bot-admin rights | `123456789,987654321` |
+| `TIME_ZONE` | Timezone used for the daily reset | `Asia/Kathmandu` |
+| `DAILY_WORDLE_SECRET` | Secret used to derive the daily word order | `change-me` |
+| `LOGS_CHANNEL` | Anti-cheat channel for suspicious messages only | `-1001234567890` |
+| `SYSTEM_LOG_CHANNEL` | Separate channel for unexpected system errors | `-1009876543210` |
+| `LOG_LEVEL` | Minimum log level (`fatal` … `silent`) | `info` |
+| `LOG_DIR` | Directory for daily log files | `logs` |
+| `LOG_RETENTION_DAYS` | Days of daily log files to keep | `14` |
+| `LOG_TO_FILE` | Write daily log files in addition to stdout | `true` or `false` |
+
+`LOGS_CHANNEL` and `SYSTEM_LOG_CHANNEL` serve different purposes and must not
+point at the same chat: the former tracks cheaters, the latter reports crashes.
+
+## Testing
+
+The test suite uses `bun test` with an in-memory Postgres (PGlite running the
+real migrations) and an in-memory Redis mock, so no external services are
+needed.
+
+```bash
+bun test              # run everything
+bun test:watch        # watch mode
+bun test:coverage     # coverage report
+bun run typecheck     # TypeScript
+bun test test/integration/scores.test.ts   # a single file
+```
+
+Tests live in `test/unit` and `test/integration`. Integration tests mount the
+real grammY middleware stack and assert on the exact Telegram API calls the bot
+would make.
+
+## Project Structure
+
+```
+src/
+├── app.ts                 # root middleware stack
+├── config/                # env, bot, database, redis, constants
+├── core/                  # cross-feature helpers, guards, logging, middleware
+├── features/
+│   ├── admin/             # ban, captcha, stats, track, transfer, broadcast
+│   ├── general/           # start, help-adjacent, id, myscore
+│   ├── group-settings/    # game topics, allowed lengths, seek auth
+│   ├── help/              # help command, callbacks and messages
+│   ├── scores/            # /score and /leaderboard
+│   └── wordle/
+│       ├── daily/         # WordSeek of the Day
+│       ├── regular/       # group/private games
+│       └── shared/        # board, hints, images, guards, types
+└── index.ts               # process bootstrap
+```
+
+Files use role-based suffixes: `.command.ts`, `.callback.ts`, `.handler.ts`,
+`.middleware.ts`, `.service.ts`, `.helper.ts`, `.guard.ts`, `.schema.ts`,
+`.constants.ts`, `.cron.ts` and `.stream.ts`.
+
 
 ## Technologies Used
 - **[grammy](https://grammy.dev/)**: Telegram Bot API framework.
