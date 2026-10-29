@@ -3,12 +3,12 @@ import type { CommandContext, Context } from "grammy";
 import { DatabaseError } from "pg";
 
 import { db } from "#/config/db";
-import type { WordLength } from "#/types";
 import { runGuards } from "#/core/guards/admin.guard";
 import { createLogger } from "#/core/logging/logger.service";
+import type { WordLength } from "#/types";
 
-import { WordSelector } from "./word-selector.service";
 import { regularGameGuards } from "../../shared/guards/wordle.guard";
+import { WordSelector } from "./word-selector.service";
 
 const log = createLogger("features.wordle.regular.services.start-game.service");
 

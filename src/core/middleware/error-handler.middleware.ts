@@ -2,9 +2,9 @@ import { BotError, Context, GrammyError, HttpError } from "grammy";
 
 import { db } from "#/config/db";
 import { redis } from "#/config/redis";
-import { redisKeys } from "#/core/redis-keys.constants";
 import { createLogger } from "#/core/logging/logger.service";
 import { reportSystemLog } from "#/core/logging/system-log.service";
+import { redisKeys } from "#/core/redis-keys.constants";
 
 const log = createLogger("error-handler");
 

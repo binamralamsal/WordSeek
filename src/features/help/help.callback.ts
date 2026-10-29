@@ -3,8 +3,8 @@ import { Composer, GrammyError } from "grammy";
 import { env } from "#/config/env";
 
 import {
-  type HelpSection,
   getMainHelpKeyboard,
+  type HelpSection,
 } from "./helpers/keyboard.helper";
 import {
   getAdminCommandsMessage,

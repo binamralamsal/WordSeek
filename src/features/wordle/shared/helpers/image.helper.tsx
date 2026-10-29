@@ -1,12 +1,12 @@
 import { InputFile } from "grammy";
 
-import sharp from "sharp";
-import { join } from "path";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import satori from "satori";
-import { readFile } from "fs/promises";
+import sharp from "sharp";
 
-import { evaluateGuess } from "./board.helper";
 import type { GuessEntry, LetterState } from "../types";
+import { evaluateGuess } from "./board.helper";
 
 const TILE_SIZE = 60;
 const GAP = 8;

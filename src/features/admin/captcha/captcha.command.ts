@@ -3,16 +3,16 @@ import { Composer } from "grammy";
 import { db } from "#/config/db";
 import { env } from "#/config/env";
 import { redis } from "#/config/redis";
-import { redisKeys } from "#/core/redis-keys.constants";
 import { formatUserMention } from "#/core/format/mention.helper";
+import { redisKeys } from "#/core/redis-keys.constants";
 
-import { captchaSchema } from "./captcha.schema";
 import { enqueueCaptchaExpiry } from "./captcha-queue.service";
 import {
   buildCaptchaKeyboard,
   buildMessage,
   decodeSlot,
 } from "./captcha-ui.helper";
+import { captchaSchema } from "./captcha.schema";
 
 const composer = new Composer();
 

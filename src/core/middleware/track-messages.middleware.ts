@@ -2,8 +2,8 @@ import { Composer, Context } from "grammy";
 
 import { env } from "#/config/env";
 import { redis } from "#/config/redis";
-import { redisKeys } from "#/core/redis-keys.constants";
 import { createLogger } from "#/core/logging/logger.service";
+import { redisKeys } from "#/core/redis-keys.constants";
 
 const log = createLogger("core.middleware.track-messages.middleware");
 

@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
 import { redisKeys } from "#/core/redis-keys.constants";
-import { dailyWordleSchema } from "#/features/wordle/shared/helpers/daily-session.helper";
 import {
   getCurrentGameDateString,
   getDateStringFromDate,
 } from "#/features/wordle/daily/helpers/date.helper";
+import { dailyWordleSchema } from "#/features/wordle/shared/helpers/daily-session.helper";
 
 describe("date helpers", () => {
   test("formats dates as YYYY-MM-DD", () => {

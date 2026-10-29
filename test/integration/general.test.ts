@@ -1,9 +1,8 @@
+import { describe, expect, test } from "bun:test";
 import type { Message } from "grammy/types";
 
-import { describe, expect, test } from "bun:test";
-
-import { TestBot } from "../helpers/harness";
 import { setupTestEnvironment } from "../helpers/env";
+import { TestBot } from "../helpers/harness";
 
 setupTestEnvironment();
 

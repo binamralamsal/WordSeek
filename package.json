@@ -6,14 +6,19 @@
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
+    "test:check": "bun test --check",
+    "fmt": "bun fmt",
+    "fmt:check": "bun fmt --check",
+    "lint": "bun lint",
+    "lint:fix": "bun lint --fix",
+    "typecheck": "bun check",
+    "verify": "bun run fmt:check && bun run lint && bun run typecheck && bun test",
     "db:migrate": "kysely migrate",
     "db:seed": "kysely seed",
-    "db:codegen": "kysely-codegen --out-file ./src/database/schema.ts --singularize --camel-case",
-    "typecheck": "tsc --noEmit"
+    "db:codegen": "kysely-codegen --out-file ./src/database/schema.ts --singularize --camel-case"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.13",
-    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@types/bun": "1.4.4",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.3.0",

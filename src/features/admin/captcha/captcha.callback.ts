@@ -1,12 +1,12 @@
 import { Composer } from "grammy";
 
 import { redis } from "#/config/redis";
-import { redisKeys } from "#/core/redis-keys.constants";
 import { formatUserMention } from "#/core/format/mention.helper";
+import { redisKeys } from "#/core/redis-keys.constants";
 import { editMessageTextSafe } from "#/core/telegram/edit-message.helper";
 
-import { captchaSchema } from "./captcha.schema";
 import { buildCaptchaKeyboard, buildMessage } from "./captcha-ui.helper";
+import { captchaSchema } from "./captcha.schema";
 
 const composer = new Composer();
 

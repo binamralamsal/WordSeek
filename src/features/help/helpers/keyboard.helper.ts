@@ -1,11 +1,11 @@
 import { InlineKeyboard } from "grammy";
 
-import { formatActiveButton } from "#/core/ui/format-active-button.helper";
 import {
   DISCUSSION_GROUP,
   DONATION_LINK,
   UPDATES_CHANNEL,
 } from "#/config/constants";
+import { formatActiveButton } from "#/core/ui/format-active-button.helper";
 
 export type HelpSection = "howto" | "scores" | "group" | "other" | "admin";
 

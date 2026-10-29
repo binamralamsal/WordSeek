@@ -1,5 +1,6 @@
 import { GrammyError } from "grammy";
 import type { Context } from "grammy";
+
 import type { ReactionTypeEmoji } from "grammy/types";
 
 export async function reactWithRandom(ctx: Context) {

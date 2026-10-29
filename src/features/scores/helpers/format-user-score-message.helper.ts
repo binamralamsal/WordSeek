@@ -1,5 +1,5 @@
-import type { LeaderboardScope } from "#/types";
 import { escapeHtml } from "#/core/format/escape-html.helper";
+import type { LeaderboardScope } from "#/types";
 
 type FormatUserScoreData = {
   totalScore: number;

@@ -2,14 +2,14 @@ import { Composer, type Context } from "grammy";
 
 import { sequentialize } from "@grammyjs/runner";
 
-import { commandRouter } from "#/features/command-router";
-import { callbackRouter } from "#/features/callback-router";
-import { wordleTextHandler } from "#/features/wordle/text.handler";
 import { bannedUsersMiddleware } from "#/core/middleware/banned-users.middleware";
-import { topicEditedMiddleware } from "#/core/middleware/topic-edited.middleware";
-import { syncUserChatMiddleware } from "#/core/middleware/sync-user-chat.middleware";
 import { botMembershipMiddleware } from "#/core/middleware/bot-membership.middleware";
+import { syncUserChatMiddleware } from "#/core/middleware/sync-user-chat.middleware";
+import { topicEditedMiddleware } from "#/core/middleware/topic-edited.middleware";
 import { trackMessagesMiddleware } from "#/core/middleware/track-messages.middleware";
+import { callbackRouter } from "#/features/callback-router";
+import { commandRouter } from "#/features/command-router";
+import { wordleTextHandler } from "#/features/wordle/text.handler";
 
 /**
  * Builds the root middleware stack exactly as it is registered in production.

@@ -1,8 +1,8 @@
 import { Composer } from "grammy";
 
-import os from "os";
-import process from "process";
-import { promises as fs } from "fs";
+import { promises as fs } from "node:fs";
+import os from "node:os";
+import process from "node:process";
 
 import { db } from "#/config/db";
 import { env } from "#/config/env";

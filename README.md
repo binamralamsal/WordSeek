@@ -118,6 +118,25 @@
 `LOGS_CHANNEL` and `SYSTEM_LOG_CHANNEL` serve different purposes and must not
 point at the same chat: the former tracks cheaters, the latter reports crashes.
 
+## Development
+
+Formatting, linting and type checking all run through Bun's built-in tools, so
+there is nothing to install. Their configuration lives in `bunfig.toml`.
+
+```bash
+bun fmt                # format the repository
+bun fmt --check        # fail if anything needs formatting
+bun lint               # lint (warnings do not fail)
+bun lint --fix         # apply safe autofixes
+bun lint --type-aware  # extra type-aware rules (opt-in, currently noisy)
+bun check              # type check with `bun check` (replaces `tsc --noEmit`)
+bun run verify         # fmt:check + lint + typecheck + tests
+```
+
+Import order is enforced by `bun fmt` (`[fmt.sortImports]` in `bunfig.toml`):
+`grammy`, `@grammyjs/*`, built-ins and packages, `#/*` aliases, then relative
+paths. Each group is sorted alphabetically.
+
 ## Testing
 
 The test suite uses `bun test` with an in-memory Postgres (PGlite running the
@@ -128,7 +147,8 @@ needed.
 bun test              # run everything
 bun test:watch        # watch mode
 bun test:coverage     # coverage report
-bun run typecheck     # TypeScript
+bun test --check      # type check the tests first
+bun run typecheck     # type check the whole project
 bun test test/integration/scores.test.ts   # a single file
 ```
 

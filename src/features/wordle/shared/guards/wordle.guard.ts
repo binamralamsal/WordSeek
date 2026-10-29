@@ -2,8 +2,8 @@ import type { Context } from "grammy";
 
 import { db } from "#/config/db";
 import { redis } from "#/config/redis";
-import { redisKeys } from "#/core/redis-keys.constants";
 import type { Guard, GuardResult } from "#/core/guards/admin.guard";
+import { redisKeys } from "#/core/redis-keys.constants";
 
 import { dailyWordleSchema } from "../helpers/daily-session.helper";
 

@@ -1,13 +1,13 @@
 import { InlineKeyboard } from "grammy";
 
-import { formatActiveButton } from "#/core/ui/format-active-button.helper";
-import type { LeaderboardPeriod, LeaderboardScope, WordLength } from "#/types";
-import { LEADERBOARD_PERIODS, LEADERBOARD_SCOPES, WORD_LENGTHS } from "#/types";
 import {
   DISCUSSION_GROUP,
   DONATION_LINK,
   UPDATES_CHANNEL,
 } from "#/config/constants";
+import { formatActiveButton } from "#/core/ui/format-active-button.helper";
+import type { LeaderboardPeriod, LeaderboardScope, WordLength } from "#/types";
+import { LEADERBOARD_PERIODS, LEADERBOARD_SCOPES, WORD_LENGTHS } from "#/types";
 
 export type LeaderboardCallbackKey = "leaderboard" | `score ${string}`;
 

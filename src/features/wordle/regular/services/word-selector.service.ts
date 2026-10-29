@@ -1,12 +1,12 @@
-import { randomInt } from "crypto";
+import { randomInt } from "node:crypto";
 
 import { redis } from "#/config/redis";
-import type { WordLength } from "#/types";
-import commonSixWords from "#/data/common-six.json";
+import { createLogger } from "#/core/logging/logger.service";
+import { redisKeys } from "#/core/redis-keys.constants";
 import commonFiveWords from "#/data/common-five.json";
 import commonFourWords from "#/data/common-four.json";
-import { redisKeys } from "#/core/redis-keys.constants";
-import { createLogger } from "#/core/logging/logger.service";
+import commonSixWords from "#/data/common-six.json";
+import type { WordLength } from "#/types";
 
 const log = createLogger(
   "features.wordle.regular.services.word-selector.service",

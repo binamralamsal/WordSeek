@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 
 import { env } from "#/config/env";
 import words from "#/data/daily-word-lists.json";

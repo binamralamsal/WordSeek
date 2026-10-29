@@ -1,15 +1,15 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  ALL_WORDS,
-  MODE_LABEL,
-} from "#/features/wordle/shared/helpers/words.helper";
-import {
   buildRichFeedback,
   evaluateGuess,
   getHint,
   renderGuessRow,
 } from "#/features/wordle/shared/helpers/board.helper";
+import {
+  ALL_WORDS,
+  MODE_LABEL,
+} from "#/features/wordle/shared/helpers/words.helper";
 
 describe("evaluateGuess", () => {
   test("marks exact matches as correct", () => {

@@ -1,14 +1,14 @@
-import { run } from "@grammyjs/runner";
 import { autoRetry } from "@grammyjs/auto-retry";
+import { run } from "@grammyjs/runner";
 
-import { bot } from "#/config/bot";
 import { createAppComposer } from "#/app";
+import { bot } from "#/config/bot";
 import { createLogger } from "#/core/logging/logger.service";
-import { dailyWordleCron } from "#/features/wordle/daily/daily.cron";
 import { errorHandler } from "#/core/middleware/error-handler.middleware";
 import { CommandRegistry } from "#/core/services/command-registry.service";
 import { resumeBroadcast } from "#/features/admin/broadcast/broadcast.service";
 import { startCaptchaWorker } from "#/features/admin/captcha/captcha-queue.service";
+import { dailyWordleCron } from "#/features/wordle/daily/daily.cron";
 import { ensureDailyWordExists } from "#/features/wordle/daily/services/daily-word.service";
 
 const log = createLogger("startup");

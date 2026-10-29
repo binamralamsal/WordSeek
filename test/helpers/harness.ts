@@ -1,8 +1,9 @@
 import { Bot } from "grammy";
+
 import type { Message, Update, User, UserFromGetMe } from "grammy/types";
 
-import { env } from "#/config/env";
 import { createAppComposer } from "#/app";
+import { env } from "#/config/env";
 
 export const TEST_BOT_INFO: UserFromGetMe = {
   id: 123456789,

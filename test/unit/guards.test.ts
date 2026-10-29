@@ -3,8 +3,8 @@ import type { Context } from "grammy";
 import { describe, expect, test } from "bun:test";
 
 import {
-  type Guard,
   adminOnlyGuards,
+  type Guard,
   requireAdmin,
   runGuards,
 } from "#/core/guards/admin.guard";

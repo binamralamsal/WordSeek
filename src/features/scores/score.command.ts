@@ -4,12 +4,12 @@ import { runGuards } from "#/core/guards/admin.guard";
 import { getTargetUser } from "#/core/services/users.service";
 import { requireAllowedTopic } from "#/features/wordle/shared/guards/wordle.guard";
 
-import { getUserScores } from "./services/get-user-scores.service";
-import { parseLeaderboardInput } from "./helpers/parse-filters.helper";
-import { getSmartDefaults } from "./services/get-smart-defaults.service";
 import { formatNoScoresMessage } from "./helpers/format-no-scores-message.helper";
 import { formatUserScoreMessage } from "./helpers/format-user-score-message.helper";
 import { generateLeaderboardKeyboard } from "./helpers/leaderboard-keyboard.helper";
+import { parseLeaderboardInput } from "./helpers/parse-filters.helper";
+import { getSmartDefaults } from "./services/get-smart-defaults.service";
+import { getUserScores } from "./services/get-user-scores.service";
 
 const composer = new Composer();
 

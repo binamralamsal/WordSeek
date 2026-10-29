@@ -5,17 +5,17 @@ import { sql } from "kysely";
 import { db } from "#/config/db";
 import { editMessageTextSafe } from "#/core/telegram/edit-message.helper";
 
-import { getUserScores } from "./services/get-user-scores.service";
-import { getSmartDefaults } from "./services/get-smart-defaults.service";
-import { formatNoScoresMessage } from "./helpers/format-no-scores-message.helper";
-import { formatUserScoreMessage } from "./helpers/format-user-score-message.helper";
-import { generateLeaderboardKeyboard } from "./helpers/leaderboard-keyboard.helper";
-import { generateUserSelectionKeyboard } from "./helpers/user-selection-keyboard.helper";
 import {
   parseScoreCallback,
   parseScoreListCallback,
   parseScoreSelectCallback,
 } from "./helpers/callback-data.helper";
+import { formatNoScoresMessage } from "./helpers/format-no-scores-message.helper";
+import { formatUserScoreMessage } from "./helpers/format-user-score-message.helper";
+import { generateLeaderboardKeyboard } from "./helpers/leaderboard-keyboard.helper";
+import { generateUserSelectionKeyboard } from "./helpers/user-selection-keyboard.helper";
+import { getSmartDefaults } from "./services/get-smart-defaults.service";
+import { getUserScores } from "./services/get-user-scores.service";
 
 const composer = new Composer();
 

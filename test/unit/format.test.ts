@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
 
-import { escapeHtml } from "#/core/format/escape-html.helper";
 import { formatDuration } from "#/core/format/duration.helper";
-import { formatActiveButton } from "#/core/ui/format-active-button.helper";
+import { escapeHtml } from "#/core/format/escape-html.helper";
 import {
   formatDisplayName,
   formatUserLink,
   formatUserMention,
 } from "#/core/format/mention.helper";
+import { formatActiveButton } from "#/core/ui/format-active-button.helper";
 
 describe("escapeHtml", () => {
   test("escapes every HTML-sensitive character", () => {

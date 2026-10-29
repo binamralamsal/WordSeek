@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
 import { redisKeys } from "#/core/redis-keys.constants";
-import { ALL_WORDS } from "#/features/wordle/shared/helpers/words.helper";
 import { getCurrentGameDateString } from "#/features/wordle/daily/helpers/date.helper";
+import { ALL_WORDS } from "#/features/wordle/shared/helpers/words.helper";
 
-import { TestBot } from "../helpers/harness";
 import { setupTestEnvironment } from "../helpers/env";
 import { seedDailyWord, seedGame, seedUser } from "../helpers/fixtures";
+import { TestBot } from "../helpers/harness";
 
 const env = setupTestEnvironment();
 

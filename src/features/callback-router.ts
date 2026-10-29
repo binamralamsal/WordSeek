@@ -1,11 +1,11 @@
 import { Composer } from "grammy";
 
+import { captchaCallbacks } from "./admin/captcha/captcha.callback";
 import { helpCallbacks } from "./help/help.callback";
+import { leaderboardCallbacks } from "./scores/leaderboard.callback";
 import { scoreCallbacks } from "./scores/score.callback";
 import { voteEndCallback } from "./wordle/regular/vote.callback";
 import { wordleHintCallback } from "./wordle/shared/hint.callback";
-import { captchaCallbacks } from "./admin/captcha/captcha.callback";
-import { leaderboardCallbacks } from "./scores/leaderboard.callback";
 
 const composer = new Composer();
 

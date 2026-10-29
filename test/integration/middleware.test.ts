@@ -1,23 +1,23 @@
-﻿import type { Message, Update } from "grammy/types";
-import { BotError, Context, GrammyError, HttpError } from "grammy";
+﻿import { BotError, Context, GrammyError, HttpError } from "grammy";
 
 import { afterEach, describe, expect, test } from "bun:test";
+import type { Message, Update } from "grammy/types";
 
-import { env } from "#/config/env";
 import { bot as configBot } from "#/config/bot";
-import { redisKeys } from "#/core/redis-keys.constants";
-import { errorHandler } from "#/core/middleware/error-handler.middleware";
+import { env } from "#/config/env";
 import { resetSystemLogState } from "#/core/logging/system-log.service";
+import { errorHandler } from "#/core/middleware/error-handler.middleware";
+import { redisKeys } from "#/core/redis-keys.constants";
 
-import { seedChatTopic, seedUser } from "../helpers/fixtures";
 import { flushAsyncWork, setupTestEnvironment } from "../helpers/env";
+import { seedChatTopic, seedUser } from "../helpers/fixtures";
 import {
-  TEST_BOT_INFO,
-  TestBot,
   forumMessageUpdate,
   forumTopicEditedUpdate,
   groupMessageUpdate,
   myChatMemberUpdate,
+  TEST_BOT_INFO,
+  TestBot,
 } from "../helpers/harness";
 
 const envState = setupTestEnvironment();

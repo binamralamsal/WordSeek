@@ -1,6 +1,6 @@
 import { Composer, InlineKeyboard, InputFile } from "grammy";
 
-import { createReadStream } from "fs";
+import { createReadStream } from "node:fs";
 
 import {
   DISCUSSION_GROUP,

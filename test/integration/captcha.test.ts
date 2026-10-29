@@ -2,12 +2,12 @@ import { afterAll, describe, expect, test } from "bun:test";
 
 import { SLOT_SYMBOLS } from "#/config/constants";
 import { redisKeys } from "#/core/redis-keys.constants";
-import { captchaSchema } from "#/features/admin/captcha/captcha.schema";
 import { setCaptchaEnqueuer } from "#/features/admin/captcha/captcha-queue.service";
+import { captchaSchema } from "#/features/admin/captcha/captcha.schema";
 
-import { TestBot } from "../helpers/harness";
-import { seedUser } from "../helpers/fixtures";
 import { setupTestEnvironment } from "../helpers/env";
+import { seedUser } from "../helpers/fixtures";
+import { TestBot } from "../helpers/harness";
 
 const env = setupTestEnvironment();
 

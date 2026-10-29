@@ -1,9 +1,9 @@
 ﻿import { describe, expect, test } from "bun:test";
 
+import { formatLeaderboardMessage } from "#/features/scores/helpers/format-leaderboard-message.helper";
 import { formatNoScoresMessage } from "#/features/scores/helpers/format-no-scores-message.helper";
 import { formatUserScoreMessage } from "#/features/scores/helpers/format-user-score-message.helper";
 import { generateLeaderboardKeyboard } from "#/features/scores/helpers/leaderboard-keyboard.helper";
-import { formatLeaderboardMessage } from "#/features/scores/helpers/format-leaderboard-message.helper";
 import { generateUserSelectionKeyboard } from "#/features/scores/helpers/user-selection-keyboard.helper";
 
 function callbackData(button: unknown): string | undefined {

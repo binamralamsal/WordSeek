@@ -1,11 +1,11 @@
 import type { Context } from "grammy";
 
 import { db } from "#/config/db";
-import type { WordLength } from "#/types";
 import { runGuards } from "#/core/guards/admin.guard";
+import type { WordLength } from "#/types";
 
-import { buildRichFeedback } from "../shared/helpers/board.helper";
 import { requireAllowedTopic } from "../shared/guards/wordle.guard";
+import { buildRichFeedback } from "../shared/helpers/board.helper";
 import { reactWithRandom } from "../shared/helpers/reactions.helper";
 import { ALL_WORDS, MODE_LABEL } from "../shared/helpers/words.helper";
 

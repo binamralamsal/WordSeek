@@ -2,8 +2,6 @@ import { db } from "#/config/db";
 import { env } from "#/config/env";
 import { createLogger } from "#/core/logging/logger.service";
 
-import { getWordDetails } from "./word-details.service";
-import { resetStreaksForInactivePlayers } from "./streaks.service";
 import {
   getCurrentGameDateString,
   getDateStringFromDate,
@@ -13,6 +11,8 @@ import {
   getWordOfTheDay,
   seedFromSecret,
 } from "../helpers/word-of-the-day.helper";
+import { resetStreaksForInactivePlayers } from "./streaks.service";
+import { getWordDetails } from "./word-details.service";
 
 const log = createLogger("features.wordle.daily.services.daily-word.service");
 

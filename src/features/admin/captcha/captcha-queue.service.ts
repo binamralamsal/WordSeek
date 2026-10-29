@@ -2,9 +2,9 @@ import { Queue, Worker } from "bullmq";
 
 import { bot } from "#/config/bot";
 import { redis } from "#/config/redis";
-import { redisKeys } from "#/core/redis-keys.constants";
-import { createLogger } from "#/core/logging/logger.service";
 import { formatUserMention } from "#/core/format/mention.helper";
+import { createLogger } from "#/core/logging/logger.service";
+import { redisKeys } from "#/core/redis-keys.constants";
 
 import { captchaSchema } from "./captcha.schema";
 

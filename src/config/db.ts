@@ -1,13 +1,13 @@
-import pg from "pg";
 import {
   CamelCasePlugin,
   DeduplicateJoinsPlugin,
   Kysely,
   PostgresDialect,
 } from "kysely";
+import pg from "pg";
 
-import type { DB } from "#/database/schema";
 import { createLogger } from "#/core/logging/logger.service";
+import type { DB } from "#/database/schema";
 
 import { env } from "./env";
 

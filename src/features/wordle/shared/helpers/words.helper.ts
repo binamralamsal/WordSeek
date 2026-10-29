@@ -1,7 +1,7 @@
-import type { WordLength } from "#/types";
-import allSixWords from "#/data/all-six.json";
 import allFiveWords from "#/data/all-five.json";
 import allFourWords from "#/data/all-four.json";
+import allSixWords from "#/data/all-six.json";
+import type { WordLength } from "#/types";
 
 export const ALL_WORDS: Record<WordLength, string[]> = {
   4: allFourWords,
