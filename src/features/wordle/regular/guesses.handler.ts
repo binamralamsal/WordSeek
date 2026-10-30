@@ -58,7 +58,6 @@ export async function handleRegularGuess(ctx: Context, currentGuess: string) {
         .execute();
 
       const score = 30 - allGuesses.length;
-      const additionalMessage = `Added ${30 - allGuesses.length} to the leaderboard.`;
 
       await db
         .insertInto("leaderboard")
@@ -70,21 +69,31 @@ export async function handleRegularGuess(ctx: Context, currentGuess: string) {
         })
         .execute();
 
-      const formattedResponse = `<blockquote>Congrats! You guessed it correctly.\nCorrect Word: <b>${currentGuess}</b>\n${additionalMessage}</blockquote>\nStart with /new${wordLength}`;
+      const formattedResponse = `<h3>🎉 Congrats! You guessed it correctly</h3>
+<p>The word was <b>${currentGuess.toUpperCase()}</b>.</p>
+<blockquote>Added ${score} to the leaderboard.</blockquote>
+<p>Keep the streak going with /new${wordLength}</p>`;
 
-      ctx.reply(formattedResponse, {
-        reply_parameters: { message_id: ctx.message!.message_id },
-        parse_mode: "HTML",
-      });
+      ctx.replyWithRichMessage(
+        { html: formattedResponse },
+        {
+          reply_parameters: { message_id: ctx.message!.message_id },
+        },
+      );
     } else {
       const additionalMessage = `Anonymous admins or channels don't get points.`;
 
-      const formattedResponse = `<blockquote>Congrats! You guessed it correctly.\nCorrect Word: <b>${currentGuess}</b>\n</blockquote>${additionalMessage}\nStart with /new${wordLength}`;
+      const formattedResponse = `<h3>🎉 Congrats! You guessed it correctly</h3>
+<p>The word was <b>${currentGuess.toUpperCase()}</b>.</p>
+<blockquote>${additionalMessage}</blockquote>
+<p>Start with /new${wordLength}</p>`;
 
-      ctx.reply(formattedResponse, {
-        reply_parameters: { message_id: ctx.message!.message_id },
-        parse_mode: "HTML",
-      });
+      ctx.replyWithRichMessage(
+        { html: formattedResponse },
+        {
+          reply_parameters: { message_id: ctx.message!.message_id },
+        },
+      );
     }
 
     reactWithRandom(ctx);
@@ -110,11 +119,11 @@ export async function handleRegularGuess(ctx: Context, currentGuess: string) {
 
   if (allGuesses.length === 30) {
     await db.deleteFrom("games").where("id", "=", currentGame.id).execute();
-    return ctx.reply(
-      "Game Over! The word was " +
-        currentGame.word +
-        `\nYou can start a new game with /new${wordLength}`,
-    );
+    return ctx.replyWithRichMessage({
+      html: `<h3>🛑 Game Over!</h3>
+<p>The word was <b>${currentGame.word.toUpperCase()}</b>.</p>
+<p>You can start a new game with /new${wordLength}</p>`,
+    });
   }
 
   const modeLabel = MODE_LABEL[wordLength];

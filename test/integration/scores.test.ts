@@ -152,8 +152,8 @@ describe("/score", () => {
     const text = bot.lastText() ?? "";
     expect(text).toContain("55");
     expect(text).toContain("#1");
-    expect(text).toContain("Current Streak:</b> 3");
-    expect(text).toContain("Highest Streak:</b> 7");
+    expect(text).toContain("3 days");
+    expect(text).toContain("7 days");
   });
 
   test("finds another user by @mention", async () => {
@@ -220,8 +220,9 @@ describe("leaderboard callbacks", () => {
     await bot.click("leaderboard global month 5");
 
     const edit = bot.lastCall("editMessageText");
-    expect(edit?.payload.text).toContain("Global");
-    expect(edit?.payload.parse_mode).toBe("HTML");
+    const html = String(edit?.payload.rich_message?.html ?? "");
+    expect(html).toContain("Global");
+    expect(html).toContain("<table");
     expect(bot.lastCall("answerCallbackQuery")).toBeDefined();
   });
 
@@ -243,7 +244,9 @@ describe("score callbacks", () => {
     await bot.click("score_list ada");
 
     const edit = bot.lastCall("editMessageText");
-    expect(edit?.payload.text).toContain("Multiple Users Found");
+    expect(String(edit?.payload.rich_message?.html)).toContain(
+      "Multiple Users Found",
+    );
     const buttons = edit?.payload.reply_markup.inline_keyboard.flat() ?? [];
     expect(buttons).toHaveLength(2);
     expect(buttons[1].callback_data).toBe("score_select 4343 ada");
@@ -265,7 +268,7 @@ describe("score callbacks", () => {
     const bot = new TestBot();
     await bot.click("score_select 4242 ada");
 
-    expect(bot.lastCall("editMessageText")?.payload.text).toContain("44");
+    expect(bot.lastText()).toContain("44");
     expect(bot.lastCall("answerCallbackQuery")).toBeDefined();
   });
 
@@ -278,9 +281,7 @@ describe("score callbacks", () => {
     const bot = new TestBot();
     await bot.click("score_select 4242 ada");
 
-    expect(bot.lastCall("editMessageText")?.payload.text).toContain(
-      "no scores recorded",
-    );
+    expect(bot.lastText()).toContain("no scores recorded");
     expect(bot.lastCall("answerCallbackQuery")?.payload.text).toBe(
       "No scores found for the current filter.",
     );
@@ -292,7 +293,7 @@ describe("score callbacks", () => {
     const bot = new TestBot();
     await bot.click("score 4242 global today 5");
 
-    expect(bot.lastCall("editMessageText")?.payload.text).toContain("88");
+    expect(bot.lastText()).toContain("88");
   });
 
   test("reports an empty filter selection", async () => {
@@ -301,9 +302,7 @@ describe("score callbacks", () => {
     const bot = new TestBot();
     await bot.click("score 4242 global today 6");
 
-    expect(bot.lastCall("editMessageText")?.payload.text).toContain(
-      "hasn't played today",
-    );
+    expect(bot.lastText()).toContain("hasn't played today");
     expect(bot.lastCall("answerCallbackQuery")?.payload.text).toBe(
       "No scores found for this period.",
     );

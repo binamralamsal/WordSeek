@@ -75,26 +75,33 @@ composer.command("score", async (ctx) => {
       hasAnyScores,
     });
 
-    return ctx.reply(message, {
+    return ctx.replyWithRichMessage(
+      { html: message },
+      {
+        reply_markup: keyboard,
+        reply_parameters: {
+          message_id: ctx.msgId!,
+        },
+      },
+    );
+  }
+
+  const message = formatUserScoreMessage(
+    userScore,
+    searchKey,
+    timeKey,
+    wordLength,
+  );
+  return ctx.replyWithRichMessage(
+    { html: message },
+    {
+      disable_notification: true,
       reply_markup: keyboard,
       reply_parameters: {
         message_id: ctx.msgId!,
       },
-    });
-  }
-
-  const message = formatUserScoreMessage(userScore, searchKey);
-  ctx.reply(message, {
-    disable_notification: true,
-    parse_mode: "HTML",
-    reply_markup: keyboard,
-    reply_parameters: {
-      message_id: ctx.msgId!,
     },
-    link_preview_options: {
-      is_disabled: true,
-    },
-  });
+  );
 });
 
 export const scoreCommand = composer;

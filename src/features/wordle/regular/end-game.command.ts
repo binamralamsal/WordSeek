@@ -2,6 +2,7 @@ import { Composer } from "grammy";
 
 import { db } from "#/config/db";
 import { redis } from "#/config/redis";
+import { escapeHtml } from "#/core/format/escape-html.helper";
 import { runGuards } from "#/core/guards/admin.guard";
 import { redisKeys } from "#/core/redis-keys.constants";
 
@@ -51,14 +52,17 @@ composer.command("end", async (ctx) => {
   const userName =
     ctx.from.first_name + (ctx.from.last_name ? " " + ctx.from.last_name : "");
 
-  await ctx.reply(
-    `<b>🗳️ Vote to End Game</b>\n\n` +
-      `<a href="tg://user?id=${ctx.from.id}">${userName}</a> wants to end the game.\n\n` +
-      `<b>Votes needed: 3 out of remaining players</b>\n` +
-      `<b>Current votes: 1/3</b>\n\n` +
-      `React with the button below to vote for ending the game.`,
+  await ctx.replyWithRichMessage(
     {
-      parse_mode: "HTML",
+      html: `<h3>🗳️ Vote to End Game</h3>
+<p><a href="tg://user?id=${ctx.from.id}">${escapeHtml(userName)}</a> wants to end the game.</p>
+<table bordered compact>
+<tr><td align="left">Votes needed</td><td align="right"><b>3</b></td></tr>
+<tr><td align="left">Current votes</td><td align="right"><b>1/3</b></td></tr>
+</table>
+<p>Tap the button below to vote.</p>`,
+    },
+    {
       reply_markup: {
         inline_keyboard: [
           [

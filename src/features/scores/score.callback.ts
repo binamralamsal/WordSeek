@@ -43,12 +43,12 @@ composer.callbackQuery(/^score_list/, async (ctx) => {
 
   await editMessageTextSafe(
     ctx,
-    `⚠️ <strong>Multiple Users Found</strong>\n\n` +
-      `There are ${users.length} users with username @${username}. ` +
-      `This can happen when a user deletes their account and someone else creates a new account with the same username.\n\n` +
-      `Please select the user you want to view:`,
     {
-      parse_mode: "HTML",
+      html: `<h3>👥 Multiple Users Found</h3>
+<blockquote>There are <b>${users.length}</b> users with username @${username}. This can happen when a user deletes their account and someone else creates a new account with the same username.</blockquote>
+<p>Please select the user you want to view:</p>`,
+    },
+    {
       reply_markup: keyboard,
     },
   );
@@ -123,10 +123,13 @@ composer.callbackQuery(/^score_select/, async (ctx) => {
           backButtonDetails.callback,
         );
 
-    await editMessageTextSafe(ctx, message, {
-      parse_mode: "HTML",
-      reply_markup: keyboard,
-    });
+    await editMessageTextSafe(
+      ctx,
+      { html: message },
+      {
+        reply_markup: keyboard,
+      },
+    );
 
     return ctx.answerCallbackQuery({
       text: "No scores found for the current filter.",
@@ -146,11 +149,16 @@ composer.callbackQuery(/^score_select/, async (ctx) => {
       : undefined,
   );
 
-  await editMessageTextSafe(ctx, formatUserScoreMessage(userScore, searchKey), {
-    reply_markup: keyboard,
-    parse_mode: "HTML",
-    link_preview_options: { is_disabled: true },
-  });
+  await editMessageTextSafe(
+    ctx,
+    {
+      html: formatUserScoreMessage(userScore, searchKey, timeKey, wordLength),
+    },
+    {
+      reply_markup: keyboard,
+      link_preview_options: { is_disabled: true },
+    },
+  );
 
   return ctx.answerCallbackQuery();
 });
@@ -215,10 +223,13 @@ composer.callbackQuery(/^score /, async (ctx) => {
       `score ${userId}`,
     );
 
-    await editMessageTextSafe(ctx, message, {
-      reply_markup: keyboard,
-      parse_mode: "HTML",
-    });
+    await editMessageTextSafe(
+      ctx,
+      { html: message },
+      {
+        reply_markup: keyboard,
+      },
+    );
 
     return ctx.answerCallbackQuery({
       text: "No scores found for this period.",
@@ -233,11 +244,16 @@ composer.callbackQuery(/^score /, async (ctx) => {
     `score ${userId}`,
   );
 
-  await editMessageTextSafe(ctx, formatUserScoreMessage(userScore, searchKey), {
-    reply_markup: keyboard,
-    parse_mode: "HTML",
-    link_preview_options: { is_disabled: true },
-  });
+  await editMessageTextSafe(
+    ctx,
+    {
+      html: formatUserScoreMessage(userScore, searchKey, timeKey, wordLength),
+    },
+    {
+      reply_markup: keyboard,
+      link_preview_options: { is_disabled: true },
+    },
+  );
 
   return ctx.answerCallbackQuery();
 });

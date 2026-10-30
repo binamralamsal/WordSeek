@@ -1,10 +1,12 @@
 import type { Context } from "grammy";
 
+import type { InputRichMessage } from "grammy/types";
+
 type EditMessageOptions = Parameters<Context["editMessageText"]>[1];
 
 export async function editMessageTextSafe(
   ctx: Context,
-  text: string,
+  text: string | InputRichMessage,
   options?: EditMessageOptions,
 ) {
   try {

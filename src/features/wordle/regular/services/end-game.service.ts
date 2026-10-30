@@ -2,6 +2,7 @@ import type { Context } from "grammy";
 
 import { db } from "#/config/db";
 import { env } from "#/config/env";
+import { escapeHtml } from "#/core/format/escape-html.helper";
 
 export async function isUserAuthorized(userId: string, chatId: string) {
   const authorized = await db
@@ -27,11 +28,12 @@ export async function endGame(
 
   const wordLength = game?.word ? game.word.length : 5;
 
-  await ctx.reply(
-    `<blockquote>🎮 <b>Game Ended</b>\nCorrect Word: <b>${word}</b></blockquote>
-<blockquote>${reason ? `${reason}\n` : ""}Start a new game with /new${wordLength}</blockquote>`,
-    { parse_mode: "HTML" },
-  );
+  await ctx.replyWithRichMessage({
+    html: `<h3>🛑 Game Ended</h3>
+<p>The word was <b>${word.toUpperCase()}</b>.</p>
+${reason ? `<blockquote>${reason}</blockquote>` : ""}
+<p>Start a new game with /new${wordLength}</p>`,
+  });
 }
 
 export type EndPermission =
@@ -60,7 +62,7 @@ export async function getEndPermission(
 
   const userName =
     ctx.from.first_name + (ctx.from.last_name ? " " + ctx.from.last_name : "");
-  const userLink = `<a href="tg://user?id=${ctx.from.id}">${userName}</a>`;
+  const userLink = `<a href="tg://user?id=${ctx.from.id}">${escapeHtml(userName)}</a>`;
 
   let reason = "";
 

@@ -27,7 +27,8 @@ describe("/new", () => {
 
     const game = await startGame(bot);
 
-    expect(bot.lastText()).toBe("Game started! Guess the 5-letter word!");
+    expect(bot.lastText()).toContain("Game started!");
+    expect(bot.lastText()).toContain("5-letter");
     expect(game.word).toHaveLength(5);
     expect(game.activeChat).toBe(String(PLAYER_ID));
     expect(game.topicId).toBe("general");
@@ -190,7 +191,8 @@ describe("regular guesses", () => {
 
     await bot.sendText(decoys[29]!, { id: PLAYER_ID });
 
-    expect(bot.lastText()).toContain("Game Over! The word was");
+    expect(bot.lastText()).toContain("Game Over!");
+    expect(bot.lastText()).toContain(game.word.toUpperCase());
     expect(await env.db.selectFrom("games").selectAll().execute()).toHaveLength(
       0,
     );

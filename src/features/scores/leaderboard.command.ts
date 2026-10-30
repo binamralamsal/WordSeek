@@ -30,12 +30,20 @@ composer.command("leaderboard", async (ctx) => {
     wordLength,
   });
 
-  ctx.reply(formatLeaderboardMessage(memberScores, searchKey), {
-    disable_notification: true,
-    reply_markup: keyboard,
-    parse_mode: "HTML",
-    link_preview_options: { is_disabled: true },
-  });
+  return ctx.replyWithRichMessage(
+    {
+      html: formatLeaderboardMessage(
+        memberScores,
+        searchKey,
+        timeKey,
+        wordLength,
+      ),
+    },
+    {
+      disable_notification: true,
+      reply_markup: keyboard,
+    },
+  );
 });
 
 export const leaderboardCommand = composer;

@@ -30,10 +30,16 @@ composer.callbackQuery(/^leaderboard/, async (ctx) => {
 
   await editMessageTextSafe(
     ctx,
-    formatLeaderboardMessage(memberScores, filter.searchKey),
+    {
+      html: formatLeaderboardMessage(
+        memberScores,
+        filter.searchKey,
+        filter.timeKey,
+        filter.wordLength,
+      ),
+    },
     {
       reply_markup: keyboard,
-      parse_mode: "HTML",
       link_preview_options: { is_disabled: true },
     },
   );

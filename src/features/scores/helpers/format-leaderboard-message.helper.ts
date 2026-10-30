@@ -1,35 +1,46 @@
 import { escapeHtml } from "#/core/format/escape-html.helper";
-import type { LeaderboardEntry, LeaderboardScope } from "#/types";
+import type {
+  LeaderboardEntry,
+  LeaderboardPeriod,
+  LeaderboardScope,
+  WordLength,
+} from "#/types";
+
+import { formatFilterSummary, formatScopeLabel } from "./format-filters.helper";
+
+const MEDALS = ["🥇", "🥈", "🥉"];
 
 export function formatLeaderboardMessage(
   data: LeaderboardEntry[],
   searchKey: LeaderboardScope,
+  timeKey: LeaderboardPeriod,
+  wordLength: WordLength,
 ) {
-  const blocks = data.reduce((acc, entry, index) => {
-    const rank = index < 3 ? ["🥇", "🥈", "🥉"][index] : "🔅";
+  const heading = `🏆 ${formatScopeLabel(searchKey)} Leaderboard`;
 
-    let usernameLink = escapeHtml(entry.name);
-    if (entry.username) {
-      usernameLink = `<a href="t.me/${entry.username}">${escapeHtml(
-        entry.name,
-      )}</a>`;
-    }
+  const rows = data
+    .map((entry, index) => {
+      const rank = MEDALS[index] ?? `<b>#${index + 1}</b>`;
 
-    const line = `${rank}${usernameLink} - ${entry.totalScore.toLocaleString()} pts`;
+      const name = entry.username
+        ? `<a href="https://t.me/${escapeHtml(entry.username)}">${escapeHtml(
+            entry.name,
+          )}</a>`
+        : escapeHtml(entry.name);
 
-    if (index === 0 || index === 3 || (index > 3 && (index - 3) % 10 === 0)) {
-      acc.push([]);
-    }
-    acc[acc.length - 1]!.push(line);
+      return `<tr><td align="center">${rank}</td><td align="left">${name}</td><td align="right"><b>${entry.totalScore.toLocaleString()}</b></td></tr>`;
+    })
+    .join("");
 
-    return acc;
-  }, [] as string[][]);
+  const body =
+    data.length > 0
+      ? `<table bordered striped compact>
+<tr><th>#</th><th>Player</th><th>Points</th></tr>
+${rows}
+</table>`
+      : `<blockquote>No scores for this filter yet. Pick another filter below, or start a game with /new.</blockquote>`;
 
-  const formattedEntries = blocks
-    .map((block) => `<blockquote>${block.join("\n")}</blockquote>`)
-    .join("\n");
-
-  return `<blockquote>🏆 ${
-    searchKey === "global" ? "Global" : "Group"
-  } Leaderboard 🏆</blockquote>\n\n${formattedEntries}`;
+  return `<h3>${heading}</h3>
+<p><i>${formatFilterSummary(searchKey, timeKey, wordLength)}</i></p>
+${body}`;
 }

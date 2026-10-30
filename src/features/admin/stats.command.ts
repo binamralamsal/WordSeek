@@ -77,56 +77,75 @@ composer.command("stats", async (ctx) => {
   const formatPercent = (used: number, total: number) =>
     ((used / total) * 100).toFixed(1);
 
-  let statsMessage = `🤖 <b>Bot Statistics</b>\n\n`;
+  const rows: string[] = [];
+  const section = (title: string) => {
+    rows.push(`<tr><td colspan="2" align="left"><b>${title}</b></td></tr>`);
+  };
+  const row = (label: string, value: string | number | bigint) => {
+    rows.push(
+      `<tr><td align="left">${label}</td><td align="right"><code>${value}</code></td></tr>`,
+    );
+  };
 
-  // Basic bot stats
-  statsMessage += `<blockquote>📊 <b>Bot Overview</b>\n`;
-  statsMessage += `├ Total Users: ${allUsersCount}\n`;
-  statsMessage += `├ Active Players: ${activePlayersCount}\n`;
-  statsMessage += `├ Total Groups: ${totalGroupsCount}\n`;
-  statsMessage += `├ Active Groups: ${activeGroupsCount}\n`;
-  statsMessage += `├ Uptime: ${uptimeHours}h ${uptimeMinutes}m\n`;
-  statsMessage += `└ PID: ${process.pid}</blockquote>\n\n`;
+  section("📊 Bot Overview");
+  row("Total Users", allUsersCount);
+  row("Active Players", activePlayersCount);
+  row("Total Groups", totalGroupsCount);
+  row("Active Groups", activeGroupsCount);
+  row("Uptime", `${uptimeHours}h ${uptimeMinutes}m`);
+  row("PID", process.pid);
 
-  // Bot memory usage
-  statsMessage += `<blockquote>🧠 <b>Bot Memory</b>\n`;
-  statsMessage += `├ RSS: ${formatBytes(memUsage.rss)}\n`;
-  statsMessage += `├ Heap Used: ${formatBytes(memUsage.heapUsed)}\n`;
-  statsMessage += `├ Heap Total: ${formatBytes(memUsage.heapTotal)}\n`;
-  statsMessage += `└ External: ${formatBytes(memUsage.external)}</blockquote>\n\n`;
+  section("🧠 Bot Memory");
+  row("RSS", formatBytes(memUsage.rss));
+  row("Heap Used", formatBytes(memUsage.heapUsed));
+  row("Heap Total", formatBytes(memUsage.heapTotal));
+  row("External", formatBytes(memUsage.external));
 
-  // VPS System stats
-  statsMessage += `<blockquote>💻 <b>VPS System</b>\n`;
-  statsMessage += `├ OS: ${os.type()} ${os.release()}\n`;
-  statsMessage += `├ Architecture: ${os.arch()}\n`;
-  statsMessage += `├ CPUs: ${cpus.length}x ${cpus[0]?.model?.split(" ")[0] || "Unknown"}\n`;
-  statsMessage += `└ Hostname: ${os.hostname()}</blockquote>\n\n`;
+  section("💻 VPS System");
+  row("OS", `${os.type()} ${os.release()}`);
+  row("Architecture", os.arch());
+  row("CPUs", `${cpus.length}x ${cpus[0]?.model?.split(" ")[0] || "Unknown"}`);
+  row("Hostname", os.hostname());
 
-  // VPS Memory
-  statsMessage += `<blockquote>💾 <b>VPS Memory</b>\n`;
-  statsMessage += `├ Total: ${formatBytes(totalMemory)}\n`;
-  statsMessage += `├ Used: ${formatBytes(usedMemory)} (${formatPercent(usedMemory, totalMemory)}%)\n`;
-  statsMessage += `├ Free: ${formatBytes(freeMemory)} (${formatPercent(freeMemory, totalMemory)}%)\n`;
-  statsMessage += `└ Available: ${formatBytes(availableMemory ?? freeMemory)}${availableMemory ? "" : " (fallback)"}</blockquote>\n\n`;
+  section("💾 VPS Memory");
+  row("Total", formatBytes(totalMemory));
+  row(
+    "Used",
+    `${formatBytes(usedMemory)} (${formatPercent(usedMemory, totalMemory)}%)`,
+  );
+  row(
+    "Free",
+    `${formatBytes(freeMemory)} (${formatPercent(freeMemory, totalMemory)}%)`,
+  );
+  row(
+    "Available",
+    `${formatBytes(availableMemory ?? freeMemory)}${availableMemory ? "" : " (fallback)"}`,
+  );
 
-  // VPS Load
-  statsMessage += `<blockquote>⚡ <b>VPS Load</b>\n`;
-  statsMessage += `├ 1min: ${loadAvg[0]?.toFixed(2)}\n`;
-  statsMessage += `├ 5min: ${loadAvg[1]?.toFixed(2)}\n`;
-  statsMessage += `├ 15min: ${loadAvg[2]?.toFixed(2)}\n`;
-  statsMessage += `└ Cores: ${cpus.length}</blockquote>\n\n`;
+  section("⚡ VPS Load");
+  row("1 Min", loadAvg[0]?.toFixed(2) ?? "0.00");
+  row("5 Min", loadAvg[1]?.toFixed(2) ?? "0.00");
+  row("15 Min", loadAvg[2]?.toFixed(2) ?? "0.00");
+  row("Cores", cpus.length);
 
   // Bot performance
   const heapPercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
   const systemMemPercent = (memUsage.rss / totalMemory) * 100;
 
-  statsMessage += `<blockquote>📈 <b>Performance</b>\n`;
-  statsMessage += `├ Heap Usage: ${heapPercent.toFixed(1)}%\n`;
-  statsMessage += `├ System Memory: ${systemMemPercent.toFixed(3)}%\n`;
-  statsMessage += `├ Bun Version: ${Bun?.version || process.version}\n`;
-  statsMessage += `└ Platform: ${process.platform}</blockquote>`;
+  section("📈 Performance");
+  row("Heap Usage", `${heapPercent.toFixed(1)}%`);
+  row("System Memory", `${systemMemPercent.toFixed(3)}%`);
+  row("Bun Version", Bun?.version || process.version);
+  row("Platform", process.platform);
 
-  return ctx.reply(statsMessage, { parse_mode: "HTML" });
+  return ctx.replyWithRichMessage({
+    html: `<h3>🤖 Bot Statistics</h3>
+<p><i>Live snapshot from the running instance</i></p>
+<table bordered striped compact>
+<tr><th>Metric</th><th>Value</th></tr>
+${rows.join("\n")}
+</table>`,
+  });
 });
 
 export const statsCommand = composer;

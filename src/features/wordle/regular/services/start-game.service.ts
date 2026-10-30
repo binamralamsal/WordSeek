@@ -83,7 +83,12 @@ export async function startGame(
       })
       .execute();
 
-    return ctx.reply(`Game started! Guess the ${wordLength}-letter word!`);
+    return ctx.replyWithRichMessage({
+      html: `<h3>🎮 New Game</h3>
+<p>Game started! Guess the <b>${wordLength}-letter</b> word.</p>
+<blockquote>Type your guess in the chat. First correct guess wins!</blockquote>
+<footer>Other modes: /new4 · /new5 · /new6</footer>`,
+    });
   } catch (error) {
     if (error instanceof DatabaseError && error.code === "23505") {
       return ctx.reply(

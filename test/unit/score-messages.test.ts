@@ -27,19 +27,31 @@ const entries = [
 
 describe("formatLeaderboardMessage", () => {
   test("renders entries, escapes names and links usernames", () => {
-    const message = formatLeaderboardMessage(entries, "global");
+    const message = formatLeaderboardMessage(entries, "global", "week", 5);
 
     expect(message).toContain("Global");
     expect(message).toContain("Leaderboard");
     expect(message).toContain("Ada");
-    expect(message).toContain('href="t.me/ada"');
+    expect(message).toContain('href="https://t.me/ada"');
     expect(message).toContain("1,234");
     expect(message).toContain("Grace &lt;Hopper&gt;");
     expect(message).toContain("42");
+    expect(message).toContain("This week");
+    expect(message).toContain("5 letters");
+    expect(message).toContain("<table");
   });
 
   test("uses group wording for group leaderboards", () => {
-    expect(formatLeaderboardMessage([], "group")).toContain("Group");
+    expect(formatLeaderboardMessage([], "group", "today", 4)).toContain(
+      "Group",
+    );
+  });
+
+  test("shows a friendly empty state instead of an empty table", () => {
+    const message = formatLeaderboardMessage([], "global", "all", 6);
+
+    expect(message).toContain("No scores for this filter yet");
+    expect(message).not.toContain("<table");
   });
 });
 
@@ -106,14 +118,20 @@ describe("formatUserScoreMessage", () => {
         highestStreak: 10,
       },
       "global",
+      "week",
+      5,
     );
 
     expect(message).toContain("Ada");
     expect(message).toContain("9,876");
     expect(message).toContain("#12");
-    expect(message).toContain("Current Streak:</b> 4");
-    expect(message).toContain("Highest Streak:</b> 10");
+    expect(message).toContain("Current streak");
+    expect(message).toContain("4 days");
+    expect(message).toContain("Best streak");
+    expect(message).toContain("10 days");
     expect(message).toContain("globally");
+    expect(message).toContain("This week");
+    expect(message).toContain("<table");
   });
 
   test("defaults missing streaks to zero and supports missing username", () => {
@@ -127,11 +145,13 @@ describe("formatUserScoreMessage", () => {
         highestStreak: null,
       },
       "group",
+      "today",
+      4,
     );
 
-    expect(message).toContain("Current Streak:</b> 0");
-    expect(message).toContain("Highest Streak:</b> 0");
+    expect(message).toContain("0 days");
     expect(message).toContain("in this chat");
+    expect(message).toContain("Today");
     expect(message).not.toContain("https://t.me/");
   });
 });

@@ -37,17 +37,22 @@ function richTexts(bot: TestBot): string[] {
 }
 
 describe("/start", () => {
-  test("welcomes the user with the banner and action buttons", async () => {
+  test("welcomes the user with a rich banner message and action buttons", async () => {
     const bot = new TestBot();
 
     await bot.sendText("/start");
 
     expect(bot.errors).toHaveLength(0);
 
-    const photo = bot.lastCall("sendPhoto");
-    expect(photo?.payload.caption).toContain("Welcome to WordSeek");
+    const rich = bot.lastCall("sendRichMessage");
+    const html = String(rich?.payload.rich_message?.html ?? "");
+    expect(html).toContain("Welcome to WordSeek");
+    expect(html).toContain("Quick start");
 
-    const buttons = photo?.payload.reply_markup.inline_keyboard.flat() ?? [];
+    const media = rich?.payload.rich_message?.media ?? [];
+    expect(media[0]?.id).toBe("banner");
+
+    const buttons = rich?.payload.reply_markup.inline_keyboard.flat() ?? [];
     expect(buttons.some((button: any) => button.text.includes("Add me"))).toBe(
       true,
     );
