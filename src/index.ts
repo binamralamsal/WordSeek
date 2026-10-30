@@ -1,55 +1,101 @@
 import { autoRetry } from "@grammyjs/auto-retry";
-import { run, sequentialize } from "@grammyjs/runner";
+import { run, type RunnerHandle } from "@grammyjs/runner";
 
-import { bot } from "./config/bot";
-import { commands } from "./commands";
-import { captchaQueue } from "./queues/captcha-queue";
-import { errorHandler } from "./handlers/error-handler";
-import { onMessageHander } from "./handlers/on-message";
-import { CommandsHelper } from "./util/commands-helper";
-import { resumeBroadcast } from "./util/resume-broadcast";
-import { callbackQueryHandler } from "./handlers/callback-query";
-import { handleBannedUsers } from "./handlers/handle-banned-users";
-import { onBotAddedInChat } from "./handlers/on-bot-added-in-chat";
-import { topicEditedHandler } from "./handlers/topic-edited-handler";
-import { trackMessagesHandler } from "./handlers/track-messages-handler";
-import { userAndChatSyncHandler } from "./handlers/user-and-chat-sync-handler";
+import { createAppComposer } from "#/app";
+import { bot } from "#/config/bot";
+import { closeDatabase } from "#/config/db";
+import { closeRedis } from "#/config/redis";
+import { createLogger } from "#/core/logging/logger.service";
+import { errorHandler } from "#/core/middleware/error-handler.middleware";
+import { CommandRegistry } from "#/core/services/command-registry.service";
 import {
-  dailyWordleCron,
-  ensureDailyWordExists,
-} from "./services/daily-wordle-cron";
+  acquireInstanceLock,
+  releaseInstanceLock,
+} from "#/core/services/instance-lock.service";
+import { resumeBroadcast } from "#/features/admin/broadcast/broadcast.service";
+import {
+  closeCaptchaQueue,
+  startCaptchaWorker,
+} from "#/features/admin/captcha/captcha-queue.service";
+import { leaderboardCompactionCron } from "#/features/scores/leaderboard-compaction.cron";
+import { dailyWordleCron } from "#/features/wordle/daily/daily.cron";
+import { ensureDailyWordExists } from "#/features/wordle/daily/services/daily-word.service";
+
+const log = createLogger("startup");
+
+const SHUTDOWN_TIMEOUT_MS = 10_000;
+
+let runner: RunnerHandle | null = null;
+let shuttingDown = false;
 
 bot.api.config.use(autoRetry());
-bot.use(userAndChatSyncHandler);
-bot.use(topicEditedHandler);
-bot.use(trackMessagesHandler);
-
-bot.use(
-  sequentialize((ctx) => {
-    if (ctx.callbackQuery) return undefined;
-    if (ctx.chat?.type === "private") return undefined;
-
-    return ctx.chatId?.toString() || ctx.from?.id.toString();
-  }),
-);
-
-bot.use(handleBannedUsers);
-
-bot.use(commands);
-bot.use(callbackQueryHandler);
-bot.use(onMessageHander);
-bot.use(onBotAddedInChat);
-
+bot.use(createAppComposer());
 bot.catch(errorHandler);
-dailyWordleCron.start();
-await ensureDailyWordExists();
 
-await bot.api.deleteWebhook({ drop_pending_updates: true });
+async function start(): Promise<void> {
+  const locked = await acquireInstanceLock({
+    onLost: () => void shutdown("instance lock lost", 1),
+  });
 
-// Resume any pending broadcast before starting the bot
+  if (!locked) {
+    throw new Error(
+      "Another WordSeek instance is already running (Redis lock is held)",
+    );
+  }
 
-run(bot);
-console.log("Bot started");
+  dailyWordleCron.start();
+  leaderboardCompactionCron.start();
+  startCaptchaWorker();
 
-await CommandsHelper.setCommands();
-await resumeBroadcast();
+  // `ensureDailyWordExists` logs and returns null on failure, so a transient
+  // database/API error does not block startup; the daily cron retries later.
+  await ensureDailyWordExists();
+  await bot.api.deleteWebhook({ drop_pending_updates: true });
+
+  // Resume any pending broadcast before starting the bot
+  runner = run(bot);
+  log.info("Bot started");
+
+  await CommandRegistry.sync();
+  await resumeBroadcast();
+}
+
+async function shutdown(reason: string, exitCode = 0): Promise<void> {
+  if (shuttingDown) return;
+  shuttingDown = true;
+
+  log.info({ reason }, "Shutting down");
+
+  const forceExit = setTimeout(() => {
+    log.error({ reason }, "Graceful shutdown timed out, exiting");
+    process.exit(1);
+  }, SHUTDOWN_TIMEOUT_MS);
+  forceExit.unref?.();
+
+  try {
+    await runner?.stop();
+    dailyWordleCron.stop();
+    leaderboardCompactionCron.stop();
+    await closeCaptchaQueue();
+    await releaseInstanceLock();
+    await closeDatabase();
+    await closeRedis();
+
+    clearTimeout(forceExit);
+    log.info("Shutdown complete");
+    process.exit(exitCode);
+  } catch (error) {
+    log.error({ err: error }, "Shutdown failed");
+    process.exit(1);
+  }
+}
+
+process.once("SIGINT", () => void shutdown("SIGINT"));
+process.once("SIGTERM", () => void shutdown("SIGTERM"));
+
+try {
+  await start();
+} catch (error) {
+  log.error({ err: error }, "Startup failed");
+  await shutdown("startup failure", 1);
+}
