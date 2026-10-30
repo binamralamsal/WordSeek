@@ -99,6 +99,16 @@ async function countRows(): Promise<number> {
   return result.rows[0]!.count;
 }
 
+async function countRowsSince(date: Date): Promise<number> {
+  const result = await sql<{ count: number }>`
+    SELECT count(*)::integer AS count
+    FROM leaderboard
+    WHERE created_at >= ${date}
+  `.execute(env.db);
+
+  return result.rows[0]!.count;
+}
+
 describe("leaderboard compaction", () => {
   test("preserves every leaderboard and per-user filter", async () => {
     const now = new Date();
@@ -152,7 +162,10 @@ describe("leaderboard compaction", () => {
     }
 
     const rowsBefore = await countRows();
+    const currentMonthRowsBefore = await countRowsSince(monthStart);
     const before = await snapshot(CHAT_ID, [USER_A, USER_B]);
+
+    expect(currentMonthRowsBefore).toBeGreaterThan(0);
 
     const result = await compactLeaderboard();
 
@@ -161,6 +174,10 @@ describe("leaderboard compaction", () => {
 
     const rowsAfterFirstRun = await countRows();
     expect(rowsAfterFirstRun).toBeLessThan(rowsBefore);
+
+    // Rows from the current month are kept as-is so recent score history stays
+    // visible.
+    expect(await countRowsSince(monthStart)).toBe(currentMonthRowsBefore);
 
     const after = await snapshot(CHAT_ID, [USER_A, USER_B]);
     expect(after).toEqual(before);
@@ -207,10 +224,12 @@ describe("leaderboard compaction", () => {
     });
 
     const result = await compactLeaderboard({ now });
-    expect(result!.rowsRemoved).toBe(2);
+    // Only the two December rows share a filter bucket. January rows are in
+    // the current month and must stay untouched.
+    expect(result!.rowsRemoved).toBe(1);
 
-    // Four rows remain: one per membership class (old, week, week+month+year,
-    // today). The two rows from 30/31 December collapse, as do 1/2 January.
+    // Five rows remain: the old row, the merged week row, and every January
+    // row exactly as it was recorded.
     const remaining = await sql<{
       createdAt: Date;
       score: number;
@@ -221,11 +240,12 @@ describe("leaderboard compaction", () => {
       ORDER BY created_at
     `.execute(env.db);
 
-    expect(remaining.rows.map((row) => row.score)).toEqual([1, 5, 9, 6]);
+    expect(remaining.rows.map((row) => row.score)).toEqual([1, 5, 4, 5, 6]);
     expect(remaining.rows.map((row) => row.createdAt.toISOString())).toEqual([
       "2024-12-29T12:00:00.000Z",
       "2024-12-30T12:00:00.000Z",
       "2025-01-01T12:00:00.000Z",
+      "2025-01-02T12:00:00.000Z",
       "2025-01-03T06:00:00.000Z",
     ]);
 

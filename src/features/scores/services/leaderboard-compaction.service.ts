@@ -35,20 +35,21 @@ export interface CompactionOptions {
  * by "before this year"/"before this month" alone is wrong: a score from
  * 31 December can still belong to this week but not to this year or month.
  *
- * The implementation therefore partitions rows by `max(boundary)` of
- * `[week, month, year]` starts that are `<= created_at`, among rows older than
- * today. Every row in a partition has the same filter membership, so the
- * partition can safely be summed into its earliest row:
+ * Only rows created before the current month are touched. The current month is
+ * kept row by row on purpose, so a chat's recent playing frequency and score
+ * history stay visible in the database.
  *
- * - rows before this year     -> all time only
- * - before this month in year -> year + all time
- * - before this week in month -> month + year + all time
- * - before today in week      -> week + month + year + all time
+ * The implementation partitions the eligible rows by `max(boundary)` of
+ * `[week, month, year]` starts that are `<= created_at`. Every row in a
+ * partition has the same filter membership, so the partition can safely be
+ * summed into its earliest row:
  *
- * Today's rows are deliberately left untouched: every filter includes them,
- * they are few, and keeping their real timestamps preserves the "latest play"
- * heuristic used by `/score`'s smart defaults. (It also means future-dated
- * rows from an import are never folded into today.)
+ * - rows before this year                         -> all time only
+ * - before this month, in this year, before week   -> year + all time
+ * - before this month, in this year, in this week  -> week + year + all time
+ *
+ * The current month itself is never merged, so there is no
+ * month/year/all-time partition to build. Future-dated rows are ignored too.
  *
  * The keeper keeps its original `created_at` (the earliest row of the
  * partition), which is what keeps the timestamps inside the same filter
@@ -109,7 +110,7 @@ export async function compactLeaderboard(
             ) AS segment_start
           FROM leaderboard
           CROSS JOIN boundaries
-          WHERE leaderboard.created_at < boundaries.day_start
+          WHERE leaderboard.created_at < boundaries.month_start
         ),
         ranked AS (
           SELECT

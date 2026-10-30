@@ -109,8 +109,10 @@ before exiting.
   ```bash
   bun run db:compact
   ```
-  Rows are merged per user, chat, word length and filter bucket, so the
-  today/week/month/year/all totals are unchanged.
+  Only rows older than the current month are merged, per user, chat, word
+  length and filter bucket. The current month is kept row by row, so recent
+  score history stays visible. The today/week/month/year/all totals are
+  unchanged.
 
 ## Environment Variables
 
