@@ -15,14 +15,25 @@ const log = createLogger("database");
 
 const { Pool } = pg;
 
-function createDatabase(): Kysely<DB> {
-  return new Kysely<DB>({
-    dialect: new PostgresDialect({
-      pool: new Pool({
-        connectionString: env.DATABASE_URL,
-        max: 10,
-      }),
-    }),
+interface DatabaseHandle {
+  database: Kysely<DB>;
+  pool: pg.Pool;
+}
+
+function createDatabase(): DatabaseHandle {
+  const pool = new Pool({
+    connectionString: env.DATABASE_URL,
+    max: 10,
+  });
+
+  // Without a listener, an error on an idle pool client (for example a
+  // database restart) is an unhandled "error" event and crashes the process.
+  pool.on("error", (error) => {
+    log.error({ err: error }, "Idle PostgreSQL client error");
+  });
+
+  const database = new Kysely<DB>({
+    dialect: new PostgresDialect({ pool }),
     log: (event) => {
       if (event.level === "query") {
         if (env.NODE_ENV === "development") {
@@ -38,14 +49,21 @@ function createDatabase(): Kysely<DB> {
     },
     plugins: [new CamelCasePlugin(), new DeduplicateJoinsPlugin()],
   });
+
+  return { database, pool };
 }
 
 let activeDatabase: Kysely<DB> | null = null;
+let activePool: pg.Pool | null = null;
 
 function currentDatabase(): Kysely<DB> {
   // Lazily create the production pool so importing this module (for example in
   // tests) never opens a real connection unless it is actually used.
-  activeDatabase ??= createDatabase();
+  if (!activeDatabase) {
+    const handle = createDatabase();
+    activeDatabase = handle.database;
+    activePool = handle.pool;
+  }
   return activeDatabase;
 }
 
@@ -76,4 +94,23 @@ export function setDatabase(database: Kysely<DB> | null): void {
 
 export function getDatabase(): Kysely<DB> {
   return currentDatabase();
+}
+
+/**
+ * Closes the database during shutdown. Does not open a connection when none was
+ * ever created, so it is safe to call from a partially started process.
+ */
+export async function closeDatabase(): Promise<void> {
+  const database = activeDatabase;
+  const pool = activePool;
+
+  activeDatabase = null;
+  activePool = null;
+
+  if (database) {
+    await database.destroy();
+    return;
+  }
+
+  await pool?.end();
 }

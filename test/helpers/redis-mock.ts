@@ -35,16 +35,42 @@ export class RedisMock {
     this.strings.set(key, String(value));
 
     const exIndex = upper.indexOf("EX");
+    const pxIndex = upper.indexOf("PX");
+
     if (exIndex >= 0) {
       const seconds = Number(args[exIndex + 1]);
       this.expirations.set(key, Date.now() + seconds * 1000);
-    }
-
-    if (!upper.includes("KEEPTTL")) {
-      if (exIndex < 0) this.expirations.delete(key);
+    } else if (pxIndex >= 0) {
+      const milliseconds = Number(args[pxIndex + 1]);
+      this.expirations.set(key, Date.now() + milliseconds);
+    } else if (!upper.includes("KEEPTTL")) {
+      this.expirations.delete(key);
     }
 
     return "OK";
+  }
+
+  /**
+   * Mimics the two compare-and-swap Lua scripts the instance lock uses:
+   * pexpire when the token still matches, delete when it still matches.
+   */
+  async eval(
+    script: string,
+    _numKeys: number,
+    ...args: (string | number)[]
+  ): Promise<number> {
+    const [key, token, ttl] = args.map(String);
+
+    if (this.strings.get(key) !== token) return 0;
+
+    if (script.includes("pexpire")) {
+      this.expirations.set(key, Date.now() + Number(ttl));
+      return 1;
+    }
+
+    this.strings.delete(key);
+    this.expirations.delete(key);
+    return 1;
   }
 
   async setex(key: string, seconds: number, value: string): Promise<"OK"> {

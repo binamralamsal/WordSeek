@@ -100,6 +100,24 @@ describe("/leaderboard", () => {
     expect(bot.lastText()).not.toContain("Ada");
   });
 
+  test("only counts scores inside the selected period", async () => {
+    await seedAda({ score: 42 });
+    await seedUser(env.db, { id: "7373", name: "Old Timer", username: "old" });
+    await seedScore(env.db, {
+      userId: "7373",
+      chatId: String(CHAT_ID),
+      score: 999,
+      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+    });
+
+    const bot = new TestBot();
+    await bot.sendText("/leaderboard global today 5");
+
+    const text = bot.lastText() ?? "";
+    expect(text).toContain("Ada");
+    expect(text).not.toContain("Old Timer");
+  });
+
   test("blocks game topics that are not designated for play", async () => {
     await env.db
       .insertInto("chatGameTopics")

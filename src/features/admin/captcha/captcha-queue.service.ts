@@ -45,7 +45,12 @@ export function enqueueCaptchaExpiry(job: CaptchaExpiryJob): Promise<unknown> {
  * command modules side-effect free (tests mount the real routers).
  */
 export function getCaptchaQueue(): Queue {
-  queue ??= new Queue(QUEUE_NAME, { connection: redis });
+  if (!queue) {
+    queue = new Queue(QUEUE_NAME, { connection: redis });
+    queue.on("error", (error) => {
+      log.error({ err: error }, "Captcha queue error");
+    });
+  }
   return queue;
 }
 
@@ -95,6 +100,10 @@ export function startCaptchaWorker(): Worker {
     },
     { connection: redis },
   );
+
+  worker.on("error", (error) => {
+    log.error({ err: error }, "Captcha worker error");
+  });
 
   return worker;
 }

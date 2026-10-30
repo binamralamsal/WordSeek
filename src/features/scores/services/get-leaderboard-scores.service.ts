@@ -4,6 +4,8 @@ import { db } from "#/config/db";
 import { toDbWordLength } from "#/types";
 import type { LeaderboardPeriod, LeaderboardScope, WordLength } from "#/types";
 
+import { getPeriodRange } from "../helpers/period-range.helper";
+
 export async function getLeaderboardScores({
   chatId,
   searchKey,
@@ -15,67 +17,51 @@ export async function getLeaderboardScores({
   timeKey: LeaderboardPeriod;
   wordLength?: WordLength;
 }) {
-  let leaderboardQuery = db
+  // Aggregate the (potentially many) score rows first and only join `users`
+  // for the 20 rows that are actually returned. Joining before aggregating
+  // used to touch the users table once per score row.
+  let scoreTotalsQuery = db
     .selectFrom("leaderboard")
-    .innerJoin("users", "users.id", "leaderboard.userId")
+    .select("leaderboard.userId")
     .select((eb) => [
-      "users.id as userId",
-      "users.name as name",
-      "users.username as username",
       sql<number>`cast(sum(${eb.ref("leaderboard.score")}) as integer)`.as(
         "totalScore",
       ),
     ])
-    .where((eb) =>
-      eb.not(
-        eb.exists(
-          eb
-            .selectFrom("bannedUsers")
-            .select("userId")
-            .whereRef("bannedUsers.userId", "=", "leaderboard.userId"),
-        ),
-      ),
-    )
-    .groupBy("users.id")
-    .orderBy(sql`sum(${sql.ref("leaderboard.score")}) desc`)
     .where("leaderboard.wordLength", "=", toDbWordLength(wordLength))
+    .where(
+      "leaderboard.userId",
+      "not in",
+      db.selectFrom("bannedUsers").select("userId"),
+    )
+    .groupBy("leaderboard.userId")
+    .orderBy(sql`sum(${sql.ref("leaderboard.score")}) desc`)
     .limit(20);
 
   if (searchKey === "group")
-    leaderboardQuery = leaderboardQuery.where(
+    scoreTotalsQuery = scoreTotalsQuery.where(
       "leaderboard.chatId",
       "=",
       chatId,
     );
 
-  if (timeKey !== "all") {
-    leaderboardQuery = leaderboardQuery.where((eb) => {
-      if (timeKey === "today")
-        return eb(
-          sql`date_trunc('day', ${eb.ref("leaderboard.createdAt")})`,
-          "=",
-          sql<Date>`date_trunc('day', now())`,
-        );
-      else if (timeKey === "week")
-        return eb(
-          sql`date_trunc('week', ${eb.ref("leaderboard.createdAt")})`,
-          "=",
-          sql<Date>`date_trunc('week', now())`,
-        );
-      else if (timeKey === "month")
-        return eb(
-          sql`date_trunc('month', ${eb.ref("leaderboard.createdAt")})`,
-          "=",
-          sql<Date>`date_trunc('month', now())`,
-        );
-      else
-        return eb(
-          sql`date_trunc('year', ${eb.ref("leaderboard.createdAt")})`,
-          "=",
-          sql<Date>`date_trunc('year', now())`,
-        );
-    });
+  const range = getPeriodRange(timeKey);
+
+  if (range) {
+    scoreTotalsQuery = scoreTotalsQuery
+      .where("leaderboard.createdAt", ">=", range.from)
+      .where("leaderboard.createdAt", "<", range.to);
   }
 
-  return await leaderboardQuery.execute();
+  return await db
+    .selectFrom(scoreTotalsQuery.as("totals"))
+    .innerJoin("users", "users.id", "totals.userId")
+    .select([
+      "users.id as userId",
+      "users.name as name",
+      "users.username as username",
+      "totals.totalScore",
+    ])
+    .orderBy("totals.totalScore", "desc")
+    .execute();
 }

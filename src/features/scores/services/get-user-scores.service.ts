@@ -4,6 +4,8 @@ import { db } from "#/config/db";
 import { toDbWordLength } from "#/types";
 import type { LeaderboardPeriod, LeaderboardScope, WordLength } from "#/types";
 
+import { getPeriodRange } from "../helpers/period-range.helper";
+
 export async function getUserScores({
   chatId,
   searchKey,
@@ -21,15 +23,10 @@ export async function getUserScores({
     .selectFrom((eb) => {
       let innerQuery = eb
         .selectFrom("leaderboard")
-        .where((eb) =>
-          eb.not(
-            eb.exists(
-              eb
-                .selectFrom("bannedUsers")
-                .select("userId")
-                .whereRef("bannedUsers.userId", "=", "leaderboard.userId"),
-            ),
-          ),
+        .where(
+          "leaderboard.userId",
+          "not in",
+          eb.selectFrom("bannedUsers").select("userId"),
         )
         .select("leaderboard.userId")
         .select(sql<number>`sum(leaderboard.score)`.as("totalScore"))
@@ -45,33 +42,12 @@ export async function getUserScores({
         innerQuery = innerQuery.where("leaderboard.chatId", "=", chatId);
       }
 
-      if (timeKey !== "all") {
-        innerQuery = innerQuery.where((eb) => {
-          if (timeKey === "today")
-            return eb(
-              sql`date_trunc('day', ${eb.ref("leaderboard.createdAt")})`,
-              "=",
-              sql<Date>`date_trunc('day', now())`,
-            );
-          else if (timeKey === "week")
-            return eb(
-              sql`date_trunc('week', ${eb.ref("leaderboard.createdAt")})`,
-              "=",
-              sql<Date>`date_trunc('week', now())`,
-            );
-          else if (timeKey === "month")
-            return eb(
-              sql`date_trunc('month', ${eb.ref("leaderboard.createdAt")})`,
-              "=",
-              sql<Date>`date_trunc('month', now())`,
-            );
-          else
-            return eb(
-              sql`date_trunc('year', ${eb.ref("leaderboard.createdAt")})`,
-              "=",
-              sql<Date>`date_trunc('year', now())`,
-            );
-        });
+      const range = getPeriodRange(timeKey);
+
+      if (range) {
+        innerQuery = innerQuery
+          .where("leaderboard.createdAt", ">=", range.from)
+          .where("leaderboard.createdAt", "<", range.to);
       }
 
       return innerQuery.as("lb");

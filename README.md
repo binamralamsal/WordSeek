@@ -1,5 +1,7 @@
 # WordSeek
 
+[![CI](https://github.com/binamralamsal/WordSeek/actions/workflows/ci.yml/badge.svg)](https://github.com/binamralamsal/WordSeek/actions/workflows/ci.yml)
+
 <img width="1173" alt="Group 40 5" src="https://github.com/user-attachments/assets/bf444d36-2eea-4ad5-83e7-4a99acda2bfe" />
 
 ## Features
@@ -90,6 +92,12 @@
      bun run start
      ```
 
+Only one bot process can poll a Telegram bot token at a time. On startup the
+bot takes a Redis lease (`wordseek:instance-lock`) and exits with a clear error
+if another instance already holds it. `SIGINT`/`SIGTERM` stop the update
+runner, the cron job and the captcha worker, then close Postgres and Redis
+before exiting.
+
 ### Additional Database Commands
 
 - **Create new migrations** (after schema changes):
@@ -136,6 +144,9 @@ bun run verify         # fmt:check + lint + typecheck + tests
 Import order is enforced by `bun fmt` (`[fmt.sortImports]` in `bunfig.toml`):
 `grammy`, `@grammyjs/*`, built-ins and packages, `#/*` aliases, then relative
 paths. Each group is sorted alphabetically.
+
+CI (`.github/workflows/ci.yml`) runs `bun run verify` on every push to `master`
+and on every pull request, using the Bun version pinned in `.bun-version`.
 
 ## Testing
 
