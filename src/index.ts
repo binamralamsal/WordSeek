@@ -17,6 +17,7 @@ import {
   closeCaptchaQueue,
   startCaptchaWorker,
 } from "#/features/admin/captcha/captcha-queue.service";
+import { leaderboardCompactionCron } from "#/features/scores/leaderboard-compaction.cron";
 import { dailyWordleCron } from "#/features/wordle/daily/daily.cron";
 import { ensureDailyWordExists } from "#/features/wordle/daily/services/daily-word.service";
 
@@ -43,6 +44,7 @@ async function start(): Promise<void> {
   }
 
   dailyWordleCron.start();
+  leaderboardCompactionCron.start();
   startCaptchaWorker();
 
   // `ensureDailyWordExists` logs and returns null on failure, so a transient
@@ -73,6 +75,7 @@ async function shutdown(reason: string, exitCode = 0): Promise<void> {
   try {
     await runner?.stop();
     dailyWordleCron.stop();
+    leaderboardCompactionCron.stop();
     await closeCaptchaQueue();
     await releaseInstanceLock();
     await closeDatabase();

@@ -104,6 +104,13 @@ before exiting.
   ```bash
   bun run db:migrate make migration-name
   ```
+- **Compact leaderboard history** (runs automatically every day at 00:15, or
+  manually after a large import):
+  ```bash
+  bun run db:compact
+  ```
+  Rows are merged per user, chat, word length and filter bucket, so the
+  today/week/month/year/all totals are unchanged.
 
 ## Environment Variables
 
