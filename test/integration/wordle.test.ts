@@ -397,9 +397,9 @@ describe("end-game voting", () => {
       chatType: "group",
     });
 
-    expect(bot.lastCall("editMessageText")?.payload.text).toContain(
-      "Current votes: 2/3",
-    );
+    expect(
+      bot.lastCall("editMessageText")?.payload.rich_message?.html,
+    ).toContain("2/3");
     expect(bot.lastCall("answerCallbackQuery")?.payload.text).toContain(
       "1 more votes needed",
     );

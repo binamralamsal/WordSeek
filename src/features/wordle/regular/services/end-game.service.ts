@@ -29,10 +29,10 @@ export async function endGame(
   const wordLength = game?.word ? game.word.length : 5;
 
   await ctx.replyWithRichMessage({
-    html: `<h3>🛑 Game Ended</h3>
+    html: `<h5>🛑 Game Ended</h5>
 <p>The word was <b>${word.toUpperCase()}</b>.</p>
 ${reason ? `<blockquote>${reason}</blockquote>` : ""}
-<p>Start a new game with /new${wordLength}</p>`,
+<footer>Start a new game with /new${wordLength}</footer>`,
   });
 }
 

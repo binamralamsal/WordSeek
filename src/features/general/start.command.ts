@@ -7,6 +7,7 @@ import {
   DONATION_LINK,
   UPDATES_CHANNEL,
 } from "#/config/constants";
+import { renderInlineKeyboard } from "#/core/telegram/rich-keyboard.helper";
 
 const BANNER_PATH = "./src/data/banner.png";
 
@@ -37,24 +38,22 @@ composer.command("start", async (ctx) => {
 <li>Use /help for detailed instructions and the full command list</li>
 </ul>
 </blockquote>
-<p><b>Ready to test your word skills? Let's play!</b></p>`;
+<p><b>Ready to test your word skills? Let's play!</b></p>
+${renderInlineKeyboard(keyboard)}`;
 
   try {
-    await ctx.replyWithRichMessage(
-      {
-        html: richContent,
-        media: [
-          {
-            id: "banner",
-            media: {
-              type: "photo",
-              media: new InputFile(createReadStream(BANNER_PATH)),
-            },
+    await ctx.replyWithRichMessage({
+      html: richContent,
+      media: [
+        {
+          id: "banner",
+          media: {
+            type: "photo",
+            media: new InputFile(createReadStream(BANNER_PATH)),
           },
-        ],
-      },
-      { reply_markup: keyboard },
-    );
+        },
+      ],
+    });
   } catch {
     // Rich media uploads are still rolling out. Fall back to a normal photo
     // message so /start always works.
@@ -76,10 +75,9 @@ Ready to test your word skills? Let's play!`;
         reply_markup: keyboard,
       });
     } catch {
-      await ctx.replyWithRichMessage(
-        { html: richContent.replace(/<img[^>]*\/>\n?/, "") },
-        { reply_markup: keyboard },
-      );
+      await ctx.replyWithRichMessage({
+        html: richContent.replace(/<img[^>]*\/>\n?/, ""),
+      });
     }
   }
 });

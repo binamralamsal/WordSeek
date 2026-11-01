@@ -1,15 +1,17 @@
 import { InlineKeyboard } from "grammy";
 
-import {
-  DISCUSSION_GROUP,
-  DONATION_LINK,
-  UPDATES_CHANNEL,
-} from "#/config/constants";
-import { formatActiveButton } from "#/core/ui/format-active-button.helper";
 import type { LeaderboardPeriod, LeaderboardScope, WordLength } from "#/types";
-import { LEADERBOARD_PERIODS, LEADERBOARD_SCOPES, WORD_LENGTHS } from "#/types";
+import { WORD_LENGTHS } from "#/types";
 
 export type LeaderboardCallbackKey = "leaderboard" | `score ${string}`;
+
+const PERIOD_BUTTONS: [LeaderboardPeriod, string][] = [
+  ["today", "Today"],
+  ["week", "Week"],
+  ["month", "Month"],
+  ["year", "Year"],
+  ["all", "All"],
+];
 
 export function generateLeaderboardKeyboard(
   searchKey: LeaderboardScope,
@@ -19,64 +21,35 @@ export function generateLeaderboardKeyboard(
   backButton?: { text: string; callback: string },
 ) {
   const keyboard = new InlineKeyboard();
-  const mid = Math.floor(LEADERBOARD_SCOPES.length / 2);
 
-  LEADERBOARD_SCOPES.forEach((key, index) => {
-    if (index === mid) {
-      keyboard.text(
-        "🔄",
-        `${callbackKey} ${searchKey} ${timeKey} ${wordLength}`,
-      );
-    }
-
-    keyboard
-      .text(
-        generateButtonText(
-          searchKey,
-          key,
-          key === "group" ? "This chat" : "Global",
-        ),
-        `${callbackKey} ${key} ${timeKey} ${wordLength}`,
-      )
-      .style(searchKey === key ? "primary" : undefined);
-  });
+  // Scope and refresh share one row to keep the keyboard compact.
+  keyboard
+    .text("🌍 Global", `${callbackKey} global ${timeKey} ${wordLength}`)
+    .style(searchKey === "global" ? "primary" : undefined)
+    .text("💬 This chat", `${callbackKey} group ${timeKey} ${wordLength}`)
+    .style(searchKey === "group" ? "primary" : undefined)
+    .text("🔄", `${callbackKey} ${searchKey} ${timeKey} ${wordLength}`);
 
   keyboard.row();
 
-  LEADERBOARD_PERIODS.forEach((key, index) => {
+  // Five short labels fit on one line, which removes two rows from the old
+  // layout. The active filter is highlighted with the primary style.
+  for (const [period, label] of PERIOD_BUTTONS) {
     keyboard
-      .text(
-        generateButtonText(
-          timeKey,
-          key,
-          key === "all"
-            ? "All time"
-            : key === "today"
-              ? "Today"
-              : `This ${key}`,
-        ),
-        `${callbackKey} ${searchKey} ${key} ${wordLength}`,
-      )
-      .style(timeKey === key ? "primary" : undefined);
-
-    if ((index + 1) % 3 === 0) keyboard.row();
-  });
+      .text(label, `${callbackKey} ${searchKey} ${period} ${wordLength}`)
+      .style(timeKey === period ? "primary" : undefined);
+  }
 
   keyboard.row();
 
-  WORD_LENGTHS.forEach((len) => {
+  for (const length of WORD_LENGTHS) {
     keyboard
       .text(
-        generateButtonText(wordLength, len, `${len} letters`),
-        `${callbackKey} ${searchKey} ${timeKey} ${len}`,
+        `${length} letters`,
+        `${callbackKey} ${searchKey} ${timeKey} ${length}`,
       )
-      .style(wordLength === len ? "primary" : undefined);
-  });
-
-  keyboard.row();
-  keyboard.url("📢 Updates", UPDATES_CHANNEL);
-  keyboard.url("💓 Donate", DONATION_LINK).success();
-  keyboard.url("💬 Discussion", DISCUSSION_GROUP);
+      .style(wordLength === length ? "primary" : undefined);
+  }
 
   if (backButton) {
     keyboard.row();
@@ -84,8 +57,4 @@ export function generateLeaderboardKeyboard(
   }
 
   return keyboard;
-}
-
-function generateButtonText<T>(key: T, currentKey: T, label: string) {
-  return formatActiveButton(label, key === currentKey);
 }

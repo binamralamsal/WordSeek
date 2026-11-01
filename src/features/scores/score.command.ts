@@ -2,6 +2,7 @@ import { Composer } from "grammy";
 
 import { runGuards } from "#/core/guards/admin.guard";
 import { getTargetUser } from "#/core/services/users.service";
+import { renderInlineKeyboard } from "#/core/telegram/rich-keyboard.helper";
 import { requireAllowedTopic } from "#/features/wordle/shared/guards/wordle.guard";
 
 import { formatNoScoresMessage } from "./helpers/format-no-scores-message.helper";
@@ -76,9 +77,8 @@ composer.command("score", async (ctx) => {
     });
 
     return ctx.replyWithRichMessage(
-      { html: message },
+      { html: `${message}\n${renderInlineKeyboard(keyboard)}` },
       {
-        reply_markup: keyboard,
         reply_parameters: {
           message_id: ctx.msgId!,
         },
@@ -93,10 +93,9 @@ composer.command("score", async (ctx) => {
     wordLength,
   );
   return ctx.replyWithRichMessage(
-    { html: message },
+    { html: `${message}\n${renderInlineKeyboard(keyboard)}` },
     {
       disable_notification: true,
-      reply_markup: keyboard,
       reply_parameters: {
         message_id: ctx.msgId!,
       },

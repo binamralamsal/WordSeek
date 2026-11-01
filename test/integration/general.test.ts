@@ -3,6 +3,7 @@ import type { Message } from "grammy/types";
 
 import { setupTestEnvironment } from "../helpers/env";
 import { TestBot } from "../helpers/harness";
+import { parseRichButtons } from "../helpers/rich-message";
 
 setupTestEnvironment();
 
@@ -52,13 +53,10 @@ describe("/start", () => {
     const media = rich?.payload.rich_message?.media ?? [];
     expect(media[0]?.id).toBe("banner");
 
-    const buttons = rich?.payload.reply_markup.inline_keyboard.flat() ?? [];
-    expect(buttons.some((button: any) => button.text.includes("Add me"))).toBe(
-      true,
-    );
-    expect(
-      buttons.some((button: any) => button.callback_data === "help_howto"),
-    ).toBe(true);
+    const buttons = parseRichButtons(html);
+    expect(buttons.some((button) => button.text.includes("Add me"))).toBe(true);
+    expect(buttons.some((button) => button.data === "help_howto")).toBe(true);
+    expect(rich?.payload.reply_markup).toBeUndefined();
   });
 });
 
@@ -153,12 +151,23 @@ describe("simple commands", () => {
     expect(bot.lastText()).toContain("/score");
   });
 
-  test("/id asks for a reply", async () => {
+  test("/id shows the caller's own id in private chats", async () => {
     const bot = new TestBot();
 
     await bot.sendText("/id");
 
-    expect(bot.lastText()).toContain("Please reply to a message");
+    const text = bot.lastText() ?? "";
+    expect(text).toContain("Your Telegram ID");
+    expect(text).toContain("7001");
+    expect(text).toContain("Tester");
+  });
+
+  test("/id is restricted to group administrators", async () => {
+    const bot = new TestBot();
+
+    await bot.sendText("/id", { chatType: "group" });
+
+    expect(bot.lastText()).toContain("group administrators");
   });
 
   test("/id renders message and user information for the replied message", async () => {

@@ -1,7 +1,5 @@
 import { InlineKeyboard } from "grammy";
 
-import { escapeHtml } from "#/core/format/escape-html.helper";
-
 type User = {
   id: string;
   name: string;
@@ -15,10 +13,8 @@ export function generateUserSelectionKeyboard(
   const keyboard = new InlineKeyboard();
 
   users.forEach((user) => {
-    const escapedName = escapeHtml(user.name);
-    const buttonText = `${escapedName} (ID: ${user.id})`;
     keyboard.text(
-      buttonText,
+      `${user.name} (ID: ${user.id})`,
       `score_select ${user.id} ${username || user.username || ""}`,
     );
     keyboard.row();

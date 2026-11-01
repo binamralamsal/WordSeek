@@ -1,6 +1,7 @@
 import { Composer } from "grammy";
 
 import { editMessageTextSafe } from "#/core/telegram/edit-message.helper";
+import { renderInlineKeyboard } from "#/core/telegram/rich-keyboard.helper";
 
 import { parseLeaderboardCallback } from "./helpers/callback-data.helper";
 import { formatLeaderboardMessage } from "./helpers/format-leaderboard-message.helper";
@@ -28,21 +29,16 @@ composer.callbackQuery(/^leaderboard/, async (ctx) => {
     filter.wordLength,
   );
 
-  await editMessageTextSafe(
-    ctx,
-    {
-      html: formatLeaderboardMessage(
-        memberScores,
-        filter.searchKey,
-        filter.timeKey,
-        filter.wordLength,
-      ),
-    },
-    {
-      reply_markup: keyboard,
-      link_preview_options: { is_disabled: true },
-    },
+  const message = formatLeaderboardMessage(
+    memberScores,
+    filter.searchKey,
+    filter.timeKey,
+    filter.wordLength,
   );
+
+  await editMessageTextSafe(ctx, {
+    html: `${message}\n${renderInlineKeyboard(keyboard)}`,
+  });
 
   return ctx.answerCallbackQuery();
 });

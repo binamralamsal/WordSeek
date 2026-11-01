@@ -77,74 +77,64 @@ composer.command("stats", async (ctx) => {
   const formatPercent = (used: number, total: number) =>
     ((used / total) * 100).toFixed(1);
 
-  const rows: string[] = [];
-  const section = (title: string) => {
-    rows.push(`<tr><td colspan="2" align="left"><b>${title}</b></td></tr>`);
-  };
-  const row = (label: string, value: string | number | bigint) => {
-    rows.push(
-      `<tr><td align="left">${label}</td><td align="right"><code>${value}</code></td></tr>`,
-    );
-  };
+  const section = (title: string, lines: string[]) =>
+    `<blockquote><b>${title}</b><br>${lines.join("<br>")}</blockquote>`;
 
-  section("📊 Bot Overview");
-  row("Total Users", allUsersCount);
-  row("Active Players", activePlayersCount);
-  row("Total Groups", totalGroupsCount);
-  row("Active Groups", activeGroupsCount);
-  row("Uptime", `${uptimeHours}h ${uptimeMinutes}m`);
-  row("PID", process.pid);
+  const metric = (label: string, value: string | number | bigint) =>
+    `${label} <b>${value}</b>`;
 
-  section("🧠 Bot Memory");
-  row("RSS", formatBytes(memUsage.rss));
-  row("Heap Used", formatBytes(memUsage.heapUsed));
-  row("Heap Total", formatBytes(memUsage.heapTotal));
-  row("External", formatBytes(memUsage.external));
+  const overview = section("📊 Bot Overview", [
+    `${metric("Total users", allUsersCount)} · ${metric("Active players", activePlayersCount)}`,
+    `${metric("Total groups", totalGroupsCount)} · ${metric("Active groups", activeGroupsCount)}`,
+    `${metric("Uptime", `${uptimeHours}h ${uptimeMinutes}m`)} · PID <code>${process.pid}</code>`,
+  ]);
 
-  section("💻 VPS System");
-  row("OS", `${os.type()} ${os.release()}`);
-  row("Architecture", os.arch());
-  row("CPUs", `${cpus.length}x ${cpus[0]?.model?.split(" ")[0] || "Unknown"}`);
-  row("Hostname", os.hostname());
+  const botMemory = section("🧠 Bot Memory", [
+    `${metric("RSS", formatBytes(memUsage.rss))} · ${metric("External", formatBytes(memUsage.external))}`,
+    metric(
+      "Heap",
+      `${formatBytes(memUsage.heapUsed)} / ${formatBytes(memUsage.heapTotal)}`,
+    ),
+  ]);
 
-  section("💾 VPS Memory");
-  row("Total", formatBytes(totalMemory));
-  row(
-    "Used",
-    `${formatBytes(usedMemory)} (${formatPercent(usedMemory, totalMemory)}%)`,
-  );
-  row(
-    "Free",
-    `${formatBytes(freeMemory)} (${formatPercent(freeMemory, totalMemory)}%)`,
-  );
-  row(
-    "Available",
-    `${formatBytes(availableMemory ?? freeMemory)}${availableMemory ? "" : " (fallback)"}`,
-  );
+  const system = section("💻 VPS System", [
+    metric("OS", `${os.type()} ${os.release()}`),
+    `${metric("Arch", os.arch())} · ${metric("CPUs", `${cpus.length}x ${cpus[0]?.model?.split(" ")[0] || "Unknown"}`)}`,
+    metric("Host", os.hostname()),
+  ]);
 
-  section("⚡ VPS Load");
-  row("1 Min", loadAvg[0]?.toFixed(2) ?? "0.00");
-  row("5 Min", loadAvg[1]?.toFixed(2) ?? "0.00");
-  row("15 Min", loadAvg[2]?.toFixed(2) ?? "0.00");
-  row("Cores", cpus.length);
+  const systemMemory = section("💾 VPS Memory", [
+    metric("Total", formatBytes(totalMemory)),
+    `${metric("Used", `${formatBytes(usedMemory)} (${formatPercent(usedMemory, totalMemory)}%)`)} · ${metric("Free", `${formatBytes(freeMemory)} (${formatPercent(freeMemory, totalMemory)}%)`)}`,
+    metric(
+      "Available",
+      `${formatBytes(availableMemory ?? freeMemory)}${availableMemory ? "" : " (fallback)"}`,
+    ),
+  ]);
+
+  const load = section("⚡ VPS Load", [
+    `${metric("1 min", loadAvg[0]?.toFixed(2) ?? "0.00")} · ${metric("5 min", loadAvg[1]?.toFixed(2) ?? "0.00")} · ${metric("15 min", loadAvg[2]?.toFixed(2) ?? "0.00")}`,
+    metric("Cores", cpus.length),
+  ]);
 
   // Bot performance
   const heapPercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
   const systemMemPercent = (memUsage.rss / totalMemory) * 100;
 
-  section("📈 Performance");
-  row("Heap Usage", `${heapPercent.toFixed(1)}%`);
-  row("System Memory", `${systemMemPercent.toFixed(3)}%`);
-  row("Bun Version", Bun?.version || process.version);
-  row("Platform", process.platform);
-
+  const performance = section("📈 Performance", [
+    `${metric("Heap usage", `${heapPercent.toFixed(1)}%`)} · ${metric("System memory", `${systemMemPercent.toFixed(3)}%`)}`,
+    `${metric("Bun version", Bun?.version || process.version)} · ${metric("Platform", process.platform)}`,
+  ]);
   return ctx.replyWithRichMessage({
-    html: `<h3>🤖 Bot Statistics</h3>
-<p><i>Live snapshot from the running instance</i></p>
-<table bordered striped compact>
-<tr><th>Metric</th><th>Value</th></tr>
-${rows.join("\n")}
-</table>`,
+    html: `<h4>🤖 Bot Statistics</h4>
+<p><i>Live snapshot · up ${uptimeHours}h ${uptimeMinutes}m</i></p>
+
+${overview}
+${botMemory}
+${system}
+${systemMemory}
+${load}
+${performance}`,
   });
 });
 

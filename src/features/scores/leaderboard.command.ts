@@ -1,6 +1,7 @@
 import { Composer } from "grammy";
 
 import { runGuards } from "#/core/guards/admin.guard";
+import { renderInlineKeyboard } from "#/core/telegram/rich-keyboard.helper";
 import { requireAllowedTopic } from "#/features/wordle/shared/guards/wordle.guard";
 
 import { formatLeaderboardMessage } from "./helpers/format-leaderboard-message.helper";
@@ -30,19 +31,16 @@ composer.command("leaderboard", async (ctx) => {
     wordLength,
   });
 
+  const message = formatLeaderboardMessage(
+    memberScores,
+    searchKey,
+    timeKey,
+    wordLength,
+  );
+
   return ctx.replyWithRichMessage(
-    {
-      html: formatLeaderboardMessage(
-        memberScores,
-        searchKey,
-        timeKey,
-        wordLength,
-      ),
-    },
-    {
-      disable_notification: true,
-      reply_markup: keyboard,
-    },
+    { html: `${message}\n${renderInlineKeyboard(keyboard)}` },
+    { disable_notification: true },
   );
 });
 

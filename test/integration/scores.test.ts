@@ -3,6 +3,7 @@
 import { setupTestEnvironment } from "../helpers/env";
 import { seedScore, seedUser } from "../helpers/fixtures";
 import { TestBot } from "../helpers/harness";
+import { parseRichButtons } from "../helpers/rich-message";
 
 const env = setupTestEnvironment();
 
@@ -25,11 +26,22 @@ async function seedAda(
   });
 }
 
+function lastRichHtml(bot: TestBot): string {
+  return String(
+    bot.calls
+      .filter(
+        (call) =>
+          call.method === "sendRichMessage" ||
+          (call.method === "editMessageText" && call.payload.rich_message),
+      )
+      .at(-1)?.payload.rich_message?.html ?? "",
+  );
+}
+
 function keyboardCallbacks(bot: TestBot): string[] {
-  return bot.calls
-    .flatMap((call) => call.payload.reply_markup?.inline_keyboard ?? [])
-    .flat()
-    .map((button: any) => String(button.callback_data ?? ""));
+  return parseRichButtons(lastRichHtml(bot))
+    .map((button) => button.data ?? "")
+    .filter(Boolean);
 }
 
 describe("/leaderboard", () => {
@@ -222,7 +234,7 @@ describe("leaderboard callbacks", () => {
     const edit = bot.lastCall("editMessageText");
     const html = String(edit?.payload.rich_message?.html ?? "");
     expect(html).toContain("Global");
-    expect(html).toContain("<table");
+    expect(html).toContain("<blockquote>");
     expect(bot.lastCall("answerCallbackQuery")).toBeDefined();
   });
 
@@ -244,12 +256,11 @@ describe("score callbacks", () => {
     await bot.click("score_list ada");
 
     const edit = bot.lastCall("editMessageText");
-    expect(String(edit?.payload.rich_message?.html)).toContain(
-      "Multiple Users Found",
-    );
-    const buttons = edit?.payload.reply_markup.inline_keyboard.flat() ?? [];
+    const html = String(edit?.payload.rich_message?.html);
+    expect(html).toContain("Multiple Users Found");
+    const buttons = parseRichButtons(html);
     expect(buttons).toHaveLength(2);
-    expect(buttons[1].callback_data).toBe("score_select 4343 ada");
+    expect(buttons[1]!.data).toBe("score_select 4343 ada");
   });
 
   test("alerts when no user owns the username", async () => {

@@ -52,29 +52,15 @@ composer.command("end", async (ctx) => {
   const userName =
     ctx.from.first_name + (ctx.from.last_name ? " " + ctx.from.last_name : "");
 
-  await ctx.replyWithRichMessage(
-    {
-      html: `<h3>🗳️ Vote to End Game</h3>
+  await ctx.replyWithRichMessage({
+    html: `<h5>🗳️ Vote to End Game</h5>
 <p><a href="tg://user?id=${ctx.from.id}">${escapeHtml(userName)}</a> wants to end the game.</p>
 <table bordered compact>
 <tr><td align="left">Votes needed</td><td align="right"><b>3</b></td></tr>
 <tr><td align="left">Current votes</td><td align="right"><b>1/3</b></td></tr>
 </table>
-<p>Tap the button below to vote.</p>`,
-    },
-    {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: "✅ Vote to End (1/3)",
-              callback_data: `vote_end ${chatId}`,
-            },
-          ],
-        ],
-      },
-    },
-  );
+<tg-button-row align="center"><tg-button type="callback_data" data="vote_end ${chatId}">✅ Vote to End (1/3)</tg-button></tg-button-row>`,
+  });
 });
 
 export const endGameCommand = composer;

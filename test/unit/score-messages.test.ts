@@ -1,10 +1,13 @@
 ﻿import { describe, expect, test } from "bun:test";
 
+import { renderInlineKeyboard } from "#/core/telegram/rich-keyboard.helper";
 import { formatLeaderboardMessage } from "#/features/scores/helpers/format-leaderboard-message.helper";
 import { formatNoScoresMessage } from "#/features/scores/helpers/format-no-scores-message.helper";
 import { formatUserScoreMessage } from "#/features/scores/helpers/format-user-score-message.helper";
 import { generateLeaderboardKeyboard } from "#/features/scores/helpers/leaderboard-keyboard.helper";
 import { generateUserSelectionKeyboard } from "#/features/scores/helpers/user-selection-keyboard.helper";
+
+import { parseRichButtons } from "../helpers/rich-message";
 
 function callbackData(button: unknown): string | undefined {
   return (button as { callback_data?: string }).callback_data;
@@ -38,7 +41,25 @@ describe("formatLeaderboardMessage", () => {
     expect(message).toContain("42");
     expect(message).toContain("This week");
     expect(message).toContain("5 letters");
-    expect(message).toContain("<table");
+    expect(message).toContain("<h4>");
+    expect(message).toContain("<blockquote>");
+  });
+
+  test("groups the podium and ten players per blockquote", () => {
+    const manyEntries = Array.from({ length: 14 }, (_, index) => ({
+      userId: String(index + 1),
+      name: `Player ${index + 1}`,
+      username: null,
+      totalScore: 100 - index,
+    }));
+
+    const message = formatLeaderboardMessage(manyEntries, "global", "all", 5);
+
+    expect(message.match(/<blockquote>/g)).toHaveLength(3);
+    expect(message).toContain("🥇");
+    expect(message).toContain("🥉");
+    expect(message).toContain("<b>#4</b>");
+    expect(message).not.toContain("<table");
   });
 
   test("uses group wording for group leaderboards", () => {
@@ -152,7 +173,7 @@ describe("formatUserScoreMessage", () => {
     expect(message).toContain("0 days");
     expect(message).toContain("in this chat");
     expect(message).toContain("Today");
-    expect(message).not.toContain("https://t.me/");
+    expect(message).not.toContain('href="https://t.me/grace"');
   });
 });
 
@@ -222,5 +243,30 @@ describe("keyboards", () => {
     expect(callbackData(buttons[0]!)).toBe("score_select 1 ada");
     expect(callbackData(buttons[1]!)).toBe("score_select 2 ada");
     expect(buttons[1]!.text).toContain("Grace");
+  });
+
+  test("renders keyboard buttons into rich message rows", () => {
+    const keyboard = generateLeaderboardKeyboard("global", "month", 5);
+    const html = renderInlineKeyboard(keyboard);
+
+    expect(html).toContain("<tg-button-row");
+    expect(html).not.toContain("reply_markup");
+
+    const buttons = parseRichButtons(html);
+    expect(
+      buttons.some((button) => button.data === "leaderboard group month 5"),
+    ).toBe(true);
+    expect(
+      buttons.some((button) => button.data === "leaderboard global month 6"),
+    ).toBe(true);
+  });
+
+  test("keeps the leaderboard keyboard to three compact rows", () => {
+    const keyboard = generateLeaderboardKeyboard("global", "month", 5);
+
+    expect(keyboard.inline_keyboard).toHaveLength(3);
+    expect(keyboard.inline_keyboard[0]).toHaveLength(3);
+    expect(keyboard.inline_keyboard[1]).toHaveLength(5);
+    expect(keyboard.inline_keyboard[2]).toHaveLength(3);
   });
 });

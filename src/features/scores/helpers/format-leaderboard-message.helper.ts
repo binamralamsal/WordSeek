@@ -6,6 +6,7 @@ import type {
   WordLength,
 } from "#/types";
 
+import { formatCommunityFooter } from "./format-community-footer.helper";
 import { formatFilterSummary, formatScopeLabel } from "./format-filters.helper";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
@@ -16,31 +17,35 @@ export function formatLeaderboardMessage(
   timeKey: LeaderboardPeriod,
   wordLength: WordLength,
 ) {
-  const heading = `🏆 ${formatScopeLabel(searchKey)} Leaderboard`;
+  const blocks: string[][] = [];
 
-  const rows = data
-    .map((entry, index) => {
-      const rank = MEDALS[index] ?? `<b>#${index + 1}</b>`;
+  data.forEach((entry, index) => {
+    // First blockquote holds the podium, then ten players per blockquote.
+    if (index === 0 || index === 3 || (index > 3 && (index - 3) % 10 === 0)) {
+      blocks.push([]);
+    }
 
-      const name = entry.username
-        ? `<a href="https://t.me/${escapeHtml(entry.username)}">${escapeHtml(
-            entry.name,
-          )}</a>`
-        : escapeHtml(entry.name);
+    const rank = MEDALS[index] ?? `<b>#${index + 1}</b>`;
+    const name = entry.username
+      ? `<a href="https://t.me/${escapeHtml(entry.username)}">${escapeHtml(
+          entry.name,
+        )}</a>`
+      : escapeHtml(entry.name);
 
-      return `<tr><td align="center">${rank}</td><td align="left">${name}</td><td align="right"><b>${entry.totalScore.toLocaleString()}</b></td></tr>`;
-    })
-    .join("");
+    blocks[blocks.length - 1]!.push(
+      `${rank} ${name} — <b>${entry.totalScore.toLocaleString()}</b> pts`,
+    );
+  });
 
   const body =
-    data.length > 0
-      ? `<table bordered striped compact>
-<tr><th>#</th><th>Player</th><th>Points</th></tr>
-${rows}
-</table>`
+    blocks.length > 0
+      ? blocks
+          .map((block) => `<blockquote>${block.join("<br>")}</blockquote>`)
+          .join("\n")
       : `<blockquote>No scores for this filter yet. Pick another filter below, or start a game with /new.</blockquote>`;
 
-  return `<h3>${heading}</h3>
+  return `<h4>🏆 ${formatScopeLabel(searchKey)} Leaderboard</h4>
 <p><i>${formatFilterSummary(searchKey, timeKey, wordLength)}</i></p>
-${body}`;
+${body}
+${formatCommunityFooter()}`;
 }

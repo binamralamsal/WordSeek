@@ -84,10 +84,8 @@ export async function startGame(
       .execute();
 
     return ctx.replyWithRichMessage({
-      html: `<h3>🎮 New Game</h3>
-<p>Game started! Guess the <b>${wordLength}-letter</b> word.</p>
-<blockquote>Type your guess in the chat. First correct guess wins!</blockquote>
-<footer>Other modes: /new4 · /new5 · /new6</footer>`,
+      html: `<h5>🎮 New Game</h5>
+<p>Game started! Guess the <b>${wordLength}-letter</b> word.</p>`,
     });
   } catch (error) {
     if (error instanceof DatabaseError && error.code === "23505") {

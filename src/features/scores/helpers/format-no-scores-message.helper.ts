@@ -55,7 +55,7 @@ export function formatNoScoresMessage(context: MessageContext): string {
     text = `${subject} ${verb} no scores recorded ${scopeText}. Try switching to "Global" or selecting a different time period.`;
   }
 
-  return `<h3>🔍 No Scores Found</h3>
+  return `<h4>🔍 No Scores Found</h4>
 <blockquote>${text}</blockquote>
 <p><i>Use the buttons below to change the scope, period or word length.</i></p>`;
 }

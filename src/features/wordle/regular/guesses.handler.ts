@@ -69,7 +69,7 @@ export async function handleRegularGuess(ctx: Context, currentGuess: string) {
         })
         .execute();
 
-      const formattedResponse = `<h3>🎉 Congrats! You guessed it correctly</h3>
+      const formattedResponse = `<h5>🎉 Congrats! You guessed it correctly</h5>
 <p>The word was <b>${currentGuess.toUpperCase()}</b>.</p>
 <blockquote>Added ${score} to the leaderboard.</blockquote>
 <p>Keep the streak going with /new${wordLength}</p>`;
@@ -83,7 +83,7 @@ export async function handleRegularGuess(ctx: Context, currentGuess: string) {
     } else {
       const additionalMessage = `Anonymous admins or channels don't get points.`;
 
-      const formattedResponse = `<h3>🎉 Congrats! You guessed it correctly</h3>
+      const formattedResponse = `<h5>🎉 Congrats! You guessed it correctly</h5>
 <p>The word was <b>${currentGuess.toUpperCase()}</b>.</p>
 <blockquote>${additionalMessage}</blockquote>
 <p>Start with /new${wordLength}</p>`;
@@ -120,7 +120,7 @@ export async function handleRegularGuess(ctx: Context, currentGuess: string) {
   if (allGuesses.length === 30) {
     await db.deleteFrom("games").where("id", "=", currentGame.id).execute();
     return ctx.replyWithRichMessage({
-      html: `<h3>🛑 Game Over!</h3>
+      html: `<h5>🛑 Game Over!</h5>
 <p>The word was <b>${currentGame.word.toUpperCase()}</b>.</p>
 <p>You can start a new game with /new${wordLength}</p>`,
     });

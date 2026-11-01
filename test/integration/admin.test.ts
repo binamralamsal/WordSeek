@@ -115,9 +115,9 @@ describe("/stats", () => {
 
     const text = bot.lastText() ?? "";
     expect(text).toContain("Bot Statistics");
-    expect(text).toContain("Total Users");
+    expect(text).toContain("Total users");
     expect(text).toContain("VPS System");
-    expect(text).toContain("Bun Version");
+    expect(text).toContain("Bun version");
   });
 
   test("is restricted to system admins", async () => {

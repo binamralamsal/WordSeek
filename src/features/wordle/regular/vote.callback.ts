@@ -86,26 +86,15 @@ composer.callbackQuery(/^vote_end\b/, async (ctx) => {
 
   const votesNeeded = 3 - voteData.voters.length;
 
-  await ctx.editMessageText(
-    `<b>🗳️ Vote to End Game</b>\n\n` +
-      `Players are voting to end the game.\n\n` +
-      `<b>Votes needed: 3 total</b>\n` +
-      `<b>Current votes: ${voteData.voters.length}/3</b>\n\n` +
-      `React with the button below to vote for ending the game.`,
-    {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: `✅ Vote to End (${voteData.voters.length}/3)`,
-              callback_data: `vote_end ${chatId}`,
-            },
-          ],
-        ],
-      },
-      parse_mode: "HTML",
-    },
-  );
+  await ctx.editMessageText({
+    html: `<h5>🗳️ Vote to End Game</h5>
+<p>Players are voting to end the game.</p>
+<table bordered compact>
+<tr><td align="left">Votes needed</td><td align="right"><b>3</b></td></tr>
+<tr><td align="left">Current votes</td><td align="right"><b>${voteData.voters.length}/3</b></td></tr>
+</table>
+<tg-button-row align="center"><tg-button type="callback_data" data="vote_end ${chatId}">✅ Vote to End (${voteData.voters.length}/3)</tg-button></tg-button-row>`,
+  });
 
   await ctx.answerCallbackQuery({
     text: `Vote recorded! ${votesNeeded} more votes needed.`,

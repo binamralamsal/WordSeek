@@ -1,6 +1,7 @@
 import { escapeHtml } from "#/core/format/escape-html.helper";
 import type { LeaderboardPeriod, LeaderboardScope, WordLength } from "#/types";
 
+import { formatCommunityLinks } from "./format-community-footer.helper";
 import {
   formatFilterSummary,
   formatScopeSentence,
@@ -34,7 +35,7 @@ export function formatUserScoreMessage(
   const highestStreak =
     data.highestStreak !== null ? data.highestStreak.toString() : "0";
 
-  return `<h3>📊 Score Report</h3>
+  return `<h4>📊 Score Report</h4>
 <p><b>${mentionLink}</b></p>
 <p><i>${formatFilterSummary(searchKey, timeKey, wordLength)}</i></p>
 
@@ -46,5 +47,5 @@ export function formatUserScoreMessage(
 <tr><td align="left">Best streak</td><td align="right">⭐ ${highestStreak} days</td></tr>
 </table>
 
-<footer>Daily WordSeek streaks are tracked per user, across chats.</footer>`;
+<footer>Daily WordSeek streaks are tracked per user, across chats.<br>${formatCommunityLinks()}</footer>`;
 }
