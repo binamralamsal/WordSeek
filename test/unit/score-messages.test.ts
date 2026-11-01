@@ -152,7 +152,7 @@ describe("formatUserScoreMessage", () => {
     expect(message).toContain("10 days");
     expect(message).toContain("globally");
     expect(message).toContain("This week");
-    expect(message).toContain("<table");
+    expect(message).toContain("<blockquote>");
   });
 
   test("defaults missing streaks to zero and supports missing username", () => {
@@ -250,6 +250,7 @@ describe("keyboards", () => {
     const html = renderInlineKeyboard(keyboard);
 
     expect(html).toContain("<tg-button-row");
+    expect(html).not.toContain('align="center"');
     expect(html).not.toContain("reply_markup");
 
     const buttons = parseRichButtons(html);
@@ -268,5 +269,12 @@ describe("keyboards", () => {
     expect(keyboard.inline_keyboard[0]).toHaveLength(3);
     expect(keyboard.inline_keyboard[1]).toHaveLength(5);
     expect(keyboard.inline_keyboard[2]).toHaveLength(3);
+
+    // Refresh sits between the two scope buttons.
+    expect(keyboard.inline_keyboard[0]!.map((button) => button.text)).toEqual([
+      "🌍 Global",
+      "🔄",
+      "💬 This chat",
+    ]);
   });
 });

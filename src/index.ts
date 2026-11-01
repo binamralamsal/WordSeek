@@ -4,6 +4,7 @@ import { run, type RunnerHandle } from "@grammyjs/runner";
 import { createAppComposer } from "#/app";
 import { bot } from "#/config/bot";
 import { closeDatabase } from "#/config/db";
+import { env } from "#/config/env";
 import { closeRedis } from "#/config/redis";
 import { createLogger } from "#/core/logging/logger.service";
 import { errorHandler } from "#/core/middleware/error-handler.middleware";
@@ -33,14 +34,21 @@ bot.use(createAppComposer());
 bot.catch(errorHandler);
 
 async function start(): Promise<void> {
-  const locked = await acquireInstanceLock({
-    onLost: () => void shutdown("instance lock lost", 1),
-  });
+  // The lock protects production replicas from double-polling. In development
+  // `bun --watch` may kill the process before it can release the lock, which
+  // would block the next start until the 30 s TTL expires, so skip it there.
+  if (env.NODE_ENV === "production") {
+    const locked = await acquireInstanceLock({
+      onLost: () => void shutdown("instance lock lost", 1),
+    });
 
-  if (!locked) {
-    throw new Error(
-      "Another WordSeek instance is already running (Redis lock is held)",
-    );
+    if (!locked) {
+      throw new Error(
+        "Another WordSeek instance is already running (Redis lock is held)",
+      );
+    }
+  } else {
+    log.info("Instance lock disabled outside production");
   }
 
   dailyWordleCron.start();

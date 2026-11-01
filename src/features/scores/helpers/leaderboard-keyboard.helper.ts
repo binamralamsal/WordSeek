@@ -22,13 +22,13 @@ export function generateLeaderboardKeyboard(
 ) {
   const keyboard = new InlineKeyboard();
 
-  // Scope and refresh share one row to keep the keyboard compact.
+  // Global, refresh and this chat share one row to keep the keyboard compact.
   keyboard
     .text("🌍 Global", `${callbackKey} global ${timeKey} ${wordLength}`)
     .style(searchKey === "global" ? "primary" : undefined)
+    .text("🔄", `${callbackKey} ${searchKey} ${timeKey} ${wordLength}`)
     .text("💬 This chat", `${callbackKey} group ${timeKey} ${wordLength}`)
-    .style(searchKey === "group" ? "primary" : undefined)
-    .text("🔄", `${callbackKey} ${searchKey} ${timeKey} ${wordLength}`);
+    .style(searchKey === "group" ? "primary" : undefined);
 
   keyboard.row();
 

@@ -7,7 +7,6 @@ import {
   formatUserLink,
   formatUserMention,
 } from "#/core/format/mention.helper";
-import { formatActiveButton } from "#/core/ui/format-active-button.helper";
 
 describe("escapeHtml", () => {
   test("escapes every HTML-sensitive character", () => {
@@ -45,17 +44,6 @@ describe("mention helpers", () => {
     expect(formatUserMention({ id: "42" })).toBe(
       `<a href="tg://user?id=42">User</a>`,
     );
-  });
-});
-
-describe("formatActiveButton", () => {
-  test("decorates active buttons and leaves inactive ones as-is", () => {
-    const active = formatActiveButton("Today", true);
-    const inactive = formatActiveButton("Today", false);
-
-    expect(active).toContain("Today");
-    expect(active).not.toBe(inactive);
-    expect(inactive).toBe("Today");
   });
 });
 

@@ -42,6 +42,6 @@ export function renderInlineKeyboard(keyboard: InlineKeyboardMarkup): string {
         .join(""),
     )
     .filter((row) => row.length > 0)
-    .map((row) => `<tg-button-row align="center">${row}</tg-button-row>`)
+    .map((row) => `<tg-button-row>${row}</tg-button-row>`)
     .join("\n");
 }

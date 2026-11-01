@@ -1,6 +1,8 @@
 import { Composer, GrammyError } from "grammy";
 
 import { env } from "#/config/env";
+import { renderInlineKeyboard } from "#/core/telegram/rich-keyboard.helper";
+import { formatCommunityFooter } from "#/core/ui/format-community-footer.helper";
 
 import {
   getMainHelpKeyboard,
@@ -53,19 +55,19 @@ composer.callbackQuery(/^help_/, async (ctx) => {
 
   const message = section.message();
   const keyboard = getMainHelpKeyboard(shouldShowAdminCommands, section.active);
+  const html = `${message}
+${formatCommunityFooter()}
+${renderInlineKeyboard(keyboard)}`;
 
   try {
-    await ctx.editMessageText({ html: message }, { reply_markup: keyboard });
+    await ctx.editMessageText({ html });
   } catch (err) {
     if (
       err instanceof GrammyError &&
       !err.description.includes("message is not modified")
     ) {
       await ctx.deleteMessage();
-      await ctx.replyWithRichMessage(
-        { html: message },
-        { reply_markup: keyboard },
-      );
+      await ctx.replyWithRichMessage({ html });
     }
   }
 

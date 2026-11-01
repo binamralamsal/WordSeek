@@ -59,7 +59,7 @@ composer.command("end", async (ctx) => {
 <tr><td align="left">Votes needed</td><td align="right"><b>3</b></td></tr>
 <tr><td align="left">Current votes</td><td align="right"><b>1/3</b></td></tr>
 </table>
-<tg-button-row align="center"><tg-button type="callback_data" data="vote_end ${chatId}">✅ Vote to End (1/3)</tg-button></tg-button-row>`,
+<tg-button-row><tg-button type="callback_data" data="vote_end ${chatId}">✅ Vote to End (1/3)</tg-button></tg-button-row>`,
   });
 });
 

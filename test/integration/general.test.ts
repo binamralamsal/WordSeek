@@ -37,6 +37,10 @@ function richTexts(bot: TestBot): string[] {
     .map((call) => String(call.payload.rich_message?.html ?? ""));
 }
 
+function lastRichHtml(bot: TestBot): string {
+  return richTexts(bot).at(-1) ?? "";
+}
+
 describe("/start", () => {
   test("welcomes the user with a rich banner message and action buttons", async () => {
     const bot = new TestBot();
@@ -61,22 +65,25 @@ describe("/start", () => {
 });
 
 describe("/help", () => {
-  test("sends the rich how-to-play message with a keyboard", async () => {
+  test("sends the rich how-to-play message with embedded buttons", async () => {
     const bot = new TestBot();
 
     await bot.sendText("/help");
 
-    const html = richTexts(bot).join("\n");
+    const html = lastRichHtml(bot);
     expect(html).toContain("How to Play WordSeek");
+    expect(html).toContain("tg-button-row");
 
-    const buttons =
-      bot
-        .lastCall("sendRichMessage")
-        ?.payload.reply_markup.inline_keyboard.flat() ?? [];
+    const buttons = parseRichButtons(html);
+    expect(buttons.some((button) => button.data === "help_scores")).toBe(true);
+    expect(buttons.some((button) => button.url?.includes("github.com"))).toBe(
+      true,
+    );
     // Regular users do not get the admin-only section.
+    expect(buttons.some((button) => button.data === "help_admin")).toBe(false);
     expect(
-      buttons.some((button: any) => button.callback_data === "help_admin"),
-    ).toBe(false);
+      bot.lastCall("sendRichMessage")?.payload.reply_markup,
+    ).toBeUndefined();
   });
 
   test("shows the admin section to system admins in private chats", async () => {
@@ -84,13 +91,8 @@ describe("/help", () => {
 
     await bot.sendText("/help", { id: 999 });
 
-    const buttons =
-      bot
-        .lastCall("sendRichMessage")
-        ?.payload.reply_markup.inline_keyboard.flat() ?? [];
-    expect(
-      buttons.some((button: any) => button.callback_data === "help_admin"),
-    ).toBe(true);
+    const buttons = parseRichButtons(lastRichHtml(bot));
+    expect(buttons.some((button) => button.data === "help_admin")).toBe(true);
   });
 
   test("hides the admin section outside private chats", async () => {
@@ -98,13 +100,8 @@ describe("/help", () => {
 
     await bot.sendText("/help", { id: 999, chatType: "group" });
 
-    const buttons =
-      bot
-        .lastCall("sendRichMessage")
-        ?.payload.reply_markup.inline_keyboard.flat() ?? [];
-    expect(
-      buttons.some((button: any) => button.callback_data === "help_admin"),
-    ).toBe(false);
+    const buttons = parseRichButtons(lastRichHtml(bot));
+    expect(buttons.some((button) => button.data === "help_admin")).toBe(false);
   });
 });
 

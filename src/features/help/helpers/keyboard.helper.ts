@@ -1,51 +1,37 @@
 import { InlineKeyboard } from "grammy";
 
-import {
-  DISCUSSION_GROUP,
-  DONATION_LINK,
-  UPDATES_CHANNEL,
-} from "#/config/constants";
-import { formatActiveButton } from "#/core/ui/format-active-button.helper";
-
 export type HelpSection = "howto" | "scores" | "group" | "other" | "admin";
 
 export function getMainHelpKeyboard(
   shouldShowAdmin: boolean,
   active: HelpSection = "howto",
 ) {
-  const keyboard = new InlineKeyboard()
-    .text(formatActiveButton("How to Play", active === "howto"), "help_howto")
+  const keyboard = new InlineKeyboard();
+
+  // Section shortcuts share one row; the active section uses the primary
+  // button style instead of wrapping the label in « ».
+  keyboard
+    .text("How to Play", "help_howto")
     .style(active === "howto" ? "primary" : undefined)
-    .text(
-      formatActiveButton("Leaderboard & Scores", active === "scores"),
-      "help_scores",
-    )
+    .text("Scores", "help_scores")
     .style(active === "scores" ? "primary" : undefined)
+    .text("Group", "help_group")
+    .style(active === "group" ? "primary" : undefined);
+
+  keyboard
     .row()
-    .text(
-      formatActiveButton("Group Settings", active === "group"),
-      "help_group",
-    )
-    .style(active === "group" ? "primary" : undefined)
-    .text(
-      formatActiveButton("Other Commands", active === "other"),
-      "help_other",
-    )
+    .text("Other", "help_other")
     .style(active === "other" ? "primary" : undefined);
 
   if (shouldShowAdmin) {
     keyboard
-      .row()
-      .text(
-        formatActiveButton("👑 Admin Commands", active === "admin"),
-        "help_admin",
-      )
+      .text("Admin", "help_admin")
       .style(active === "admin" ? "primary" : undefined);
   }
-  keyboard.url("GitHub Repo", "https://github.com/binamralamsal/WordSeek");
-  keyboard.row().url("📢 Updates", UPDATES_CHANNEL);
-  keyboard.url("💓 Donate", DONATION_LINK).success();
-  keyboard.url("💬 Discussion", DISCUSSION_GROUP);
+
+  keyboard
+    .row()
+    .url("GitHub Repo", "https://github.com/binamralamsal/WordSeek");
 
   return keyboard;
 }

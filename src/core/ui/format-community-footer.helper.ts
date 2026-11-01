@@ -4,7 +4,7 @@ import {
   UPDATES_CHANNEL,
 } from "#/config/constants";
 
-/** Inline community links shared by score and leaderboard messages. */
+/** Inline community links shared by rich messages. */
 export function formatCommunityLinks(): string {
   return `📢 <a href="${UPDATES_CHANNEL}">Updates</a> · 💓 <a href="${DONATION_LINK}">Donate</a> · 💬 <a href="${DISCUSSION_GROUP}">Discussion</a>`;
 }

@@ -92,11 +92,13 @@
      bun run start
      ```
 
-Only one bot process can poll a Telegram bot token at a time. On startup the
-bot takes a Redis lease (`wordseek:instance-lock`) and exits with a clear error
-if another instance already holds it. `SIGINT`/`SIGTERM` stop the update
-runner, the cron job and the captcha worker, then close Postgres and Redis
-before exiting.
+Only one bot process can poll a Telegram bot token at a time. In production
+(`NODE_ENV=production`) the bot takes a Redis lease
+(`wordseek:instance-lock`) and exits with a clear error if another instance
+already holds it. The lease is skipped in development so `bun run dev` can
+restart immediately after a file change instead of waiting for a stale lock to
+expire. `SIGINT`/`SIGTERM` stop the update runner, the cron job and the captcha
+worker, then close Postgres and Redis before exiting.
 
 ### Additional Database Commands
 

@@ -1,7 +1,7 @@
 import { escapeHtml } from "#/core/format/escape-html.helper";
+import { formatCommunityLinks } from "#/core/ui/format-community-footer.helper";
 import type { LeaderboardPeriod, LeaderboardScope, WordLength } from "#/types";
 
-import { formatCommunityLinks } from "./format-community-footer.helper";
 import {
   formatFilterSummary,
   formatScopeSentence,
@@ -39,13 +39,8 @@ export function formatUserScoreMessage(
 <p><b>${mentionLink}</b></p>
 <p><i>${formatFilterSummary(searchKey, timeKey, wordLength)}</i></p>
 
-<table bordered striped compact>
-<tr><th>Metric</th><th>Value</th></tr>
-<tr><td align="left">Points ${formatScopeSentence(searchKey)}</td><td align="right"><b>${totalScore}</b></td></tr>
-<tr><td align="left">Rank</td><td align="right"><b>#${rank}</b></td></tr>
-<tr><td align="left">Current streak</td><td align="right">🔥 ${currentStreak} days</td></tr>
-<tr><td align="left">Best streak</td><td align="right">⭐ ${highestStreak} days</td></tr>
-</table>
+<blockquote><b>🏅 Rank</b> #${rank}<br><b>⭐ Points</b> ${totalScore} ${formatScopeSentence(searchKey)}</blockquote>
+<blockquote><b>🔥 Current streak</b> ${currentStreak} days<br><b>🏆 Best streak</b> ${highestStreak} days</blockquote>
 
 <footer>Daily WordSeek streaks are tracked per user, across chats.<br>${formatCommunityLinks()}</footer>`;
 }

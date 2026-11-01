@@ -1,4 +1,5 @@
 import { escapeHtml } from "#/core/format/escape-html.helper";
+import { formatCommunityFooter } from "#/core/ui/format-community-footer.helper";
 import type {
   LeaderboardEntry,
   LeaderboardPeriod,
@@ -6,7 +7,6 @@ import type {
   WordLength,
 } from "#/types";
 
-import { formatCommunityFooter } from "./format-community-footer.helper";
 import { formatFilterSummary, formatScopeLabel } from "./format-filters.helper";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
