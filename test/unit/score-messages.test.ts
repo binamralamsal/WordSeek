@@ -58,13 +58,14 @@ describe("formatLeaderboardMessage", () => {
     expect(message.match(/<blockquote>/g)).toHaveLength(3);
     expect(message).toContain("🥇");
     expect(message).toContain("🥉");
-    expect(message).toContain("<b>#4</b>");
+    expect(message).toContain("🔅");
+    expect(message).not.toContain("<b>#4</b>");
     expect(message).not.toContain("<table");
   });
 
-  test("uses group wording for group leaderboards", () => {
+  test("uses chat wording for group-scoped leaderboards in DMs and groups", () => {
     expect(formatLeaderboardMessage([], "group", "today", 4)).toContain(
-      "Group",
+      "This chat",
     );
   });
 
@@ -153,6 +154,8 @@ describe("formatUserScoreMessage", () => {
     expect(message).toContain("globally");
     expect(message).toContain("This week");
     expect(message).toContain("<blockquote>");
+    expect(message).toContain("@ada");
+    expect(message).not.toContain("Daily WordSeek streaks");
   });
 
   test("defaults missing streaks to zero and supports missing username", () => {

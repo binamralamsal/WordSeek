@@ -9,7 +9,7 @@ const PERIOD_LABELS: Record<LeaderboardPeriod, string> = {
 };
 
 export function formatScopeLabel(scope: LeaderboardScope): string {
-  return scope === "global" ? "Global" : "Group";
+  return scope === "global" ? "Global" : "This chat";
 }
 
 export function formatScopeSentence(scope: LeaderboardScope): string {

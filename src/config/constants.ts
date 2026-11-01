@@ -1,6 +1,7 @@
 export const UPDATES_CHANNEL = "https://t.me/WordSeek";
 export const DISCUSSION_GROUP = "https://t.me/WordGuesser";
 export const DONATION_LINK = "https://buymemomo.com/binamra";
+export const GITHUB_REPO = "https://github.com/binamralamsal/WordSeek";
 
 export const SLOT_SYMBOLS = ["➖", "🍒", "🍋", "7️⃣"];
 

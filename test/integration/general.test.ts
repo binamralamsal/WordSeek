@@ -77,8 +77,9 @@ describe("/help", () => {
     const buttons = parseRichButtons(html);
     expect(buttons.some((button) => button.data === "help_scores")).toBe(true);
     expect(buttons.some((button) => button.url?.includes("github.com"))).toBe(
-      true,
+      false,
     );
+    expect(html).toContain("github.com/binamralamsal/WordSeek");
     // Regular users do not get the admin-only section.
     expect(buttons.some((button) => button.data === "help_admin")).toBe(false);
     expect(
@@ -165,6 +166,19 @@ describe("simple commands", () => {
     await bot.sendText("/id", { chatType: "group" });
 
     expect(bot.lastText()).toContain("group administrators");
+  });
+
+  test("/id shows the command message and sender to group admins", async () => {
+    const bot = new TestBot();
+    bot.chatMemberStatus = "administrator";
+
+    await bot.sendText("/id", { chatType: "group" });
+
+    const text = bot.lastText() ?? "";
+    expect(text).toContain("Your Telegram ID");
+    expect(text).toContain("7001");
+    expect(text).toContain("Test Chat");
+    expect(text).toContain("Command Message");
   });
 
   test("/id renders message and user information for the replied message", async () => {

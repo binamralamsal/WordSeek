@@ -1,15 +1,16 @@
 import type { Context } from "grammy";
+import { InlineKeyboard } from "grammy";
 
 import { db } from "#/config/db";
 import { redis } from "#/config/redis";
 import { formatDailyWordDetails } from "#/core/format/word-details.helper";
 import { redisKeys } from "#/core/redis-keys.constants";
+import { replyNotice } from "#/core/telegram/reply-notice.helper";
+import { renderInlineKeyboard } from "#/core/telegram/rich-keyboard.helper";
 
+import { sendBoardMessage } from "../shared/helpers/board-message.helper";
 import { evaluateGuess } from "../shared/helpers/board.helper";
-import {
-  generateWordleImage,
-  wordleImageFile,
-} from "../shared/helpers/image.helper";
+import { generateWordleImage } from "../shared/helpers/image.helper";
 import { reactWithRandom } from "../shared/helpers/reactions.helper";
 import { ALL_WORDS } from "../shared/helpers/words.helper";
 import type { DailyWord, GuessEntry } from "../shared/types";
@@ -18,6 +19,12 @@ import { recordWinStreak, resetStreak } from "./services/streaks.service";
 
 const DAILY_ATTEMPTS = 6;
 
+function shareKeyboard(shareText: string) {
+  return renderInlineKeyboard(
+    new InlineKeyboard().switchInline("📤 Share", shareText),
+  );
+}
+
 export async function handleDailyWordleGuess(
   ctx: Context,
   currentGuess: string,
@@ -25,7 +32,10 @@ export async function handleDailyWordleGuess(
   const userId = ctx.from!.id.toString();
 
   if (!ALL_WORDS[5].includes(currentGuess)) {
-    return ctx.reply(`${currentGuess.toUpperCase()} is not a valid word.`);
+    return replyNotice(
+      ctx,
+      `${currentGuess.toUpperCase()} is not a valid word.`,
+    );
   }
 
   const todayDate = getCurrentGameDateString();
@@ -37,7 +47,8 @@ export async function handleDailyWordleGuess(
     .executeTakeFirst();
 
   if (!dailyWord) {
-    return ctx.reply(
+    return replyNotice(
+      ctx,
       "Today's WordSeek is not available. Please try again later.",
     );
   }
@@ -51,7 +62,10 @@ export async function handleDailyWordleGuess(
     .execute();
 
   if (existingGuesses.some((g) => g.guess === currentGuess)) {
-    return ctx.reply("You've already guessed this word. Try a different one!");
+    return replyNotice(
+      ctx,
+      "You've already guessed this word. Try a different one!",
+    );
   }
 
   const attemptNumber = existingGuesses.length + 1;
@@ -85,10 +99,14 @@ export async function handleDailyWordleGuess(
 
   const imageBuffer = await generateWordleImage(allGuesses, dailyWord.word);
   const attemptsLeft = DAILY_ATTEMPTS - allGuesses.length;
+  const attemptsLabel = attemptsLeft === 1 ? "attempt" : "attempts";
 
-  await ctx.replyWithPhoto(wordleImageFile(imageBuffer), {
-    caption: `${attemptsLeft} ${attemptsLeft === 1 ? "attempt" : "attempts"} remaining`,
-  });
+  await sendBoardMessage(
+    ctx,
+    imageBuffer,
+    `<p><b>${attemptsLeft}</b> ${attemptsLabel} remaining</p>`,
+    { caption: `${attemptsLeft} ${attemptsLabel} remaining` },
+  );
 }
 
 async function handleDailyWordleWin(
@@ -109,21 +127,32 @@ async function handleDailyWordleWin(
     allGuesses,
     dailyWord.word,
   );
+  const triesLabel = allGuesses.length === 1 ? "try" : "tries";
+  const details = formatDailyWordDetails(dailyWord);
+  const captionDetails = formatDailyWordDetails(dailyWord, "\n");
 
-  await ctx.replyWithPhoto(wordleImageFile(imageBuffer), {
-    caption: `🎉 Congratulations! You guessed it in ${allGuesses.length} ${allGuesses.length === 1 ? "try" : "tries"}!\n\n🔥 Current Streak: ${streak.currentStreak}\n⭐ Highest Streak: ${streak.highestStreak}\n\n${formatDailyWordDetails(dailyWord)}`,
-    parse_mode: "HTML",
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: "📤 Share",
-            switch_inline_query: shareText,
-          },
+  await sendBoardMessage(
+    ctx,
+    imageBuffer,
+    `<h5>🎉 You Guessed It!</h5>
+<p>Solved today's WordSeek in <b>${allGuesses.length}</b> ${triesLabel}.</p>
+<blockquote>🔥 Current streak <b>${streak.currentStreak}</b><br>⭐ Highest streak <b>${streak.highestStreak}</b></blockquote>
+${details}
+${shareKeyboard(shareText)}`,
+    {
+      caption: `🎉 Congratulations! You guessed it in ${allGuesses.length} ${triesLabel}!\n\n🔥 Current Streak: ${streak.currentStreak}\n⭐ Highest Streak: ${streak.highestStreak}\n\n${captionDetails}`,
+      replyMarkup: {
+        inline_keyboard: [
+          [
+            {
+              text: "📤 Share",
+              switch_inline_query: shareText,
+            },
+          ],
         ],
-      ],
+      },
     },
-  });
+  );
 
   reactWithRandom(ctx);
 }
@@ -144,21 +173,32 @@ async function handleDailyWordleLoss(
     allGuesses,
     dailyWord.word,
   );
+  const details = formatDailyWordDetails(dailyWord);
+  const captionDetails = formatDailyWordDetails(dailyWord, "\n");
 
-  await ctx.replyWithPhoto(wordleImageFile(imageBuffer), {
-    caption: `Game Over! The word was: ${dailyWord.word.toUpperCase()}\n\n💔 Streak reset to 0\n\n${formatDailyWordDetails(dailyWord)}\n\nCome back tomorrow for a new challenge!`,
-    parse_mode: "HTML",
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: "📤 Share",
-            switch_inline_query: shareText,
-          },
+  await sendBoardMessage(
+    ctx,
+    imageBuffer,
+    `<h5>💔 Game Over</h5>
+<p>The word was <b>${dailyWord.word.toUpperCase()}</b>.</p>
+<blockquote>Streak reset to <b>0</b></blockquote>
+${details}
+<footer>Come back tomorrow for a new challenge!</footer>
+${shareKeyboard(shareText)}`,
+    {
+      caption: `Game Over! The word was: ${dailyWord.word.toUpperCase()}\n\n💔 Streak reset to 0\n\n${captionDetails}\n\nCome back tomorrow for a new challenge!`,
+      replyMarkup: {
+        inline_keyboard: [
+          [
+            {
+              text: "📤 Share",
+              switch_inline_query: shareText,
+            },
+          ],
         ],
-      ],
+      },
     },
-  });
+  );
 }
 
 const SHARE_EMOJI = {

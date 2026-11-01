@@ -2,6 +2,7 @@ import type { Context } from "grammy";
 
 import { db } from "#/config/db";
 import { runGuards } from "#/core/guards/admin.guard";
+import { replyNotice } from "#/core/telegram/reply-notice.helper";
 import type { WordLength } from "#/types";
 
 import { requireAllowedTopic } from "../shared/guards/wordle.guard";
@@ -33,7 +34,8 @@ export async function handleRegularGuess(ctx: Context, currentGuess: string) {
   if (currentGuess.length !== wordLength) return;
 
   if (!validWords.includes(currentGuess))
-    return ctx.reply(
+    return replyNotice(
+      ctx,
       `${currentGuess} is not a valid ${wordLength}-letter word.`,
     );
 
@@ -45,7 +47,8 @@ export async function handleRegularGuess(ctx: Context, currentGuess: string) {
     .executeTakeFirst();
 
   if (guessExists)
-    return ctx.reply(
+    return replyNotice(
+      ctx,
       "Someone has already guessed your word. Please try another one!",
     );
 

@@ -35,12 +35,14 @@ export function formatUserScoreMessage(
   const highestStreak =
     data.highestStreak !== null ? data.highestStreak.toString() : "0";
 
+  const tag = data.username ? ` · @${escapeHtml(data.username)}` : "";
+
   return `<h4>📊 Score Report</h4>
-<p><b>${mentionLink}</b></p>
+<p><b>${mentionLink}</b>${tag}</p>
 <p><i>${formatFilterSummary(searchKey, timeKey, wordLength)}</i></p>
 
 <blockquote><b>🏅 Rank</b> #${rank}<br><b>⭐ Points</b> ${totalScore} ${formatScopeSentence(searchKey)}</blockquote>
 <blockquote><b>🔥 Current streak</b> ${currentStreak} days<br><b>🏆 Best streak</b> ${highestStreak} days</blockquote>
 
-<footer>Daily WordSeek streaks are tracked per user, across chats.<br>${formatCommunityLinks()}</footer>`;
+<footer>${formatCommunityLinks()}</footer>`;
 }

@@ -1,10 +1,10 @@
 import type { CommandContext, Context } from "grammy";
 
-import { DatabaseError } from "pg";
-
 import { db } from "#/config/db";
+import { isUniqueViolation } from "#/core/database/errors.helper";
 import { runGuards } from "#/core/guards/admin.guard";
 import { createLogger } from "#/core/logging/logger.service";
+import { replyNotice } from "#/core/telegram/reply-notice.helper";
 import type { WordLength } from "#/types";
 
 import { regularGameGuards } from "../../shared/guards/wordle.guard";
@@ -25,7 +25,7 @@ export async function startGame(
     const chatId = ctx.chat.id;
 
     const guard = await runGuards(ctx, regularGameGuards);
-    if (!guard.ok) return ctx.reply(guard.message);
+    if (!guard.ok) return replyNotice(ctx, guard.message);
 
     const topicSettings = await db
       .selectFrom("chatGameTopics")
@@ -43,7 +43,8 @@ export async function startGame(
 
     if (forcedLength) {
       if (!allowedLengths.includes(forcedLength)) {
-        return ctx.reply(
+        return replyNotice(
+          ctx,
           `Only these lengths are allowed in this topic: ${allowedLengths.join(
             ", ",
           )}.`,
@@ -57,7 +58,8 @@ export async function startGame(
         const parsed = Number(lengthArg) as WordLength;
 
         if (!allowedLengths.includes(parsed)) {
-          return ctx.reply(
+          return replyNotice(
+            ctx,
             `Only these lengths are allowed in this topic: ${allowedLengths.join(
               ", ",
             )}.`,
@@ -88,13 +90,15 @@ export async function startGame(
 <p>Game started! Guess the <b>${wordLength}-letter</b> word.</p>`,
     });
   } catch (error) {
-    if (error instanceof DatabaseError && error.code === "23505") {
-      return ctx.reply(
-        "There is already a game in progress in this chat. Use /end to end the current game.",
-      );
+    if (isUniqueViolation(error)) {
+      return ctx.replyWithRichMessage({
+        html: `<h5>🎮 Game Already Running</h5>
+<blockquote>A game is already in progress in this chat.</blockquote>
+<p>Keep guessing the current word, or use /end to start over.</p>`,
+      });
     }
 
     log.error(error);
-    return ctx.reply("Something went wrong. Please try again.");
+    return replyNotice(ctx, "Something went wrong. Please try again.");
   }
 }

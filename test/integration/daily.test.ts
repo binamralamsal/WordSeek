@@ -7,6 +7,7 @@ import { ALL_WORDS } from "#/features/wordle/shared/helpers/words.helper";
 import { setupTestEnvironment } from "../helpers/env";
 import { seedDailyWord, seedGame, seedUser } from "../helpers/fixtures";
 import { TestBot } from "../helpers/harness";
+import { parseRichButtons } from "../helpers/rich-message";
 
 const env = setupTestEnvironment();
 
@@ -52,7 +53,8 @@ describe("/daily", () => {
     const bot = new TestBot();
     await bot.sendText("/daily", { id: PLAYER_ID });
 
-    expect(bot.lastText()).toContain("WordSeek of the Day started");
+    expect(bot.lastText()).toContain("WordSeek of the Day");
+    expect(bot.lastText()).toContain("5-letter");
     expect(await env.redis.get(redisKeys.dailySession(PLAYER_ID))).toContain(
       '"dailyWordId"',
     );
@@ -90,9 +92,11 @@ describe("/daily", () => {
 
     await bot.sendText("/daily", { id: PLAYER_ID });
 
-    const photo = bot.lastCall("sendPhoto");
-    expect(photo?.payload.caption).toContain("Welcome back!");
-    expect(photo?.payload.caption).toContain("5 attempts left");
+    const rich = bot.lastCall("sendRichMessage");
+    expect(rich?.payload.rich_message.html).toContain("Welcome back!");
+    expect(rich?.payload.rich_message.html).toContain("attempts left today");
+    expect(rich?.payload.rich_message.media).toHaveLength(1);
+    expect(rich?.payload.rich_message.media[0].id).toBe("board");
   });
 
   test("reports an already completed game", async () => {
@@ -105,7 +109,8 @@ describe("/daily", () => {
 
     await bot.sendText("/daily", { id: PLAYER_ID });
 
-    expect(bot.lastText()).toContain("already completed today's WordSeek");
+    expect(bot.lastText()).toContain("Daily Already Solved");
+    expect(bot.lastText()).toContain("1</b> try");
   });
 
   test("reports an exhausted game", async () => {
@@ -120,7 +125,7 @@ describe("/daily", () => {
 
     await bot.sendText("/daily", { id: PLAYER_ID });
 
-    expect(bot.lastText()).toContain("used all 6 attempts");
+    expect(bot.lastText()).toContain("Out of Attempts");
     expect(bot.lastText()).toContain(SOLUTION.toUpperCase());
   });
 
@@ -174,8 +179,8 @@ describe("daily guesses", () => {
     await bot.sendText("/daily", { id: PLAYER_ID });
     await bot.sendText(wrongWords(SOLUTION, 1)[0]!, { id: PLAYER_ID });
 
-    const photo = bot.lastCall("sendPhoto");
-    expect(photo?.payload.caption).toBe("5 attempts remaining");
+    const rich = bot.lastCall("sendRichMessage");
+    expect(rich?.payload.rich_message.html).toContain("attempts remaining");
     expect(
       await env.db.selectFrom("dailyGuesses").selectAll().execute(),
     ).toHaveLength(1);
@@ -205,12 +210,17 @@ describe("daily guesses", () => {
     await bot.sendText("/daily", { id: PLAYER_ID });
     await bot.sendText(SOLUTION, { id: PLAYER_ID });
 
-    const photo = bot.lastCall("sendPhoto");
-    expect(photo?.payload.caption).toContain("Congratulations!");
-    expect(photo?.payload.caption).toContain("1 try");
-    expect(photo?.payload.caption).toContain("Current Streak: 1");
-    expect(photo?.payload.caption).toContain("Highest Streak: 1");
-    expect(photo?.payload.reply_markup.inline_keyboard).toHaveLength(1);
+    const rich = bot.lastCall("sendRichMessage");
+    const html = rich?.payload.rich_message.html ?? "";
+    expect(html).toContain("You Guessed It!");
+    expect(html).toContain("1</b> try");
+    expect(html).toContain("Current streak <b>1</b>");
+    expect(html).toContain("Highest streak <b>1</b>");
+    expect(html).toContain("tg://photo?id=board");
+    expect(parseRichButtons(html).some((b) => b.text.includes("Share"))).toBe(
+      true,
+    );
+    expect(rich?.payload.reply_markup).toBeUndefined();
     expect(await env.redis.get(redisKeys.dailySession(PLAYER_ID))).toBeNull();
 
     const stats = await env.db
@@ -232,10 +242,14 @@ describe("daily guesses", () => {
       await bot.sendText(guess, { id: PLAYER_ID });
     }
 
-    const photo = bot.lastCall("sendPhoto");
-    expect(photo?.payload.caption).toContain("Game Over!");
-    expect(photo?.payload.caption).toContain(SOLUTION.toUpperCase());
-    expect(photo?.payload.caption).toContain("Streak reset to 0");
+    const rich = bot.lastCall("sendRichMessage");
+    const html = rich?.payload.rich_message.html ?? "";
+    expect(html).toContain("Game Over");
+    expect(html).toContain(SOLUTION.toUpperCase());
+    expect(html).toContain("Streak reset to <b>0</b>");
+    expect(parseRichButtons(html).some((b) => b.text.includes("Share"))).toBe(
+      true,
+    );
     expect(await env.redis.get(redisKeys.dailySession(PLAYER_ID))).toBeNull();
 
     const stats = await env.db
@@ -256,7 +270,8 @@ describe("/pausedaily", () => {
     await bot.sendText("/daily", { id: PLAYER_ID });
     await bot.sendText("/pausedaily", { id: PLAYER_ID });
 
-    expect(bot.lastText()).toContain("has been paused");
+    expect(bot.lastText()).toContain("Daily Game Paused");
+    expect(bot.lastText()).toContain("play regular WordSeek");
     expect(await env.redis.get(redisKeys.dailySession(PLAYER_ID))).toBeNull();
   });
 
@@ -265,7 +280,7 @@ describe("/pausedaily", () => {
 
     await bot.sendText("/pausedaily", { id: PLAYER_ID });
 
-    expect(bot.lastText()).toContain("don't have an active");
+    expect(bot.lastText()).toContain("have an active WordSeek of the Day game");
   });
 
   test("allows a regular game after pausing", async () => {

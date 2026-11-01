@@ -1,6 +1,7 @@
 import { Composer } from "grammy";
 
 import { runGuards } from "#/core/guards/admin.guard";
+import { replyNotice } from "#/core/telegram/reply-notice.helper";
 import { renderInlineKeyboard } from "#/core/telegram/rich-keyboard.helper";
 import { requireAllowedTopic } from "#/features/wordle/shared/guards/wordle.guard";
 
@@ -15,7 +16,7 @@ composer.command("leaderboard", async (ctx) => {
   const chatId = ctx.chat.id.toString();
 
   const guard = await runGuards(ctx, [requireAllowedTopic]);
-  if (!guard.ok) return ctx.reply(guard.message);
+  if (!guard.ok) return replyNotice(ctx, guard.message);
 
   const { searchKey, timeKey, wordLength } = parseLeaderboardFilters(
     ctx.match,

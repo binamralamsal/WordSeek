@@ -220,7 +220,7 @@ describe("/score", () => {
     const bot = new TestBot();
     await bot.sendText("/score @ghost");
 
-    expect(bot.lastText()).toBe("User not found.");
+    expect(bot.lastText()).toContain("User not found.");
   });
 });
 

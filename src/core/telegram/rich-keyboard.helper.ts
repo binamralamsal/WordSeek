@@ -24,6 +24,10 @@ function renderButton(button: InlineButton): string | null {
     return `<tg-button type="callback_data" data="${escapeAttribute(button.callback_data)}"${style}>${text}</tg-button>`;
   }
 
+  if ("switch_inline_query" in button) {
+    return `<tg-button type="switch_inline_query" query="${escapeAttribute(button.switch_inline_query ?? "")}"${style}>${text}</tg-button>`;
+  }
+
   return null;
 }
 

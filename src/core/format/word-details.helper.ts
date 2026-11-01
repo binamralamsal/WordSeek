@@ -7,7 +7,11 @@ interface WordDetailsInput {
   sentence: string | null;
 }
 
-function renderWordDetails(input: WordDetailsInput, escape = true) {
+function renderWordDetails(
+  input: WordDetailsInput,
+  escape = true,
+  separator = "<br>",
+) {
   const { word, meaning, phonetic, sentence } = input;
 
   const parts: string[] = [];
@@ -30,10 +34,13 @@ function renderWordDetails(input: WordDetailsInput, escape = true) {
     parts.push(`<strong>Example</strong>: ${escapeHtml(sentence)}`);
   }
 
-  return `<blockquote>${parts.join("\n")}</blockquote>`;
+  return `<blockquote>${parts.join(separator)}</blockquote>`;
 }
 
-export function formatDailyWordDetails(data: WordDetailsInput) {
+export function formatDailyWordDetails(
+  data: WordDetailsInput,
+  separator = "<br>",
+) {
   return renderWordDetails(
     {
       word: data.word,
@@ -42,6 +49,7 @@ export function formatDailyWordDetails(data: WordDetailsInput) {
       sentence: data.sentence,
     },
     false,
+    separator,
   );
 }
 

@@ -2,6 +2,7 @@ import { Composer } from "grammy";
 
 import { redis } from "#/config/redis";
 import { redisKeys } from "#/core/redis-keys.constants";
+import { replyNotice } from "#/core/telegram/reply-notice.helper";
 
 import { handleDailyWordleGuess } from "./daily/guesses.handler";
 import { getCurrentGameDateString } from "./daily/helpers/date.helper";
@@ -32,7 +33,8 @@ composer.on("message:text", async (ctx) => {
 
       if (result.data.date !== todayDate) {
         await redis.del(redisKeys.dailySession(userId));
-        return ctx.reply(
+        return replyNotice(
+          ctx,
           "Your previous game has expired. Please start today's WordSeek with /daily",
         );
       }

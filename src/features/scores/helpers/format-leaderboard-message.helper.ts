@@ -7,7 +7,7 @@ import type {
   WordLength,
 } from "#/types";
 
-import { formatFilterSummary, formatScopeLabel } from "./format-filters.helper";
+import { formatFilterSummary } from "./format-filters.helper";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
@@ -25,7 +25,7 @@ export function formatLeaderboardMessage(
       blocks.push([]);
     }
 
-    const rank = MEDALS[index] ?? `<b>#${index + 1}</b>`;
+    const rank = MEDALS[index] ?? "🔅";
     const name = entry.username
       ? `<a href="https://t.me/${escapeHtml(entry.username)}">${escapeHtml(
           entry.name,
@@ -44,7 +44,7 @@ export function formatLeaderboardMessage(
           .join("\n")
       : `<blockquote>No scores for this filter yet. Pick another filter below, or start a game with /new.</blockquote>`;
 
-  return `<h4>🏆 ${formatScopeLabel(searchKey)} Leaderboard</h4>
+  return `<h4>🏆 Leaderboard</h4>
 <p><i>${formatFilterSummary(searchKey, timeKey, wordLength)}</i></p>
 ${body}
 ${formatCommunityFooter()}`;

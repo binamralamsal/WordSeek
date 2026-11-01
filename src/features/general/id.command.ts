@@ -1,8 +1,9 @@
 import { Composer } from "grammy";
 
-import type { User } from "grammy/types";
+import type { Chat, User } from "grammy/types";
 
 import { escapeHtml } from "#/core/format/escape-html.helper";
+import { replyNotice } from "#/core/telegram/reply-notice.helper";
 
 const composer = new Composer();
 
@@ -20,7 +21,15 @@ function fullName(user: { first_name: string; last_name?: string }) {
   return [user.first_name, user.last_name].filter(Boolean).join(" ");
 }
 
-function formatSelfInfo(from: User, chatId: number) {
+function formatOwnInfo(
+  from: User,
+  chat: Chat,
+  messageId: number,
+  messageDate: number,
+) {
+  const chatTitle = "title" in chat ? chat.title : null;
+  const chatUsername = "username" in chat ? chat.username : null;
+
   return `<h4>🪪 Your Telegram ID</h4>
 ${section("👤 User", [
   field("ID", `<code>${from.id}</code>`),
@@ -29,8 +38,14 @@ ${section("👤 User", [
   from.is_premium ? field("Premium", "Yes") : "",
 ])}
 ${section("💬 Chat", [
-  field("ID", `<code>${chatId}</code>`),
-  field("Type", "private"),
+  field("ID", `<code>${chat.id}</code>`),
+  field("Type", escapeHtml(chat.type)),
+  chatTitle ? field("Title", escapeHtml(chatTitle)) : "",
+  chatUsername ? field("Username", `@${escapeHtml(chatUsername)}`) : "",
+])}
+${section("📨 Command Message", [
+  field("ID", `<code>${messageId}</code>`),
+  field("Date", escapeHtml(new Date(messageDate * 1000).toLocaleString())),
 ])}
 <footer>Reply to any message with /id to inspect it.</footer>`;
 }
@@ -46,11 +61,9 @@ composer.command("id", async (ctx) => {
       member.status === "administrator" || member.status === "creator";
 
     if (!isAdmin) {
-      return ctx.reply(
+      return replyNotice(
+        ctx,
         "This command can only be used by group administrators.",
-        {
-          reply_parameters: { message_id: ctx.message!.message_id },
-        },
       );
     }
   }
@@ -58,16 +71,19 @@ composer.command("id", async (ctx) => {
   const repliedMsg = ctx.message?.reply_to_message;
 
   if (!repliedMsg) {
-    if (isPrivate) {
-      return ctx.replyWithRichMessage(
-        { html: formatSelfInfo(ctx.from, ctx.chat.id) },
-        { reply_parameters: { message_id: ctx.message!.message_id } },
-      );
-    }
+    const message = ctx.message!;
 
-    return ctx.reply("Please reply to a message to get its information.", {
-      reply_parameters: { message_id: ctx.message!.message_id },
-    });
+    return ctx.replyWithRichMessage(
+      {
+        html: formatOwnInfo(
+          ctx.from,
+          ctx.chat,
+          message.message_id,
+          message.date,
+        ),
+      },
+      { reply_parameters: { message_id: message.message_id } },
+    );
   }
 
   const sections: string[] = [];

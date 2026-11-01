@@ -5,6 +5,7 @@ import { redis } from "#/config/redis";
 import { escapeHtml } from "#/core/format/escape-html.helper";
 import { runGuards } from "#/core/guards/admin.guard";
 import { redisKeys } from "#/core/redis-keys.constants";
+import { replyNotice } from "#/core/telegram/reply-notice.helper";
 
 import { requireAllowedTopic } from "../shared/guards/wordle.guard";
 import { endGame, getEndPermission } from "./services/end-game.service";
@@ -16,7 +17,7 @@ composer.command("end", async (ctx) => {
   if (!ctx.message) return;
 
   const guard = await runGuards(ctx, [requireAllowedTopic]);
-  if (!guard.ok) return ctx.reply(guard.message);
+  if (!guard.ok) return replyNotice(ctx, guard.message);
 
   const currentGame = await db
     .selectFrom("games")
@@ -24,7 +25,7 @@ composer.command("end", async (ctx) => {
     .where("activeChat", "=", String(ctx.chat.id))
     .executeTakeFirst();
 
-  if (!currentGame) return ctx.reply("There is no game in progress.");
+  if (!currentGame) return replyNotice(ctx, "There is no game in progress.");
 
   const userId = ctx.from.id.toString();
   const permission = await getEndPermission(ctx, userId, currentGame.startedBy);
@@ -37,7 +38,8 @@ composer.command("end", async (ctx) => {
   const existingVotes = await redis.get(voteKey);
 
   if (existingVotes) {
-    return await ctx.reply(
+    return await replyNotice(
+      ctx,
       "⏳ A vote to end the game is already in progress. Please wait for it to complete.",
     );
   }

@@ -7,6 +7,7 @@ import {
   formatUserLink,
   formatUserMention,
 } from "#/core/format/mention.helper";
+import { formatDailyWordDetails } from "#/core/format/word-details.helper";
 
 describe("escapeHtml", () => {
   test("escapes every HTML-sensitive character", () => {
@@ -44,6 +45,32 @@ describe("mention helpers", () => {
     expect(formatUserMention({ id: "42" })).toBe(
       `<a href="tg://user?id=42">User</a>`,
     );
+  });
+});
+
+describe("formatDailyWordDetails", () => {
+  const details = {
+    word: "crane",
+    meaning: "A large bird <b>bold</b>",
+    phonetic: "/kreɪn/",
+    sentence: "The crane stood still.",
+  };
+
+  test("joins rich-message lines with <br>", () => {
+    const html = formatDailyWordDetails(details);
+
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain("<br>");
+    expect(html).not.toContain("\n");
+    // Meaning markup is preserved for rich messages.
+    expect(html).toContain("<b>bold</b>");
+  });
+
+  test("supports newline separators for plain photo captions", () => {
+    const html = formatDailyWordDetails(details, "\n");
+
+    expect(html).not.toContain("<br>");
+    expect(html).toContain("\n");
   });
 });
 

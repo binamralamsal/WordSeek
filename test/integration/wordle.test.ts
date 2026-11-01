@@ -34,6 +34,19 @@ describe("/new", () => {
     expect(game.topicId).toBe("general");
   });
 
+  test("handles a duplicate start without logging an error", async () => {
+    const bot = new TestBot();
+
+    await startGame(bot);
+    await bot.sendText("/new", { id: PLAYER_ID });
+
+    expect(bot.lastText()).toContain("Game Already Running");
+    expect(bot.errors).toHaveLength(0);
+    expect(await env.db.selectFrom("games").selectAll().execute()).toHaveLength(
+      1,
+    );
+  });
+
   test("starts explicit lengths", async () => {
     const bot = new TestBot();
 
@@ -228,7 +241,7 @@ describe("/end", () => {
 
     await bot.sendText("/end", { id: PLAYER_ID });
 
-    expect(bot.lastText()).toBe("There is no game in progress.");
+    expect(bot.lastText()).toContain("There is no game in progress.");
   });
 
   test("ends immediately in private chats", async () => {
