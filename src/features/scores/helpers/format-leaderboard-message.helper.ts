@@ -12,25 +12,12 @@ import { formatFilterSummary } from "./format-filters.helper";
 const MEDALS = ["🥇", "🥈", "🥉"];
 
 type LeaderboardFormatOptions = {
-  /** User IDs to show next to their name. Callers pass the system admins. */
-  revealIds?: ReadonlySet<string>;
-  /** The requester's own row when they are outside the top 20. */
-  currentUser?: LeaderboardEntry & { rank: number | null };
+  /**
+   * Show every player's Telegram user ID next to their name. Callers enable
+   * this only for admins viewing a leaderboard in a private chat.
+   */
+  showUserIds?: boolean;
 };
-
-function formatName(entry: LeaderboardEntry) {
-  return entry.username
-    ? `<a href="https://t.me/${escapeHtml(entry.username)}">${escapeHtml(
-        entry.name,
-      )}</a>`
-    : escapeHtml(entry.name);
-}
-
-function formatId(entry: LeaderboardEntry, revealIds?: ReadonlySet<string>) {
-  return revealIds?.has(entry.userId)
-    ? ` <code>${escapeHtml(entry.userId)}</code>`
-    : "";
-}
 
 export function formatLeaderboardMessage(
   data: LeaderboardEntry[],
@@ -48,8 +35,14 @@ export function formatLeaderboardMessage(
     }
 
     const rank = MEDALS[index] ?? "🔅";
-    const name = formatName(entry);
-    const id = formatId(entry, options.revealIds);
+    const name = entry.username
+      ? `<a href="https://t.me/${escapeHtml(entry.username)}">${escapeHtml(
+          entry.name,
+        )}</a>`
+      : escapeHtml(entry.name);
+    const id = options.showUserIds
+      ? ` <code>${escapeHtml(entry.userId)}</code>`
+      : "";
 
     blocks[blocks.length - 1]!.push(
       `${rank} ${name}${id} — <b>${entry.totalScore.toLocaleString()}</b> pts`,
@@ -63,21 +56,8 @@ export function formatLeaderboardMessage(
           .join("\n")
       : `<blockquote>No scores for this filter yet. Pick another filter below, or start a game with /new.</blockquote>`;
 
-  const currentUser = options.currentUser;
-  const currentUserBlock = currentUser
-    ? `<blockquote>📍 <b>Your position</b><br>${
-        currentUser.rank === null
-          ? "Not ranked yet · "
-          : `#${currentUser.rank.toLocaleString()} `
-      }${formatName(currentUser)}${formatId(currentUser, options.revealIds)}${
-        currentUser.rank === null
-          ? ""
-          : ` — <b>${currentUser.totalScore.toLocaleString()}</b> pts`
-      }</blockquote>`
-    : "";
-
   return `<h4>🏆 Leaderboard</h4>
 <p><i>${formatFilterSummary(searchKey, timeKey, wordLength)}</i></p>
-${body}${currentUserBlock ? `\n${currentUserBlock}` : ""}
+${body}
 ${formatCommunityFooter()}`;
 }

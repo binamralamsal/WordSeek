@@ -1,7 +1,6 @@
 import { Composer } from "grammy";
 
 import { env } from "#/config/env";
-import { formatDisplayName } from "#/core/format/mention.helper";
 import { runGuards } from "#/core/guards/admin.guard";
 import { replyNotice } from "#/core/telegram/reply-notice.helper";
 import { renderInlineKeyboard } from "#/core/telegram/rich-keyboard.helper";
@@ -10,7 +9,7 @@ import { requireAllowedTopic } from "#/features/wordle/shared/guards/wordle.guar
 import { formatLeaderboardMessage } from "./helpers/format-leaderboard-message.helper";
 import { generateLeaderboardKeyboard } from "./helpers/leaderboard-keyboard.helper";
 import { parseLeaderboardFilters } from "./helpers/parse-filters.helper";
-import { getLeaderboardView } from "./services/get-leaderboard-view.service";
+import { getLeaderboardScores } from "./services/get-leaderboard-scores.service";
 
 const composer = new Composer();
 
@@ -27,31 +26,24 @@ composer.command("leaderboard", async (ctx) => {
 
   const keyboard = generateLeaderboardKeyboard(searchKey, timeKey, wordLength);
 
-  const adminIds = new Set(env.ADMIN_USERS.map(String));
-  const leaderboard = await getLeaderboardView({
-    adminIds,
+  const memberScores = await getLeaderboardScores({
     chatId,
-    requester: ctx.from
-      ? {
-          id: ctx.from.id.toString(),
-          name: formatDisplayName(ctx.from),
-          username: ctx.from.username ?? null,
-        }
-      : undefined,
     searchKey,
     timeKey,
     wordLength,
   });
 
   const message = formatLeaderboardMessage(
-    leaderboard.entries,
+    memberScores,
     searchKey,
     timeKey,
     wordLength,
     {
-      // Admins are identifiable in every leaderboard, including groups.
-      revealIds: adminIds,
-      currentUser: leaderboard.currentUser,
+      // Admins can identify every player when they view the leaderboard in DM.
+      showUserIds:
+        ctx.chat.type === "private" &&
+        ctx.from !== undefined &&
+        env.ADMIN_USERS.includes(ctx.from.id),
     },
   );
 

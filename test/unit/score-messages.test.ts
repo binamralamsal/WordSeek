@@ -63,48 +63,19 @@ describe("formatLeaderboardMessage", () => {
     expect(message).not.toContain("<table");
   });
 
-  test("reveals selected user ids next to their names", () => {
+  test("shows every player's id when enabled", () => {
     const message = formatLeaderboardMessage(entries, "global", "week", 5, {
-      revealIds: new Set(["1"]),
+      showUserIds: true,
     });
 
     expect(message).toContain("Ada</a> <code>1</code>");
-    expect(message).not.toContain("<code>2</code>");
+    expect(message).toContain("Grace &lt;Hopper&gt; <code>2</code>");
   });
 
-  test("shows the requester's own rank outside the top 20", () => {
-    const message = formatLeaderboardMessage(entries, "global", "week", 5, {
-      revealIds: new Set(["3"]),
-      currentUser: {
-        userId: "3",
-        name: "Owner <Admin>",
-        username: null,
-        totalScore: 5,
-        rank: 21,
-      },
-    });
+  test("hides every id by default", () => {
+    const message = formatLeaderboardMessage(entries, "global", "week", 5);
 
-    expect(message).toContain("Your position");
-    expect(message).toContain("#21");
-    expect(message).toContain("Owner &lt;Admin&gt; <code>3</code>");
-    expect(message).toContain("<b>5</b> pts");
-  });
-
-  test("shows an unranked admin's identity without a rank", () => {
-    const message = formatLeaderboardMessage([], "global", "week", 5, {
-      revealIds: new Set(["3"]),
-      currentUser: {
-        userId: "3",
-        name: "Owner",
-        username: null,
-        totalScore: 0,
-        rank: null,
-      },
-    });
-
-    expect(message).toContain("Not ranked yet");
-    expect(message).toContain("Owner <code>3</code>");
-    expect(message).not.toContain("#0");
+    expect(message).not.toContain("<code>");
   });
 
   test("uses chat wording for group-scoped leaderboards in DMs and groups", () => {

@@ -1,14 +1,13 @@
 import { Composer } from "grammy";
 
 import { env } from "#/config/env";
-import { formatDisplayName } from "#/core/format/mention.helper";
 import { editMessageTextSafe } from "#/core/telegram/edit-message.helper";
 import { renderInlineKeyboard } from "#/core/telegram/rich-keyboard.helper";
 
 import { parseLeaderboardCallback } from "./helpers/callback-data.helper";
 import { formatLeaderboardMessage } from "./helpers/format-leaderboard-message.helper";
 import { generateLeaderboardKeyboard } from "./helpers/leaderboard-keyboard.helper";
-import { getLeaderboardView } from "./services/get-leaderboard-view.service";
+import { getLeaderboardScores } from "./services/get-leaderboard-scores.service";
 
 const composer = new Composer();
 
@@ -20,17 +19,8 @@ composer.callbackQuery(/^leaderboard/, async (ctx) => {
   }
 
   const chatId = ctx.chat.id.toString();
-  const adminIds = new Set(env.ADMIN_USERS.map(String));
-  const leaderboard = await getLeaderboardView({
-    adminIds,
+  const memberScores = await getLeaderboardScores({
     chatId,
-    requester: ctx.from
-      ? {
-          id: ctx.from.id.toString(),
-          name: formatDisplayName(ctx.from),
-          username: ctx.from.username ?? null,
-        }
-      : undefined,
     ...filter,
   });
 
@@ -41,14 +31,16 @@ composer.callbackQuery(/^leaderboard/, async (ctx) => {
   );
 
   const message = formatLeaderboardMessage(
-    leaderboard.entries,
+    memberScores,
     filter.searchKey,
     filter.timeKey,
     filter.wordLength,
     {
-      // Admins are identifiable in every leaderboard, including groups.
-      revealIds: adminIds,
-      currentUser: leaderboard.currentUser,
+      // Admins can identify every player when they view the leaderboard in DM.
+      showUserIds:
+        ctx.chat.type === "private" &&
+        ctx.from !== undefined &&
+        env.ADMIN_USERS.includes(ctx.from.id),
     },
   );
 

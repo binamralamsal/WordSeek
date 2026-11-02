@@ -69,7 +69,7 @@ describe("/leaderboard", () => {
     expect(bot.errors).toHaveLength(0);
   });
 
-  test("shows admin ids in every leaderboard", async () => {
+  test("shows user ids to admins in DMs only", async () => {
     await seedUser(env.db, { id: "999", name: "Owner", username: null });
     await seedScore(env.db, {
       userId: "999",
@@ -81,56 +81,36 @@ describe("/leaderboard", () => {
       chatId: String(GROUP_CHAT_ID),
       score: 10,
     });
-
-    const dmBot = new TestBot();
-    await dmBot.sendText("/leaderboard");
-    expect(dmBot.lastText()).toContain("<code>999</code>");
-
-    const groupBot = new TestBot();
-    await groupBot.sendText("/leaderboard", { chatType: "group" });
-    expect(groupBot.lastText()).toContain("Owner");
-    expect(groupBot.lastText()).toContain("<code>999</code>");
-  });
-
-  test("shows an admin's own rank when they are outside the top 20", async () => {
-    await seedUser(env.db, { id: "999", name: "Owner", username: null });
+    await seedUser(env.db, {
+      id: "4242",
+      name: "No Username",
+      username: null,
+    });
     await seedScore(env.db, {
-      userId: "999",
+      userId: "4242",
       chatId: String(CHAT_ID),
-      score: 1,
+      score: 20,
     });
 
-    for (let index = 0; index < 20; index += 1) {
-      const userId = String(8_000 + index);
-      await seedUser(env.db, { id: userId, name: `Player ${index + 1}` });
-      await seedScore(env.db, {
-        userId,
-        chatId: String(CHAT_ID),
-        score: 100 - index,
-      });
-    }
+    const dmBot = new TestBot();
+    await dmBot.sendText("/leaderboard", { id: 999, firstName: "Owner" });
+    const dmText = dmBot.lastText() ?? "";
+    expect(dmText).toContain("Owner <code>999</code>");
+    expect(dmText).toContain("No Username <code>4242</code>");
 
-    const bot = new TestBot();
-    await bot.sendText("/leaderboard", { id: 999, firstName: "Owner" });
+    const groupBot = new TestBot();
+    await groupBot.sendText("/leaderboard", {
+      chatId: GROUP_CHAT_ID,
+      chatType: "group",
+      id: 999,
+      firstName: "Owner",
+    });
+    expect(groupBot.lastText()).toContain("Owner");
+    expect(groupBot.lastText()).not.toContain("<code>");
 
-    const text = bot.lastText() ?? "";
-    expect(text).toContain("Your position");
-    expect(text).toContain("#21");
-    expect(text).toContain("Owner <code>999</code>");
-    expect(bot.errors).toHaveLength(0);
-  });
-
-  test("shows an unranked admin's id in their own position", async () => {
-    await seedUser(env.db, { id: "999", name: "Owner", username: null });
-
-    const bot = new TestBot();
-    await bot.sendText("/leaderboard", { id: 999, firstName: "Owner" });
-
-    const text = bot.lastText() ?? "";
-    expect(text).toContain("Your position");
-    expect(text).toContain("Not ranked yet");
-    expect(text).toContain("Owner <code>999</code>");
-    expect(bot.errors).toHaveLength(0);
+    const nonAdminBot = new TestBot();
+    await nonAdminBot.sendText("/leaderboard");
+    expect(nonAdminBot.lastText()).not.toContain("<code>");
   });
 
   test("defaults to the current group", async () => {
