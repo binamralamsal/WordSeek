@@ -15,7 +15,7 @@ type LeaderboardFormatOptions = {
   /** User IDs to show next to their name. Callers pass the system admins. */
   revealIds?: ReadonlySet<string>;
   /** The requester's own row when they are outside the top 20. */
-  currentUser?: LeaderboardEntry & { rank: number };
+  currentUser?: LeaderboardEntry & { rank: number | null };
 };
 
 function formatName(entry: LeaderboardEntry) {
@@ -65,9 +65,15 @@ export function formatLeaderboardMessage(
 
   const currentUser = options.currentUser;
   const currentUserBlock = currentUser
-    ? `<blockquote>📍 <b>Your position</b><br>#${currentUser.rank.toLocaleString()} ${formatName(
-        currentUser,
-      )}${formatId(currentUser, options.revealIds)} — <b>${currentUser.totalScore.toLocaleString()}</b> pts</blockquote>`
+    ? `<blockquote>📍 <b>Your position</b><br>${
+        currentUser.rank === null
+          ? "Not ranked yet · "
+          : `#${currentUser.rank.toLocaleString()} `
+      }${formatName(currentUser)}${formatId(currentUser, options.revealIds)}${
+        currentUser.rank === null
+          ? ""
+          : ` — <b>${currentUser.totalScore.toLocaleString()}</b> pts`
+      }</blockquote>`
     : "";
 
   return `<h4>🏆 Leaderboard</h4>

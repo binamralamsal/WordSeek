@@ -90,6 +90,23 @@ describe("formatLeaderboardMessage", () => {
     expect(message).toContain("<b>5</b> pts");
   });
 
+  test("shows an unranked admin's identity without a rank", () => {
+    const message = formatLeaderboardMessage([], "global", "week", 5, {
+      revealIds: new Set(["3"]),
+      currentUser: {
+        userId: "3",
+        name: "Owner",
+        username: null,
+        totalScore: 0,
+        rank: null,
+      },
+    });
+
+    expect(message).toContain("Not ranked yet");
+    expect(message).toContain("Owner <code>3</code>");
+    expect(message).not.toContain("#0");
+  });
+
   test("uses chat wording for group-scoped leaderboards in DMs and groups", () => {
     expect(formatLeaderboardMessage([], "group", "today", 4)).toContain(
       "This chat",

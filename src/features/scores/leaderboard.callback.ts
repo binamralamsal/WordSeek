@@ -1,6 +1,7 @@
 import { Composer } from "grammy";
 
 import { env } from "#/config/env";
+import { formatDisplayName } from "#/core/format/mention.helper";
 import { editMessageTextSafe } from "#/core/telegram/edit-message.helper";
 import { renderInlineKeyboard } from "#/core/telegram/rich-keyboard.helper";
 
@@ -19,9 +20,17 @@ composer.callbackQuery(/^leaderboard/, async (ctx) => {
   }
 
   const chatId = ctx.chat.id.toString();
+  const adminIds = new Set(env.ADMIN_USERS.map(String));
   const leaderboard = await getLeaderboardView({
+    adminIds,
     chatId,
-    requesterId: ctx.from?.id.toString(),
+    requester: ctx.from
+      ? {
+          id: ctx.from.id.toString(),
+          name: formatDisplayName(ctx.from),
+          username: ctx.from.username ?? null,
+        }
+      : undefined,
     ...filter,
   });
 
@@ -38,7 +47,7 @@ composer.callbackQuery(/^leaderboard/, async (ctx) => {
     filter.wordLength,
     {
       // Admins are identifiable in every leaderboard, including groups.
-      revealIds: new Set(env.ADMIN_USERS.map(String)),
+      revealIds: adminIds,
       currentUser: leaderboard.currentUser,
     },
   );

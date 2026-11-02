@@ -120,6 +120,19 @@ describe("/leaderboard", () => {
     expect(bot.errors).toHaveLength(0);
   });
 
+  test("shows an unranked admin's id in their own position", async () => {
+    await seedUser(env.db, { id: "999", name: "Owner", username: null });
+
+    const bot = new TestBot();
+    await bot.sendText("/leaderboard", { id: 999, firstName: "Owner" });
+
+    const text = bot.lastText() ?? "";
+    expect(text).toContain("Your position");
+    expect(text).toContain("Not ranked yet");
+    expect(text).toContain("Owner <code>999</code>");
+    expect(bot.errors).toHaveLength(0);
+  });
+
   test("defaults to the current group", async () => {
     await seedUser(env.db, {
       id: "5151",

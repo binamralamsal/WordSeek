@@ -1,6 +1,7 @@
 import { Composer } from "grammy";
 
 import { env } from "#/config/env";
+import { formatDisplayName } from "#/core/format/mention.helper";
 import { runGuards } from "#/core/guards/admin.guard";
 import { replyNotice } from "#/core/telegram/reply-notice.helper";
 import { renderInlineKeyboard } from "#/core/telegram/rich-keyboard.helper";
@@ -26,9 +27,17 @@ composer.command("leaderboard", async (ctx) => {
 
   const keyboard = generateLeaderboardKeyboard(searchKey, timeKey, wordLength);
 
+  const adminIds = new Set(env.ADMIN_USERS.map(String));
   const leaderboard = await getLeaderboardView({
+    adminIds,
     chatId,
-    requesterId: ctx.from?.id.toString(),
+    requester: ctx.from
+      ? {
+          id: ctx.from.id.toString(),
+          name: formatDisplayName(ctx.from),
+          username: ctx.from.username ?? null,
+        }
+      : undefined,
     searchKey,
     timeKey,
     wordLength,
@@ -41,7 +50,7 @@ composer.command("leaderboard", async (ctx) => {
     wordLength,
     {
       // Admins are identifiable in every leaderboard, including groups.
-      revealIds: new Set(env.ADMIN_USERS.map(String)),
+      revealIds: adminIds,
       currentUser: leaderboard.currentUser,
     },
   );
