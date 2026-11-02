@@ -6,6 +6,7 @@ import {
 } from "kysely";
 import pg from "pg";
 
+import { isUniqueViolation } from "#/core/database/errors.helper";
 import { createLogger } from "#/core/logging/logger.service";
 import type { DB } from "#/database/schema";
 
@@ -44,6 +45,11 @@ function createDatabase(): DatabaseHandle {
         }
         return;
       }
+
+      // Duplicate-key errors are expected in a few flows (for example a user
+      // starting a game twice) and are handled by the caller. Logging them as
+      // errors would spam production logs with harmless events.
+      if (isUniqueViolation(event.error)) return;
 
       log.error({ err: event.error }, "Database error");
     },

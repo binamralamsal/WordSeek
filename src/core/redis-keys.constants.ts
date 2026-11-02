@@ -18,5 +18,4 @@ export const redisKeys = {
   geminiFailedKeys: "seek-gemini:failed_keys",
   broadcastState: "broadcast:state",
   broadcastLock: "broadcast:lock",
-  instanceLock: "wordseek:instance-lock",
 } as const;

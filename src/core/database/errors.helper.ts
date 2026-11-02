@@ -1,5 +1,3 @@
-import { DatabaseError } from "pg";
-
 const UNIQUE_VIOLATION = "23505";
 
 /**
@@ -7,14 +5,14 @@ const UNIQUE_VIOLATION = "23505";
  * (for example when the driver comes from a different module copy).
  */
 export function isUniqueViolation(error: unknown): boolean {
-  if (error instanceof DatabaseError) {
-    return error.code === UNIQUE_VIOLATION;
-  }
+  if (typeof error !== "object" || error === null) return false;
+
+  const candidate = error as { code?: unknown; message?: unknown };
+
+  if (candidate.code === UNIQUE_VIOLATION) return true;
 
   return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: unknown }).code === UNIQUE_VIOLATION
+    typeof candidate.message === "string" &&
+    /duplicate key value violates unique constraint/i.test(candidate.message)
   );
 }

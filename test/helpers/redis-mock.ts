@@ -50,29 +50,6 @@ export class RedisMock {
     return "OK";
   }
 
-  /**
-   * Mimics the two compare-and-swap Lua scripts the instance lock uses:
-   * pexpire when the token still matches, delete when it still matches.
-   */
-  async eval(
-    script: string,
-    _numKeys: number,
-    ...args: (string | number)[]
-  ): Promise<number> {
-    const [key, token, ttl] = args.map(String);
-
-    if (this.strings.get(key) !== token) return 0;
-
-    if (script.includes("pexpire")) {
-      this.expirations.set(key, Date.now() + Number(ttl));
-      return 1;
-    }
-
-    this.strings.delete(key);
-    this.expirations.delete(key);
-    return 1;
-  }
-
   async setex(key: string, seconds: number, value: string): Promise<"OK"> {
     this.strings.set(key, String(value));
     this.expirations.set(key, Date.now() + seconds * 1000);

@@ -14,6 +14,14 @@ const log = createLogger("features.wordle.regular.services.start-game.service");
 
 const GLOBAL_VALID_LENGTHS: WordLength[] = [5, 4, 6];
 
+function replyAlreadyRunning(ctx: CommandContext<Context>) {
+  return ctx.replyWithRichMessage({
+    html: `<h5>🎮 Game Already Running</h5>
+<blockquote>A game is already in progress in this chat.</blockquote>
+<p>Keep guessing the current word, or use /end to start over.</p>`,
+  });
+}
+
 export async function startGame(
   ctx: CommandContext<Context>,
   forcedLength?: WordLength,
@@ -72,6 +80,17 @@ export async function startGame(
       }
     }
 
+    // `games.active_chat` is unique, so a second /new in the same chat cannot
+    // insert another row. Check first to avoid triggering (and logging) a
+    // duplicate-key error for what is a completely normal user action.
+    const activeGame = await db
+      .selectFrom("games")
+      .select("id")
+      .where("activeChat", "=", chatId.toString())
+      .executeTakeFirst();
+
+    if (activeGame) return replyAlreadyRunning(ctx);
+
     const wordSelector = new WordSelector();
     const randomWord = await wordSelector.getRandomWord(chatId, wordLength);
 
@@ -91,11 +110,7 @@ export async function startGame(
     });
   } catch (error) {
     if (isUniqueViolation(error)) {
-      return ctx.replyWithRichMessage({
-        html: `<h5>🎮 Game Already Running</h5>
-<blockquote>A game is already in progress in this chat.</blockquote>
-<p>Keep guessing the current word, or use /end to start over.</p>`,
-      });
+      return replyAlreadyRunning(ctx);
     }
 
     log.error(error);
