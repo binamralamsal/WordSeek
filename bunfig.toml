@@ -1,0 +1,31 @@
+[test]
+preload = ["./test/setup.ts"]
+
+[fmt]
+printWidth = 80
+tabWidth = 2
+trailingComma = "all"
+
+[fmt.sortImports]
+groups = [
+  "grammy",
+  "grammyjs",
+  ["builtin", "external"],
+  ["internal", "subpath"],
+  ["parent", "sibling", "index"],
+]
+internalPattern = ["#/"]
+newlinesBetween = true
+customGroups = [
+  { groupName = "grammy", elementNamePattern = ["grammy"] },
+  { groupName = "grammyjs", elementNamePattern = ["@grammyjs/**"] },
+]
+
+[lint.rules]
+"no-console" = "warn"
+"@typescript-eslint/no-floating-promises" = "warn"
+"unicorn/prefer-node-protocol" = "warn"
+
+[[lint.overrides]]
+files = ["scripts/**"]
+rules = { "no-console" = "off" }

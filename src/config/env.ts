@@ -4,7 +4,9 @@ export const env = z
   .object({
     BOT_TOKEN: z.string().min(1, { message: "BOT_TOKEN is required" }),
     DATABASE_URL: z.string().min(1, { message: "DATABASE_URL is required" }),
-    NODE_ENV: z.enum(["development", "production"]).default("development"),
+    NODE_ENV: z
+      .enum(["development", "production", "test"])
+      .default("development"),
     ADMIN_USERS: z
       .string()
       .default("")
@@ -14,7 +16,24 @@ export const env = z
       .string()
       .url({ message: "CUSTOM_API_ROOT must be a valid URL" })
       .default("https://api.telegram.org"), // default to official API
+    // Channel dedicated to tracking suspicious messages (anti-cheat).
+    // This is intentionally separate from the system log channel below.
     LOGS_CHANNEL: z
+      .string()
+      .optional()
+      .transform((v) => (v ? Number(v) : undefined)),
+    LOG_LEVEL: z
+      .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
+      .default("info"),
+    LOG_DIR: z.string().default("logs"),
+    LOG_RETENTION_DAYS: z.coerce.number().int().positive().default(14),
+    LOG_TO_FILE: z
+      .string()
+      .default("true")
+      .transform((v) => v !== "false"),
+    // Optional Telegram channel that receives system errors/fatal logs.
+    // Never point this at LOGS_CHANNEL: that one only tracks suspicious messages.
+    SYSTEM_LOG_CHANNEL: z
       .string()
       .optional()
       .transform((v) => (v ? Number(v) : undefined)),
