@@ -69,6 +69,29 @@ describe("/leaderboard", () => {
     expect(bot.errors).toHaveLength(0);
   });
 
+  test("shows admin ids in private leaderboards only", async () => {
+    await seedUser(env.db, { id: "999", name: "Owner", username: null });
+    await seedScore(env.db, {
+      userId: "999",
+      chatId: String(CHAT_ID),
+      score: 10,
+    });
+    await seedScore(env.db, {
+      userId: "999",
+      chatId: String(GROUP_CHAT_ID),
+      score: 10,
+    });
+
+    const dmBot = new TestBot();
+    await dmBot.sendText("/leaderboard");
+    expect(dmBot.lastText()).toContain("<code>999</code>");
+
+    const groupBot = new TestBot();
+    await groupBot.sendText("/leaderboard", { chatType: "group" });
+    expect(groupBot.lastText()).toContain("Owner");
+    expect(groupBot.lastText()).not.toContain("<code>999</code>");
+  });
+
   test("defaults to the current group", async () => {
     await seedUser(env.db, {
       id: "5151",

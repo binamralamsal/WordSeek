@@ -11,11 +11,20 @@ import { formatFilterSummary } from "./format-filters.helper";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
+type LeaderboardFormatOptions = {
+  /**
+   * User IDs to show next to their name. Callers pass the system admins only
+   * when the leaderboard is rendered in a private chat.
+   */
+  revealIds?: ReadonlySet<string>;
+};
+
 export function formatLeaderboardMessage(
   data: LeaderboardEntry[],
   searchKey: LeaderboardScope,
   timeKey: LeaderboardPeriod,
   wordLength: WordLength,
+  options: LeaderboardFormatOptions = {},
 ) {
   const blocks: string[][] = [];
 
@@ -31,9 +40,12 @@ export function formatLeaderboardMessage(
           entry.name,
         )}</a>`
       : escapeHtml(entry.name);
+    const id = options.revealIds?.has(entry.userId)
+      ? ` <code>${escapeHtml(entry.userId)}</code>`
+      : "";
 
     blocks[blocks.length - 1]!.push(
-      `${rank} ${name} — <b>${entry.totalScore.toLocaleString()}</b> pts`,
+      `${rank} ${name}${id} — <b>${entry.totalScore.toLocaleString()}</b> pts`,
     );
   });
 

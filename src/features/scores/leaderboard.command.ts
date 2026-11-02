@@ -1,5 +1,6 @@
 import { Composer } from "grammy";
 
+import { env } from "#/config/env";
 import { runGuards } from "#/core/guards/admin.guard";
 import { replyNotice } from "#/core/telegram/reply-notice.helper";
 import { renderInlineKeyboard } from "#/core/telegram/rich-keyboard.helper";
@@ -37,6 +38,13 @@ composer.command("leaderboard", async (ctx) => {
     searchKey,
     timeKey,
     wordLength,
+    {
+      // Admin IDs are only revealed inside private chats.
+      revealIds:
+        ctx.chat.type === "private"
+          ? new Set(env.ADMIN_USERS.map(String))
+          : undefined,
+    },
   );
 
   return ctx.replyWithRichMessage(

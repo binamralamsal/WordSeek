@@ -1,5 +1,6 @@
 import { Composer } from "grammy";
 
+import { env } from "#/config/env";
 import { editMessageTextSafe } from "#/core/telegram/edit-message.helper";
 import { renderInlineKeyboard } from "#/core/telegram/rich-keyboard.helper";
 
@@ -34,6 +35,13 @@ composer.callbackQuery(/^leaderboard/, async (ctx) => {
     filter.searchKey,
     filter.timeKey,
     filter.wordLength,
+    {
+      // Admin IDs are only revealed inside private chats.
+      revealIds:
+        ctx.chat.type === "private"
+          ? new Set(env.ADMIN_USERS.map(String))
+          : undefined,
+    },
   );
 
   await editMessageTextSafe(ctx, {

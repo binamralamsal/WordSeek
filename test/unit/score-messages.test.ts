@@ -63,6 +63,15 @@ describe("formatLeaderboardMessage", () => {
     expect(message).not.toContain("<table");
   });
 
+  test("reveals selected user ids next to their names in private chats", () => {
+    const message = formatLeaderboardMessage(entries, "global", "week", 5, {
+      revealIds: new Set(["1"]),
+    });
+
+    expect(message).toContain("Ada</a> <code>1</code>");
+    expect(message).not.toContain("<code>2</code>");
+  });
+
   test("uses chat wording for group-scoped leaderboards in DMs and groups", () => {
     expect(formatLeaderboardMessage([], "group", "today", 4)).toContain(
       "This chat",
@@ -145,6 +154,7 @@ describe("formatUserScoreMessage", () => {
     );
 
     expect(message).toContain("Ada");
+    expect(message).toContain("<h4>📊 Score Report · Ada</h4>");
     expect(message).toContain("9,876");
     expect(message).toContain("#12");
     expect(message).toContain("Current streak");
@@ -154,7 +164,7 @@ describe("formatUserScoreMessage", () => {
     expect(message).toContain("globally");
     expect(message).toContain("This week");
     expect(message).toContain("<blockquote>");
-    expect(message).toContain("@ada");
+    expect(message).not.toContain("@ada");
     expect(message).not.toContain("Daily WordSeek streaks");
   });
 

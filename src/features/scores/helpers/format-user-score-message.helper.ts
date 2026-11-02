@@ -23,9 +23,6 @@ export function formatUserScoreMessage(
   wordLength: WordLength,
 ) {
   const name = escapeHtml(data.name);
-  const mentionLink = data.username
-    ? `<a href="https://t.me/${escapeHtml(data.username)}">${name}</a>`
-    : name;
 
   const totalScore = data.totalScore.toLocaleString();
   const rank = data.rank.toLocaleString();
@@ -35,10 +32,7 @@ export function formatUserScoreMessage(
   const highestStreak =
     data.highestStreak !== null ? data.highestStreak.toString() : "0";
 
-  const tag = data.username ? ` · @${escapeHtml(data.username)}` : "";
-
-  return `<h4>📊 Score Report</h4>
-<p><b>${mentionLink}</b>${tag}</p>
+  return `<h4>📊 Score Report · ${name}</h4>
 <p><i>${formatFilterSummary(searchKey, timeKey, wordLength)}</i></p>
 
 <blockquote><b>🏅 Rank</b> #${rank}<br><b>⭐ Points</b> ${totalScore} ${formatScopeSentence(searchKey)}</blockquote>
