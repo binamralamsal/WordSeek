@@ -9,7 +9,7 @@ import { requireAllowedTopic } from "#/features/wordle/shared/guards/wordle.guar
 import { formatLeaderboardMessage } from "./helpers/format-leaderboard-message.helper";
 import { generateLeaderboardKeyboard } from "./helpers/leaderboard-keyboard.helper";
 import { parseLeaderboardFilters } from "./helpers/parse-filters.helper";
-import { getLeaderboardScores } from "./services/get-leaderboard-scores.service";
+import { getLeaderboardView } from "./services/get-leaderboard-view.service";
 
 const composer = new Composer();
 
@@ -26,21 +26,23 @@ composer.command("leaderboard", async (ctx) => {
 
   const keyboard = generateLeaderboardKeyboard(searchKey, timeKey, wordLength);
 
-  const memberScores = await getLeaderboardScores({
+  const leaderboard = await getLeaderboardView({
     chatId,
+    requesterId: ctx.from?.id.toString(),
     searchKey,
     timeKey,
     wordLength,
   });
 
   const message = formatLeaderboardMessage(
-    memberScores,
+    leaderboard.entries,
     searchKey,
     timeKey,
     wordLength,
     {
       // Admins are identifiable in every leaderboard, including groups.
       revealIds: new Set(env.ADMIN_USERS.map(String)),
+      currentUser: leaderboard.currentUser,
     },
   );
 

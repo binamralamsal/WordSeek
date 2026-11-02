@@ -92,6 +92,34 @@ describe("/leaderboard", () => {
     expect(groupBot.lastText()).toContain("<code>999</code>");
   });
 
+  test("shows an admin's own rank when they are outside the top 20", async () => {
+    await seedUser(env.db, { id: "999", name: "Owner", username: null });
+    await seedScore(env.db, {
+      userId: "999",
+      chatId: String(CHAT_ID),
+      score: 1,
+    });
+
+    for (let index = 0; index < 20; index += 1) {
+      const userId = String(8_000 + index);
+      await seedUser(env.db, { id: userId, name: `Player ${index + 1}` });
+      await seedScore(env.db, {
+        userId,
+        chatId: String(CHAT_ID),
+        score: 100 - index,
+      });
+    }
+
+    const bot = new TestBot();
+    await bot.sendText("/leaderboard", { id: 999, firstName: "Owner" });
+
+    const text = bot.lastText() ?? "";
+    expect(text).toContain("Your position");
+    expect(text).toContain("#21");
+    expect(text).toContain("Owner <code>999</code>");
+    expect(bot.errors).toHaveLength(0);
+  });
+
   test("defaults to the current group", async () => {
     await seedUser(env.db, {
       id: "5151",

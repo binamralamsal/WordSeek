@@ -7,7 +7,7 @@ import { renderInlineKeyboard } from "#/core/telegram/rich-keyboard.helper";
 import { parseLeaderboardCallback } from "./helpers/callback-data.helper";
 import { formatLeaderboardMessage } from "./helpers/format-leaderboard-message.helper";
 import { generateLeaderboardKeyboard } from "./helpers/leaderboard-keyboard.helper";
-import { getLeaderboardScores } from "./services/get-leaderboard-scores.service";
+import { getLeaderboardView } from "./services/get-leaderboard-view.service";
 
 const composer = new Composer();
 
@@ -19,8 +19,9 @@ composer.callbackQuery(/^leaderboard/, async (ctx) => {
   }
 
   const chatId = ctx.chat.id.toString();
-  const memberScores = await getLeaderboardScores({
+  const leaderboard = await getLeaderboardView({
     chatId,
+    requesterId: ctx.from?.id.toString(),
     ...filter,
   });
 
@@ -31,13 +32,14 @@ composer.callbackQuery(/^leaderboard/, async (ctx) => {
   );
 
   const message = formatLeaderboardMessage(
-    memberScores,
+    leaderboard.entries,
     filter.searchKey,
     filter.timeKey,
     filter.wordLength,
     {
       // Admins are identifiable in every leaderboard, including groups.
       revealIds: new Set(env.ADMIN_USERS.map(String)),
+      currentUser: leaderboard.currentUser,
     },
   );
 

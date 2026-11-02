@@ -72,6 +72,24 @@ describe("formatLeaderboardMessage", () => {
     expect(message).not.toContain("<code>2</code>");
   });
 
+  test("shows the requester's own rank outside the top 20", () => {
+    const message = formatLeaderboardMessage(entries, "global", "week", 5, {
+      revealIds: new Set(["3"]),
+      currentUser: {
+        userId: "3",
+        name: "Owner <Admin>",
+        username: null,
+        totalScore: 5,
+        rank: 21,
+      },
+    });
+
+    expect(message).toContain("Your position");
+    expect(message).toContain("#21");
+    expect(message).toContain("Owner &lt;Admin&gt; <code>3</code>");
+    expect(message).toContain("<b>5</b> pts");
+  });
+
   test("uses chat wording for group-scoped leaderboards in DMs and groups", () => {
     expect(formatLeaderboardMessage([], "group", "today", 4)).toContain(
       "This chat",
