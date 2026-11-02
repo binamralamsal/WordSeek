@@ -63,7 +63,7 @@ describe("formatLeaderboardMessage", () => {
     expect(message).not.toContain("<table");
   });
 
-  test("reveals selected user ids next to their names in private chats", () => {
+  test("reveals selected user ids next to their names", () => {
     const message = formatLeaderboardMessage(entries, "global", "week", 5, {
       revealIds: new Set(["1"]),
     });

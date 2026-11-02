@@ -12,10 +12,7 @@ import { formatFilterSummary } from "./format-filters.helper";
 const MEDALS = ["🥇", "🥈", "🥉"];
 
 type LeaderboardFormatOptions = {
-  /**
-   * User IDs to show next to their name. Callers pass the system admins only
-   * when the leaderboard is rendered in a private chat.
-   */
+  /** User IDs to show next to their name. Callers pass the system admins. */
   revealIds?: ReadonlySet<string>;
 };
 

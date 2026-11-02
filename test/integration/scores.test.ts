@@ -69,7 +69,7 @@ describe("/leaderboard", () => {
     expect(bot.errors).toHaveLength(0);
   });
 
-  test("shows admin ids in private leaderboards only", async () => {
+  test("shows admin ids in every leaderboard", async () => {
     await seedUser(env.db, { id: "999", name: "Owner", username: null });
     await seedScore(env.db, {
       userId: "999",
@@ -89,7 +89,7 @@ describe("/leaderboard", () => {
     const groupBot = new TestBot();
     await groupBot.sendText("/leaderboard", { chatType: "group" });
     expect(groupBot.lastText()).toContain("Owner");
-    expect(groupBot.lastText()).not.toContain("<code>999</code>");
+    expect(groupBot.lastText()).toContain("<code>999</code>");
   });
 
   test("defaults to the current group", async () => {

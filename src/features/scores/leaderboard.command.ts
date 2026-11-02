@@ -39,11 +39,8 @@ composer.command("leaderboard", async (ctx) => {
     timeKey,
     wordLength,
     {
-      // Admin IDs are only revealed inside private chats.
-      revealIds:
-        ctx.chat.type === "private"
-          ? new Set(env.ADMIN_USERS.map(String))
-          : undefined,
+      // Admins are identifiable in every leaderboard, including groups.
+      revealIds: new Set(env.ADMIN_USERS.map(String)),
     },
   );
 
