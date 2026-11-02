@@ -76,9 +76,9 @@ describe("/help", () => {
 
     const buttons = parseRichButtons(html);
     expect(buttons.some((button) => button.data === "help_scores")).toBe(true);
-    expect(buttons.some((button) => button.url?.includes("github.com"))).toBe(
-      false,
-    );
+    expect(
+      buttons.some((button) => button.text.toLowerCase().includes("github")),
+    ).toBe(false);
     expect(html).toContain("github.com/binamralamsal/WordSeek");
     // Regular users do not get the admin-only section.
     expect(buttons.some((button) => button.data === "help_admin")).toBe(false);
