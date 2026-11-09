@@ -7,9 +7,7 @@ import process from "node:process";
 
 import { db } from "#/config/db";
 import { env } from "#/config/env";
-import { createLogger } from "#/core/logging/logger.service";
 
-const log = createLogger("features.admin.stats.command");
 const composer = new Composer();
 
 type StatsCounts = {
@@ -150,29 +148,7 @@ composer.command("stats", async (ctx) => {
     `${metric("Bun version", Bun?.version || process.version)} · ${metric("Platform", process.platform)}`,
   ]);
 
-  // Drafts are private-chat only. They give the admin the local system stats
-  // immediately while the database counts are still running.
-  const draftPromise =
-    ctx.chat.type === "private"
-      ? ctx
-          .replyWithRichMessageDraft({
-            html: `<h4>🤖 Bot Statistics</h4>
-<p><i>Collecting database counts…</i></p>
-
-<blockquote><b>⏳ Loading</b><br>Fetching users, players and groups.</blockquote>
-${botMemory}
-${system}
-${systemMemory}
-${load}
-${performance}`,
-          })
-          .catch((error) => {
-            log.debug({ err: error }, "Failed to send stats draft");
-          })
-      : Promise.resolve();
-
   const counts = await countsPromise;
-  await draftPromise;
 
   const overview = section("📊 Bot Overview", [
     `${metric("Total users", counts.totalUsers)} · ${metric("Active players", counts.activePlayers)}`,

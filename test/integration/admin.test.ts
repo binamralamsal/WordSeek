@@ -122,17 +122,6 @@ describe("/stats", () => {
     expect(text).not.toContain("NaN");
     expect(
       bot.calls.some((call) => call.method === "sendRichMessageDraft"),
-    ).toBe(true);
-  });
-
-  test("does not stream drafts in groups", async () => {
-    const bot = new TestBot();
-
-    await bot.sendText("/stats", { id: 999, chatType: "group" });
-
-    expect(bot.lastText()).toContain("Bot Statistics");
-    expect(
-      bot.calls.some((call) => call.method === "sendRichMessageDraft"),
     ).toBe(false);
   });
 
