@@ -1,6 +1,10 @@
 import { randomInt } from "node:crypto";
 
-import type { GuessEntry, LetterState } from "../types";
+import { evaluateGuess, type LetterState } from "#/shared/wordle";
+
+import type { GuessEntry } from "../types";
+
+export { evaluateGuess };
 
 const BUTTON_STYLE: Record<LetterState, string | null> = {
   correct: "success",
@@ -29,32 +33,6 @@ function zeroWidthNoise(min = 1, max = 6): string {
     out += ZERO_WIDTH[randomInt(ZERO_WIDTH.length)];
   }
   return out;
-}
-
-export function evaluateGuess(guess: string, solution: string): LetterState[] {
-  const g = guess.toUpperCase();
-  const s = solution.toUpperCase();
-
-  const remaining: Record<string, number> = {};
-  for (const c of s) remaining[c] = (remaining[c] || 0) + 1;
-
-  const result: LetterState[] = Array(g.length).fill("absent");
-
-  for (let i = 0; i < g.length; i++) {
-    if (g[i] === s[i]) {
-      result[i] = "correct";
-      remaining[g[i]]--;
-    }
-  }
-
-  for (let i = 0; i < g.length; i++) {
-    if (result[i] === "absent" && remaining[g[i]] > 0) {
-      result[i] = "present";
-      remaining[g[i]]--;
-    }
-  }
-
-  return result;
 }
 
 export function getHint(state: string, letter: string): string {

@@ -16,12 +16,18 @@ import {
 import { leaderboardCompactionCron } from "#/features/scores/leaderboard-compaction.cron";
 import { dailyWordleCron } from "#/features/wordle/daily/daily.cron";
 import { ensureDailyWordExists } from "#/features/wordle/daily/services/daily-word.service";
+import {
+  type MiniAppServer,
+  startMiniAppServer,
+  syncMiniAppMenuButton,
+} from "#/web/server";
 
 const log = createLogger("startup");
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
 let runner: RunnerHandle | null = null;
+let webServer: MiniAppServer | null = null;
 let shuttingDown = false;
 
 bot.api.config.use(autoRetry());
@@ -37,6 +43,11 @@ async function start(): Promise<void> {
   // database/API error does not block startup; the daily cron retries later.
   await ensureDailyWordExists();
   await bot.api.deleteWebhook({ drop_pending_updates: true });
+
+  // The Mini App server shares this process so there is still exactly one bot
+  // poller. A failed web server must not take the bot offline.
+  webServer = startMiniAppServer();
+  await syncMiniAppMenuButton();
 
   // Resume any pending broadcast before starting the bot
   runner = run(bot);
@@ -60,6 +71,8 @@ async function shutdown(reason: string, exitCode = 0): Promise<void> {
 
   try {
     await runner?.stop();
+    webServer?.stop(true);
+    webServer = null;
     dailyWordleCron.stop();
     leaderboardCompactionCron.stop();
     await closeCaptchaQueue();

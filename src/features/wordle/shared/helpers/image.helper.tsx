@@ -5,7 +5,7 @@ import { join } from "node:path";
 import satori from "satori";
 import sharp from "sharp";
 
-import type { GuessEntry, LetterState } from "../types";
+import type { LetterState } from "../types";
 import { evaluateGuess } from "./board.helper";
 
 const TILE_SIZE = 60;
@@ -25,7 +25,7 @@ const TILE_COLORS: Record<LetterState, string> = {
 };
 
 export async function generateWordleImage(
-  data: GuessEntry[],
+  data: { guess: string }[],
   solution: string,
 ) {
   const tiles = data.map((entry) => ({

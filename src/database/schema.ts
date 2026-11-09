@@ -97,10 +97,36 @@ export interface Leaderboard {
   wordLength: Generated<WordLength>;
 }
 
+export interface MiniAppGame {
+  attemptsUsed: Generated<number>;
+  chatId: string;
+  createdAt: Generated<Timestamp>;
+  finishedAt: Timestamp | null;
+  id: Generated<number>;
+  score: number | null;
+  startedAt: Generated<Timestamp>;
+  status: Generated<string>;
+  updatedAt: Generated<Timestamp>;
+  userId: string;
+  word: string;
+  wordLength: WordLength;
+}
+
+export interface MiniAppGuess {
+  attemptNumber: number;
+  createdAt: Generated<Timestamp>;
+  gameId: number;
+  guess: string;
+  id: Generated<number>;
+  updatedAt: Generated<Timestamp>;
+}
+
 export interface User {
   createdAt: Generated<Timestamp>;
   id: string;
   name: string;
+  nickname: string | null;
+  photoUrl: string | null;
   updatedAt: Generated<Timestamp>;
   username: string | null;
 }
@@ -124,6 +150,8 @@ export interface DB {
   games: Game;
   guesses: Guess;
   leaderboard: Leaderboard;
+  miniAppGames: MiniAppGame;
+  miniAppGuesses: MiniAppGuess;
   users: User;
   userStats: UserStat;
 }

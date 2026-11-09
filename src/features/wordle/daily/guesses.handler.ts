@@ -1,21 +1,19 @@
 import type { Context } from "grammy";
 import { InlineKeyboard } from "grammy";
 
-import { db } from "#/config/db";
-import { redis } from "#/config/redis";
 import { formatDailyWordDetails } from "#/core/format/word-details.helper";
-import { redisKeys } from "#/core/redis-keys.constants";
 import { replyNotice } from "#/core/telegram/reply-notice.helper";
 import { renderInlineKeyboard } from "#/core/telegram/rich-keyboard.helper";
+import type { MiniAppDailyState } from "#/shared/miniapp";
+import { evaluateGuess } from "#/shared/wordle";
 
 import { sendBoardMessage } from "../shared/helpers/board-message.helper";
-import { evaluateGuess } from "../shared/helpers/board.helper";
 import { generateWordleImage } from "../shared/helpers/image.helper";
 import { reactWithRandom } from "../shared/helpers/reactions.helper";
-import { ALL_WORDS } from "../shared/helpers/words.helper";
-import type { DailyWord, GuessEntry } from "../shared/types";
-import { getCurrentGameDateString } from "./helpers/date.helper";
-import { recordWinStreak, resetStreak } from "./services/streaks.service";
+import {
+  type DailyWordRow,
+  submitDailyGuess,
+} from "./services/daily-play.service";
 
 const DAILY_ATTEMPTS = 6;
 
@@ -30,75 +28,33 @@ export async function handleDailyWordleGuess(
   currentGuess: string,
 ) {
   const userId = ctx.from!.id.toString();
+  const result = await submitDailyGuess(userId, currentGuess);
 
-  if (!ALL_WORDS[5].includes(currentGuess)) {
-    return replyNotice(
-      ctx,
-      `${currentGuess.toUpperCase()} is not a valid word.`,
-    );
+  if (!result.ok) {
+    if (result.code === "INVALID_WORD") {
+      return replyNotice(
+        ctx,
+        `${currentGuess.toUpperCase()} is not a valid word.`,
+      );
+    }
+
+    return replyNotice(ctx, result.message);
   }
 
-  const todayDate = getCurrentGameDateString();
+  const { state, dailyWord } = result;
 
-  const dailyWord = await db
-    .selectFrom("dailyWords")
-    .selectAll()
-    .where("date", "=", new Date(todayDate))
-    .executeTakeFirst();
-
-  if (!dailyWord) {
-    return replyNotice(
-      ctx,
-      "Today's WordSeek is not available. Please try again later.",
-    );
-  }
-
-  const existingGuesses = await db
-    .selectFrom("dailyGuesses")
-    .selectAll()
-    .where("userId", "=", userId)
-    .where("dailyWordId", "=", dailyWord.id)
-    .orderBy("attemptNumber", "asc")
-    .execute();
-
-  if (existingGuesses.some((g) => g.guess === currentGuess)) {
-    return replyNotice(
-      ctx,
-      "You've already guessed this word. Try a different one!",
-    );
-  }
-
-  const attemptNumber = existingGuesses.length + 1;
-  await db
-    .insertInto("dailyGuesses")
-    .values({
-      userId,
-      dailyWordId: dailyWord.id,
-      guess: currentGuess,
-      attemptNumber,
-    })
-    .execute();
-
-  const allGuesses = await db
-    .selectFrom("dailyGuesses")
-    .selectAll()
-    .where("userId", "=", userId)
-    .where("dailyWordId", "=", dailyWord.id)
-    .orderBy("attemptNumber", "asc")
-    .execute();
-
-  if (currentGuess === dailyWord.word) {
-    await handleDailyWordleWin(ctx, dailyWord, allGuesses);
+  if (state.status === "won") {
+    await handleDailyWordleWin(ctx, dailyWord, state);
     return;
   }
 
-  if (allGuesses.length >= DAILY_ATTEMPTS) {
-    await handleDailyWordleLoss(ctx, dailyWord, allGuesses);
+  if (state.status === "lost") {
+    await handleDailyWordleLoss(ctx, dailyWord, state);
     return;
   }
 
-  const imageBuffer = await generateWordleImage(allGuesses, dailyWord.word);
-  const attemptsLeft = DAILY_ATTEMPTS - allGuesses.length;
+  const imageBuffer = await generateWordleImage(state.guesses, dailyWord.word);
+  const attemptsLeft = DAILY_ATTEMPTS - state.guesses.length;
   const attemptsLabel = attemptsLeft === 1 ? "attempt" : "attempts";
 
   await sendBoardMessage(
@@ -111,23 +67,16 @@ export async function handleDailyWordleGuess(
 
 async function handleDailyWordleWin(
   ctx: Context,
-  dailyWord: DailyWord,
-  allGuesses: GuessEntry[],
+  dailyWord: DailyWordRow,
+  state: MiniAppDailyState,
 ) {
-  const userId = ctx.from!.id.toString();
-
-  await redis.del(redisKeys.dailySession(userId));
-
-  const streak = await recordWinStreak(userId);
-  if (!streak) return;
-
-  const imageBuffer = await generateWordleImage(allGuesses, dailyWord.word);
+  const imageBuffer = await generateWordleImage(state.guesses, dailyWord.word);
   const shareText = generateWordleShareText(
     dailyWord.dayNumber,
-    allGuesses,
+    state.guesses,
     dailyWord.word,
   );
-  const triesLabel = allGuesses.length === 1 ? "try" : "tries";
+  const triesLabel = state.guesses.length === 1 ? "try" : "tries";
   const details = formatDailyWordDetails(dailyWord);
   const captionDetails = formatDailyWordDetails(dailyWord, "\n");
 
@@ -135,12 +84,12 @@ async function handleDailyWordleWin(
     ctx,
     imageBuffer,
     `<h5>🎉 You Guessed It!</h5>
-<p>Solved today's WordSeek in <b>${allGuesses.length}</b> ${triesLabel}.</p>
-<blockquote>🔥 Current streak <b>${streak.currentStreak}</b><br>⭐ Highest streak <b>${streak.highestStreak}</b></blockquote>
+<p>Solved today's WordSeek in <b>${state.guesses.length}</b> ${triesLabel}.</p>
+<blockquote>🔥 Current streak <b>${state.streak.current}</b><br>⭐ Highest streak <b>${state.streak.highest}</b></blockquote>
 ${details}
 ${shareKeyboard(shareText)}`,
     {
-      caption: `🎉 Congratulations! You guessed it in ${allGuesses.length} ${triesLabel}!\n\n🔥 Current Streak: ${streak.currentStreak}\n⭐ Highest Streak: ${streak.highestStreak}\n\n${captionDetails}`,
+      caption: `🎉 Congratulations! You guessed it in ${state.guesses.length} ${triesLabel}!\n\n🔥 Current Streak: ${state.streak.current}\n⭐ Highest Streak: ${state.streak.highest}\n\n${captionDetails}`,
       replyMarkup: {
         inline_keyboard: [
           [
@@ -159,18 +108,13 @@ ${shareKeyboard(shareText)}`,
 
 async function handleDailyWordleLoss(
   ctx: Context,
-  dailyWord: DailyWord,
-  allGuesses: GuessEntry[],
+  dailyWord: DailyWordRow,
+  state: MiniAppDailyState,
 ) {
-  const userId = ctx.from!.id.toString();
-
-  await redis.del(redisKeys.dailySession(userId));
-  await resetStreak(userId);
-
-  const imageBuffer = await generateWordleImage(allGuesses, dailyWord.word);
+  const imageBuffer = await generateWordleImage(state.guesses, dailyWord.word);
   const shareText = generateWordleShareText(
     dailyWord.dayNumber,
-    allGuesses,
+    state.guesses,
     dailyWord.word,
   );
   const details = formatDailyWordDetails(dailyWord);
@@ -209,7 +153,7 @@ const SHARE_EMOJI = {
 
 export function generateWordleShareText(
   dayNumber: number,
-  guesses: GuessEntry[],
+  guesses: { guess: string }[],
   solution: string,
 ) {
   const totalAttempts = guesses.length;

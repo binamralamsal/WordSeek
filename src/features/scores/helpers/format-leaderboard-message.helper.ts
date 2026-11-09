@@ -35,11 +35,12 @@ export function formatLeaderboardMessage(
     }
 
     const rank = MEDALS[index] ?? "🔅";
+    const displayName = entry.nickname?.trim() || entry.name;
     const name = entry.username
       ? `<a href="https://t.me/${escapeHtml(entry.username)}">${escapeHtml(
-          entry.name,
+          displayName,
         )}</a>`
-      : escapeHtml(entry.name);
+      : escapeHtml(displayName);
     const id = options.showUserIds
       ? ` <code>${escapeHtml(entry.userId)}</code>`
       : "";

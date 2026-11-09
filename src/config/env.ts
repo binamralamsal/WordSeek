@@ -3,6 +3,11 @@ import { z } from "zod";
 export const env = z
   .object({
     BOT_TOKEN: z.string().min(1, { message: "BOT_TOKEN is required" }),
+    // Use Telegram's separate Bot API test environment with a test token.
+    TELEGRAM_TEST_SERVER: z
+      .string()
+      .default("false")
+      .transform((v) => v.toLowerCase() === "true"),
     DATABASE_URL: z.string().min(1, { message: "DATABASE_URL is required" }),
     NODE_ENV: z
       .enum(["development", "production", "test"])
@@ -52,5 +57,22 @@ export const env = z
       .transform((val) => val.split(" ").filter(Boolean))
       .optional()
       .default([]),
+    // Public HTTPS origin of the Mini App. When set, the bot advertises the
+    // app in the chat menu and `/app`.
+    MINIAPP_URL: z.string().url().optional(),
+    // Short name configured in BotFather for direct Mini App links.
+    MINIAPP_SHORT_NAME: z.string().default("app"),
+    MINIAPP_PORT: z.coerce.number().int().positive().default(3000),
+    // Interface binding for the Mini App HTTP server (defaults to all hosts).
+    PORT: z.coerce.number().int().positive().optional(),
+    MINIAPP_STATIC_DIR: z.string().default("dist/miniapp"),
+    MINIAPP_AUTH_MAX_AGE_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(86_400),
+    // Development-only escape hatch for opening the UI in a normal browser.
+    // Never used when NODE_ENV is production.
+    MINIAPP_DEV_USER_ID: z.string().optional(),
   })
   .parse(process.env);

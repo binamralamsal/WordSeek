@@ -16,6 +16,7 @@
 ## Features
 
 - Play the Wordle-inspired word guessing game in private chats or group chats.
+- Play daily and classic games in the integrated Telegram Mini App.
 - Supports multiplayer gameplay in groups, with admin tools for game management.
 - Daily **WordSeek of the Day** with streaks and AI-generated word details.
 - Keep track of scores with group and global leaderboards.
@@ -59,6 +60,12 @@
   tools (bot-admin users, private chat only).
 
 ## Installation & Setup
+
+The bot and Mini App HTTP server run in the same long-lived Bun process. Build
+the frontend with `bun run build:miniapp`; configure `MINIAPP_URL` with its
+public HTTPS URL. The server listens on `PORT` (or `MINIAPP_PORT`, default
+3000). `TELEGRAM_TEST_SERVER=true` selects Telegram's Bot API test environment
+and requires a test-environment token.
 
 ### Requirements
 

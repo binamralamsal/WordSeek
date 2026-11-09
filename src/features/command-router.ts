@@ -9,6 +9,7 @@ import { statsCommand } from "./admin/stats.command";
 import { trackCommand } from "./admin/track.command";
 import { transferCommand } from "./admin/transfer.command";
 import { unbanCommand } from "./admin/unban.command";
+import { appCommand } from "./general/app.command";
 import { idCommand } from "./general/id.command";
 import { myScoreCommand } from "./general/my-score.command";
 import { startCommand } from "./general/start.command";
@@ -46,6 +47,7 @@ composer.use(
   transferCommand,
   broadcastCommand,
   dailyWordleCommand,
+  appCommand,
   idCommand,
   allowOnlyLenCommand,
   recreateTopicCommand,
@@ -64,6 +66,7 @@ const advertisedCommands: [string, string][] = [
   ["new5", "Start a new 5-letter game."],
   ["new6", "Start a new 6-letter game."],
   ["daily", "Play WordSeek of the Day (DM only)"],
+  ["app", "Play WordSeek in the Mini App"],
   ["pausedaily", "Pause WordSeek of the Day game"],
   ["seekauth", "Manage users authorized to end the seek game (admin only)"],
   ["leaderboard", "View the leaderboard."],

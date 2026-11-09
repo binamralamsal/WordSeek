@@ -12,9 +12,18 @@ condensed agent checklist, see [AGENTS.md](../AGENTS.md).
 - **PostgreSQL** (a local database is enough for development).
 - **Redis** (sessions, votes, tracking, broadcast state and BullMQ).
 - A **Telegram bot token** from [@BotFather](https://t.me/BotFather).
+- Optional: a Telegram Bot API test-environment token when
+  `TELEGRAM_TEST_SERVER=true`.
 - Optional: Gemini API keys for daily-word meanings and phonetics.
 
 ## First-time setup
+
+The Mini App API and bot share one long-running Bun process. Build the UI with
+`bun run build:miniapp`. Set `MINIAPP_URL` to its public HTTPS URL so Telegram
+can open it. The HTTP server binds to `0.0.0.0` on `PORT`, falling back to
+`MINIAPP_PORT` (default `3000`). Use `TELEGRAM_TEST_SERVER=true` only with a
+token created for Telegram's test environment; it selects grammY's `test`
+client environment.
 
 ```bash
 git clone https://github.com/binamralamsal/WordSeek

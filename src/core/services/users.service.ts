@@ -9,16 +9,23 @@ export type UserRecord = {
   id: string;
   name: string;
   username: string | null;
+  photoUrl?: string | null;
 };
 
 export async function upsertUser(user: UserRecord) {
   await db
     .insertInto("users")
-    .values(user)
+    .values({
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      ...(user.photoUrl !== undefined ? { photoUrl: user.photoUrl } : {}),
+    })
     .onConflict((oc) =>
       oc.column("id").doUpdateSet({
         name: user.name,
         username: user.username,
+        ...(user.photoUrl !== undefined ? { photoUrl: user.photoUrl } : {}),
       }),
     )
     .execute();

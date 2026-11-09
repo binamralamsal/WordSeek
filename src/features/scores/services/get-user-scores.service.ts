@@ -57,7 +57,9 @@ export async function getUserScores({
     .select([
       "users.id",
       "users.name",
+      "users.nickname",
       "users.username",
+      "users.photoUrl",
       "lb.totalScore",
       "lb.rank",
       "userStats.highestStreak",

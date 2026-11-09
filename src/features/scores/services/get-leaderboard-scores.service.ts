@@ -59,7 +59,9 @@ export async function getLeaderboardScores({
     .select([
       "users.id as userId",
       "users.name as name",
+      "users.nickname as nickname",
       "users.username as username",
+      "users.photoUrl as photoUrl",
       "totals.totalScore",
     ])
     .orderBy("totals.totalScore", "desc")

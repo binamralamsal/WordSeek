@@ -11,6 +11,7 @@ type FormatUserScoreData = {
   totalScore: number;
   rank: number;
   name: string;
+  nickname?: string | null;
   username: string | null;
   currentStreak: number | null;
   highestStreak: number | null;
@@ -22,7 +23,7 @@ export function formatUserScoreMessage(
   timeKey: LeaderboardPeriod,
   wordLength: WordLength,
 ) {
-  const name = escapeHtml(data.name);
+  const name = escapeHtml(data.nickname?.trim() || data.name);
 
   const totalScore = data.totalScore.toLocaleString();
   const rank = data.rank.toLocaleString();

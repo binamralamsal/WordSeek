@@ -4,6 +4,7 @@
  */
 process.env.NODE_ENV = "test";
 process.env.BOT_TOKEN = "123456:TEST-TOKEN";
+process.env.TELEGRAM_TEST_SERVER = "false";
 process.env.DATABASE_URL =
   "postgres://wordseek:wordseek@127.0.0.1:5432/wordseek_test";
 process.env.REDIS_URI = "redis://127.0.0.1:6399";

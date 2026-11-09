@@ -44,6 +44,8 @@ class FileMigrationProvider implements MigrationProvider {
 }
 
 const APP_TABLES = [
+  "mini_app_guesses",
+  "mini_app_games",
   "daily_guesses",
   "guesses",
   "daily_words",

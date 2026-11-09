@@ -5,6 +5,27 @@ import { getCurrentGameDateString } from "../helpers/date.helper";
 
 const log = createLogger("features.wordle.daily.services.streaks.service");
 
+export async function ensureUserStats(userId: string) {
+  await db
+    .insertInto("userStats")
+    .values({
+      userId,
+      highestStreak: 0,
+      currentStreak: 0,
+      lastGuessed: null,
+    })
+    .onConflict((oc) => oc.column("userId").doNothing())
+    .execute();
+}
+
+export async function getUserStreak(userId: string) {
+  return await db
+    .selectFrom("userStats")
+    .select(["currentStreak", "highestStreak"])
+    .where("userId", "=", userId)
+    .executeTakeFirst();
+}
+
 export async function resetStreaksForInactivePlayers(yesterdayDate: string) {
   try {
     log.info(
