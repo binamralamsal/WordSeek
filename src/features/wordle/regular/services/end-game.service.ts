@@ -22,6 +22,7 @@ export async function endGame(
 ) {
   const game = await db
     .deleteFrom("games")
+    .where("source", "=", "telegram")
     .where("activeChat", "=", String(chatId))
     .returning("word")
     .executeTakeFirst();

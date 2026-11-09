@@ -24,6 +24,7 @@ composer.callbackQuery(/^vote_end\b/, async (ctx) => {
   const existingGame = await db
     .selectFrom("games")
     .selectAll()
+    .where("source", "=", "telegram")
     .where("activeChat", "=", chatId.toString())
     .executeTakeFirst();
 

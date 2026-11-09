@@ -53,6 +53,7 @@ export async function getUserRow(userId: string) {
 
 export async function getProfileStats(
   userId: string,
+  joinedAt: Date,
 ): Promise<MiniAppProfileStats> {
   const dailyWord = await db
     .selectFrom("dailyWords")
@@ -60,57 +61,59 @@ export async function getProfileStats(
     .where("date", "=", new Date(getCurrentGameDateString()))
     .executeTakeFirst();
 
-  const [userStats, scoreRow, classicRow, dailyRow, firstGame] =
-    await Promise.all([
-      db
-        .selectFrom("userStats")
-        .select(["currentStreak", "highestStreak"])
-        .where("userId", "=", userId)
-        .executeTakeFirst(),
-      db
-        .selectFrom("leaderboard")
-        .select([
-          sql<number>`coalesce(cast(sum(score) as integer), 0)`.as(
-            "totalScore",
-          ),
-          sql<number>`coalesce(cast(max(score) as integer), 0)`.as("bestScore"),
-        ])
-        .where("userId", "=", userId)
-        .executeTakeFirst(),
-      db
-        .selectFrom("miniAppGames")
-        .select([
-          sql<number>`cast(count(*) as integer)`.as("games"),
-          sql<number>`cast(count(*) filter (where status = 'won') as integer)`.as(
-            "wins",
-          ),
-        ])
-        .where("userId", "=", userId)
-        .executeTakeFirst(),
-      dailyWord
-        ? db
-            .selectFrom("dailyGuesses")
-            .select(["guess"])
-            .where("userId", "=", userId)
-            .where("dailyWordId", "=", dailyWord.id)
-            .orderBy("attemptNumber", "asc")
-            .execute()
-        : Promise.resolve([]),
-      db
-        .selectFrom("leaderboard")
-        .select("createdAt")
-        .where("userId", "=", userId)
-        .orderBy("createdAt", "asc")
-        .limit(1)
-        .executeTakeFirst(),
-    ]);
+  const [userStats, scoreRow, dailyRow] = await Promise.all([
+    db
+      .selectFrom("userStats")
+      .select([
+        "currentStreak",
+        "highestStreak",
+        "classicGamesPlayed",
+        "classicGamesWon",
+        "classicGamesLost",
+        "dailyGamesPlayed",
+        "dailyGamesWon",
+        "dailyGamesLost",
+      ])
+      .where("userId", "=", userId)
+      .executeTakeFirst(),
+    db
+      .selectFrom("leaderboard")
+      .select([
+        sql<number>`coalesce(cast(sum(score) as integer), 0)`.as("totalScore"),
+        sql<number>`coalesce(cast(max(least(score, 30)) as integer), 0)`.as(
+          "bestScore",
+        ),
+      ])
+      .where("userId", "=", userId)
+      .executeTakeFirst(),
+    dailyWord
+      ? db
+          .selectFrom("dailyGuesses")
+          .select(["guess"])
+          .where("userId", "=", userId)
+          .where("dailyWordId", "=", dailyWord.id)
+          .orderBy("attemptNumber", "asc")
+          .execute()
+      : Promise.resolve([]),
+  ]);
 
   const guesses = dailyRow ?? [];
+  const classicGames = Number(userStats?.classicGamesPlayed ?? 0);
+  const classicWins = Number(userStats?.classicGamesWon ?? 0);
+  const classicLosses = Number(userStats?.classicGamesLost ?? 0);
+  const dailyGames = Number(userStats?.dailyGamesPlayed ?? 0);
+  const dailyWins = Number(userStats?.dailyGamesWon ?? 0);
+  const dailyLosses = Number(userStats?.dailyGamesLost ?? 0);
 
   return {
+    gamesPlayed: classicGames + dailyGames,
     totalScore: Number(scoreRow?.totalScore ?? 0),
-    classicGames: Number(classicRow?.games ?? 0),
-    classicWins: Number(classicRow?.wins ?? 0),
+    classicGames,
+    classicWins,
+    classicLosses,
+    dailyGames,
+    dailyWins,
+    dailyLosses,
     bestScore: Number(scoreRow?.bestScore ?? 0),
     currentStreak: Number(userStats?.currentStreak ?? 0),
     highestStreak: Number(userStats?.highestStreak ?? 0),
@@ -118,7 +121,7 @@ export async function getProfileStats(
     dailySolvedToday: Boolean(
       dailyWord && guesses.some((guess) => guess.guess === dailyWord.word),
     ),
-    memberSince: (firstGame?.createdAt ?? new Date()).toISOString(),
+    memberSince: joinedAt.toISOString(),
   };
 }
 
@@ -133,7 +136,7 @@ export async function getMiniAppProfile(
 
   return {
     user: toMiniAppUser(user),
-    stats: await getProfileStats(userId),
+    stats: await getProfileStats(userId, user.createdAt),
     group,
   };
 }

@@ -230,6 +230,8 @@ describe("daily guesses", () => {
       .executeTakeFirstOrThrow();
     expect(stats.currentStreak).toBe(1);
     expect(stats.highestStreak).toBe(1);
+    expect(stats.dailyGamesPlayed).toBe(1);
+    expect(stats.dailyGamesWon).toBe(1);
   });
 
   test("loses after six attempts and resets the streak", async () => {
@@ -258,6 +260,8 @@ describe("daily guesses", () => {
       .where("userId", "=", String(PLAYER_ID))
       .executeTakeFirstOrThrow();
     expect(stats.currentStreak).toBe(0);
+    expect(stats.dailyGamesPlayed).toBe(1);
+    expect(stats.dailyGamesLost).toBe(1);
   });
 });
 

@@ -44,6 +44,7 @@ async function requireNoActiveRegularGame(ctx: Context): Promise<GuardResult> {
   const activeGame = await db
     .selectFrom("games")
     .selectAll()
+    .where("source", "=", "telegram")
     .where("activeChat", "=", userId)
     .executeTakeFirst();
 

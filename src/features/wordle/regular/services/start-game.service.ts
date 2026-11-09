@@ -86,6 +86,7 @@ export async function startGame(
     const activeGame = await db
       .selectFrom("games")
       .select("id")
+      .where("source", "=", "telegram")
       .where("activeChat", "=", chatId.toString())
       .executeTakeFirst();
 

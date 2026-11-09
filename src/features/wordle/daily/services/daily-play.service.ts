@@ -5,6 +5,7 @@ import type { MiniAppDailyState, MiniAppGuess } from "#/shared/miniapp";
 import { evaluateGuess } from "#/shared/wordle";
 
 import { ALL_WORDS } from "../../shared/helpers/words.helper";
+import { recordDailyResult } from "../../shared/services/game-stats.service";
 import { getCurrentGameDateString } from "../helpers/date.helper";
 import { ensureDailyWordExists } from "./daily-word.service";
 import {
@@ -190,6 +191,7 @@ export async function submitDailyGuess(
 
   if (guess === dailyWord.word) {
     await redis.del(redisKeys.dailySession(userId));
+    await recordDailyResult(userId, true);
     const streak = await recordWinStreak(userId);
     return {
       ok: true,
@@ -204,6 +206,7 @@ export async function submitDailyGuess(
 
   if (rows.length >= DAILY_ATTEMPTS) {
     await redis.del(redisKeys.dailySession(userId));
+    await recordDailyResult(userId, false);
     await resetStreak(userId);
     return {
       ok: true,

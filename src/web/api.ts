@@ -29,16 +29,15 @@ import {
   type MiniAppClassicState,
   type MiniAppDailyState,
   type MiniAppLeaderboardPage,
+  type MiniAppLeaderboardScope,
   type MiniAppProfile,
   type NicknameUpdateResponse,
 } from "#/shared/miniapp";
 import { NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH } from "#/shared/nickname";
 import {
   isLeaderboardPeriod,
-  isLeaderboardScope,
   isWordLength,
   type LeaderboardPeriod,
-  type LeaderboardScope,
   type WordLength,
 } from "#/types";
 
@@ -50,6 +49,9 @@ const guessSchema = z.object({
 });
 
 const startClassicSchema = z.object({
+  wordLength: z.coerce.number().int(),
+});
+const classicGuessSchema = guessSchema.extend({
   wordLength: z.coerce.number().int(),
 });
 
@@ -96,7 +98,7 @@ class ApiRouteError extends Error {
 }
 
 function parseLeaderboardFilters(url: URL): {
-  scope: LeaderboardScope;
+  scope: MiniAppLeaderboardScope;
   period: LeaderboardPeriod;
   wordLength: WordLength;
   page: number;
@@ -108,7 +110,7 @@ function parseLeaderboardFilters(url: URL): {
   const pageRaw = Number(url.searchParams.get("page") ?? "1");
   const pageSizeRaw = Number(url.searchParams.get("pageSize") ?? "10");
 
-  if (!isLeaderboardScope(scopeRaw)) {
+  if (scopeRaw !== "global" && scopeRaw !== "group" && scopeRaw !== "private") {
     throw new ApiRouteError("INVALID_SCOPE", "Unknown leaderboard scope.");
   }
 
@@ -154,7 +156,7 @@ async function handleBootstrap(auth: AuthContext): Promise<Response> {
   const [profile, daily, classic] = await Promise.all([
     getMiniAppProfile(auth.userId, auth.group),
     getDailyState(auth.userId),
-    getClassicState(auth.userId),
+    getClassicState(auth.userId, 5),
   ]);
 
   if (!profile) {
@@ -216,7 +218,6 @@ async function handleStartClassic(
   const state = await startClassicGame({
     userId: auth.userId,
     wordLength: parsed.data.wordLength,
-    chatId: auth.group?.chatId ?? auth.userId,
   });
 
   return json<MiniAppClassicState>(state);
@@ -226,13 +227,17 @@ async function handleClassicGuess(
   request: Request,
   auth: AuthContext,
 ): Promise<Response> {
-  const parsed = guessSchema.safeParse(await readJson(request));
+  const parsed = classicGuessSchema.safeParse(await readJson(request));
 
-  if (!parsed.success) {
-    throw new ApiRouteError("INVALID_GUESS", "Send a word guess.");
+  if (!parsed.success || !isWordLength(parsed.data.wordLength)) {
+    throw new ApiRouteError("INVALID_GUESS", "Send a guess and word length.");
   }
 
-  const result = await submitClassicGuess(auth.userId, parsed.data.guess);
+  const result = await submitClassicGuess(
+    auth.userId,
+    parsed.data.guess,
+    parsed.data.wordLength,
+  );
 
   if (!result.ok) {
     return fail(result.code, result.message);
@@ -241,13 +246,24 @@ async function handleClassicGuess(
   return json<MiniAppClassicState>(result.state);
 }
 
+async function handleAbandonClassic(
+  request: Request,
+  auth: AuthContext,
+): Promise<Response> {
+  const parsed = startClassicSchema.safeParse(await readJson(request));
+  if (!parsed.success || !isWordLength(parsed.data.wordLength)) {
+    throw new ApiRouteError("INVALID_LENGTH", "Word length must be 4, 5 or 6.");
+  }
+  await abandonClassicGame(auth.userId, parsed.data.wordLength);
+  return json(await getClassicState(auth.userId, parsed.data.wordLength));
+}
+
 async function handleLeaderboard(
   url: URL,
   auth: AuthContext,
 ): Promise<Response> {
   const filters = parseLeaderboardFilters(url);
-  const chatId =
-    filters.scope === "group" ? requireGroupChatId(auth) : undefined;
+  const chatId = leaderboardChatId(filters.scope, auth);
 
   const page = await getLeaderboardPage({
     ...filters,
@@ -259,8 +275,7 @@ async function handleLeaderboard(
 
 async function handleMyRanking(url: URL, auth: AuthContext): Promise<Response> {
   const filters = parseLeaderboardFilters(url);
-  const chatId =
-    filters.scope === "group" ? requireGroupChatId(auth) : undefined;
+  const chatId = leaderboardChatId(filters.scope, auth);
 
   const ranking = await getMyRanking({
     scope: filters.scope,
@@ -271,6 +286,15 @@ async function handleMyRanking(url: URL, auth: AuthContext): Promise<Response> {
   });
 
   return json(ranking);
+}
+
+function leaderboardChatId(
+  scope: MiniAppLeaderboardScope,
+  auth: AuthContext,
+): string | undefined {
+  if (scope === "group") return requireGroupChatId(auth);
+  if (scope === "private") return auth.userId;
+  return undefined;
 }
 
 async function handleProfile(auth: AuthContext): Promise<Response> {
@@ -321,15 +345,25 @@ export function createMiniAppApi(auth: AuthContext) {
         : fail(result.code, result.message, 503);
     })
     .post("/daily/guess", ({ request }) => handleDailyGuess(request, auth))
-    .get("/classic", async () =>
-      json<MiniAppClassicState>(await getClassicState(auth.userId)),
-    )
+    .get("/classic", async ({ request }) => {
+      const length = Number(
+        new URL(request.url).searchParams.get("length") ?? "5",
+      );
+      if (!isWordLength(length)) {
+        throw new ApiRouteError(
+          "INVALID_LENGTH",
+          "Word length must be 4, 5 or 6.",
+        );
+      }
+      return json<MiniAppClassicState>(
+        await getClassicState(auth.userId, length),
+      );
+    })
     .post("/classic/start", ({ request }) => handleStartClassic(request, auth))
     .post("/classic/guess", ({ request }) => handleClassicGuess(request, auth))
-    .post("/classic/abandon", async () => {
-      await abandonClassicGame(auth.userId);
-      return json<MiniAppClassicState>(null);
-    })
+    .post("/classic/abandon", ({ request }) =>
+      handleAbandonClassic(request, auth),
+    )
     .get("/leaderboard", ({ request }) =>
       handleLeaderboard(new URL(request.url), auth),
     )

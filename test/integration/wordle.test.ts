@@ -180,6 +180,16 @@ describe("regular guesses", () => {
       score: 30,
       wordLength: "5",
     });
+    const stats = await env.db
+      .selectFrom("userStats")
+      .select(["classicGamesPlayed", "classicGamesWon", "classicTotalScore"])
+      .where("userId", "=", String(PLAYER_ID))
+      .executeTakeFirstOrThrow();
+    expect(stats).toEqual({
+      classicGamesPlayed: 1,
+      classicGamesWon: 1,
+      classicTotalScore: 30,
+    });
     expect(await env.db.selectFrom("games").selectAll().execute()).toHaveLength(
       0,
     );

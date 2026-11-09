@@ -6,6 +6,7 @@ import type {
 import type { ScoredGuess } from "./wordle";
 
 export type { LeaderboardPeriod, LeaderboardScope, WordLength };
+export type MiniAppLeaderboardScope = LeaderboardScope | "private";
 
 export const DAILY_ATTEMPTS = 6;
 export const CLASSIC_ATTEMPTS = 30;
@@ -64,9 +65,14 @@ export type MiniAppGroupContext = {
 };
 
 export type MiniAppProfileStats = {
+  gamesPlayed: number;
   totalScore: number;
   classicGames: number;
   classicWins: number;
+  classicLosses: number;
+  dailyGames: number;
+  dailyWins: number;
+  dailyLosses: number;
   bestScore: number;
   currentStreak: number;
   highestStreak: number;
@@ -98,7 +104,7 @@ export type LeaderboardPage = {
   total: number;
   totalPages: number;
   totalPlayers: number;
-  scope: LeaderboardScope;
+  scope: MiniAppLeaderboardScope;
   period: LeaderboardPeriod;
   wordLength: WordLength;
 };
@@ -114,7 +120,7 @@ export type MyRanking = {
   gamesWon: number;
   bestScore: number;
   totalPlayers: number;
-  scope: LeaderboardScope;
+  scope: MiniAppLeaderboardScope;
   period: LeaderboardPeriod;
   wordLength: WordLength;
 } | null;

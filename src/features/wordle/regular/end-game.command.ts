@@ -22,6 +22,7 @@ composer.command("end", async (ctx) => {
   const currentGame = await db
     .selectFrom("games")
     .selectAll()
+    .where("source", "=", "telegram")
     .where("activeChat", "=", String(ctx.chat.id))
     .executeTakeFirst();
 

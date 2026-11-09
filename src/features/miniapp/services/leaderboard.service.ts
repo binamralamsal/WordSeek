@@ -4,11 +4,11 @@ import { db } from "#/config/db";
 import type {
   LeaderboardPage,
   LeaderboardRow,
+  MiniAppLeaderboardScope,
   MyRanking,
 } from "#/shared/miniapp";
 import {
   type LeaderboardPeriod,
-  type LeaderboardScope,
   toDbWordLength,
   type WordLength,
 } from "#/types";
@@ -19,7 +19,7 @@ export const LEADERBOARD_PAGE_SIZE = 10;
 export const LEADERBOARD_MAX_PAGE_SIZE = 50;
 
 type LeaderboardQueryInput = {
-  scope: LeaderboardScope;
+  scope: MiniAppLeaderboardScope;
   period: LeaderboardPeriod;
   wordLength: WordLength;
   chatId?: string | null;
@@ -46,7 +46,7 @@ function buildTotalsQuery({
     .select("leaderboard.userId")
     .select(sql<number>`cast(sum(score) as integer)`.as("totalScore"))
     .select(sql<number>`cast(count(*) as integer)`.as("gamesWon"))
-    .select(sql<number>`cast(max(score) as integer)`.as("bestScore"))
+    .select(sql<number>`cast(max(least(score, 30)) as integer)`.as("bestScore"))
     .select(
       sql<number>`cast(rank() over (order by sum(score) desc) as integer)`.as(
         "rank",
@@ -60,7 +60,7 @@ function buildTotalsQuery({
     )
     .groupBy("leaderboard.userId");
 
-  if (scope === "group") {
+  if (scope === "group" || scope === "private") {
     query = query.where("leaderboard.chatId", "=", chatId ?? "");
   }
 
