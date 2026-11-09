@@ -45,6 +45,7 @@ test("estimates compacted classic wins and backfills completed daily totals", as
   await seedScore(env.db, { userId: "compact", score: 80 });
 
   await rollbackMiniAppMigration(env.db);
+  await rollbackMiniAppMigration(env.db);
 
   const daily = await env.db
     .insertInto("dailyWords")

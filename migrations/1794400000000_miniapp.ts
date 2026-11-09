@@ -113,28 +113,50 @@ export async function up(db: Kysely<any>): Promise<void> {
 export async function down(db: Kysely<any>): Promise<void> {
   await sql`DROP INDEX IF EXISTS games_miniapp_scope_updated_idx`.execute(db);
   await sql`DROP INDEX IF EXISTS games_active_source_scope_idx`.execute(db);
-  await sql`DELETE FROM games WHERE source = 'miniapp'`.execute(db);
   await sql`
-    ALTER TABLE games
-    ADD CONSTRAINT games_active_chat_topic_id_unique UNIQUE (active_chat, topic_id);
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name = 'games'
+          AND column_name = 'source'
+      ) THEN
+        DELETE FROM games WHERE source = 'miniapp';
+      END IF;
+    END $$;
+  `.execute(db);
+  await sql`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'games_active_chat_topic_id_unique'
+      ) THEN
+        ALTER TABLE games
+        ADD CONSTRAINT games_active_chat_topic_id_unique
+        UNIQUE (active_chat, topic_id);
+      END IF;
+    END $$;
   `.execute(db);
 
-  await db.schema
-    .alterTable("user_stats")
-    .dropColumn("daily_games_lost")
-    .dropColumn("daily_games_won")
-    .dropColumn("daily_games_played")
-    .dropColumn("classic_games_won")
-    .execute();
-  await db.schema
-    .alterTable("games")
-    .dropColumn("game_status")
-    .dropColumn("source")
-    .execute();
+  await sql`
+    ALTER TABLE user_stats
+      DROP COLUMN IF EXISTS daily_games_lost,
+      DROP COLUMN IF EXISTS daily_games_won,
+      DROP COLUMN IF EXISTS daily_games_played,
+      DROP COLUMN IF EXISTS classic_games_won;
+  `.execute(db);
+  await sql`
+    ALTER TABLE games
+      DROP CONSTRAINT IF EXISTS games_status_check,
+      DROP COLUMN IF EXISTS game_status,
+      DROP COLUMN IF EXISTS source;
+  `.execute(db);
   await sql`DROP TYPE IF EXISTS game_source`.execute(db);
-  await db.schema
-    .alterTable("users")
-    .dropColumn("photo_url")
-    .dropColumn("nickname")
-    .execute();
+  await sql`
+    ALTER TABLE users
+      DROP COLUMN IF EXISTS photo_url,
+      DROP COLUMN IF EXISTS nickname;
+  `.execute(db);
 }
