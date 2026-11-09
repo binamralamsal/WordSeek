@@ -118,6 +118,20 @@ describe("/stats", () => {
     expect(text).toContain("Total users");
     expect(text).toContain("VPS System");
     expect(text).toContain("Bun version");
+    expect(
+      bot.calls.some((call) => call.method === "sendRichMessageDraft"),
+    ).toBe(true);
+  });
+
+  test("does not stream drafts in groups", async () => {
+    const bot = new TestBot();
+
+    await bot.sendText("/stats", { id: 999, chatType: "group" });
+
+    expect(bot.lastText()).toContain("Bot Statistics");
+    expect(
+      bot.calls.some((call) => call.method === "sendRichMessageDraft"),
+    ).toBe(false);
   });
 
   test("is restricted to system admins", async () => {
