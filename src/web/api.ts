@@ -28,6 +28,7 @@ import {
   type MiniAppBootstrap,
   type MiniAppClassicState,
   type MiniAppDailyState,
+  type MiniAppLeaderboardPage,
   type MiniAppProfile,
   type NicknameUpdateResponse,
 } from "#/shared/miniapp";
@@ -128,10 +129,16 @@ function parseLeaderboardFilters(url: URL): {
   };
 }
 
-function withIsMe(page: LeaderboardPage, userId: string): LeaderboardPage {
+function withIsMe(
+  page: LeaderboardPage,
+  userId: string,
+): MiniAppLeaderboardPage {
   return {
     ...page,
-    rows: page.rows.map((row) => ({ ...row, isMe: row.userId === userId })),
+    rows: page.rows.map(({ userId: rowUserId, ...row }) => ({
+      ...row,
+      isMe: rowUserId === userId,
+    })),
   };
 }
 

@@ -1,0 +1,9 @@
+{
+  "name": "wordseek-miniapp-ui",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "cn": "^0.5.2",
+    "radix-ui": "^1.8.1"
+  }
+}

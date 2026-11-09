@@ -112,7 +112,19 @@ export async function startClassicGame({
   const active = await findActiveGame(userId);
 
   if (active) {
-    return toState(active, await getGuesses(active.id));
+    if (Number(active.wordLength) === wordLength) {
+      return toState(active, await getGuesses(active.id));
+    }
+
+    // Starting a different mode is an explicit request to switch lengths.
+    // Close the old run before creating the replacement so the partial unique
+    // active-game index remains satisfied.
+    await db
+      .updateTable("miniAppGames")
+      .set({ status: "lost", finishedAt: new Date(), updatedAt: new Date() })
+      .where("id", "=", active.id)
+      .where("status", "=", "active")
+      .execute();
   }
 
   const word = await selector.getRandomWord(`mini:${userId}`, wordLength);

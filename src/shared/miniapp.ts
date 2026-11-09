@@ -103,6 +103,11 @@ export type LeaderboardPage = {
   wordLength: WordLength;
 };
 
+/** Public Mini App shape deliberately excludes Telegram user IDs. */
+export type MiniAppLeaderboardPage = Omit<LeaderboardPage, "rows"> & {
+  rows: Omit<LeaderboardRow, "userId">[];
+};
+
 export type MyRanking = {
   rank: number;
   score: number;

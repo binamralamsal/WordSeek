@@ -13,6 +13,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(root, "src"),
       "@shared": path.resolve(root, "../src/shared"),
+      cn: path.resolve(root, "src/lib/utils.ts"),
     },
   },
   build: {
