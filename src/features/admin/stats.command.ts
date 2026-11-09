@@ -20,10 +20,10 @@ type StatsCounts = {
 };
 
 type StatsCountRow = {
-  active_groups: string;
-  active_players: string;
-  total_groups: string;
-  total_users: string;
+  activeGroups: string;
+  activePlayers: string;
+  totalGroups: string;
+  totalUsers: string;
 };
 
 async function getStatsCounts(): Promise<StatsCounts> {
@@ -55,10 +55,10 @@ async function getStatsCounts(): Promise<StatsCounts> {
   if (!row) throw new Error("Stats query returned no rows");
 
   return {
-    totalUsers: Number(row.total_users),
-    activePlayers: Number(row.active_players),
-    activeGroups: Number(row.active_groups),
-    totalGroups: Number(row.total_groups),
+    totalUsers: Number(row.totalUsers),
+    activePlayers: Number(row.activePlayers),
+    activeGroups: Number(row.activeGroups),
+    totalGroups: Number(row.totalGroups),
   };
 }
 

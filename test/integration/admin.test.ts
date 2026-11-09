@@ -115,9 +115,11 @@ describe("/stats", () => {
 
     const text = bot.lastText() ?? "";
     expect(text).toContain("Bot Statistics");
-    expect(text).toContain("Total users");
+    expect(text).toMatch(/Total users <b>\d+<\/b>/);
+    expect(text).toMatch(/Active players <b>\d+<\/b>/);
     expect(text).toContain("VPS System");
     expect(text).toContain("Bun version");
+    expect(text).not.toContain("NaN");
     expect(
       bot.calls.some((call) => call.method === "sendRichMessageDraft"),
     ).toBe(true);
