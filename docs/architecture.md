@@ -6,8 +6,9 @@ agent-facing checklist, see [AGENTS.md](../AGENTS.md).
 
 ## Runtime overview
 
-WordSeek is **one long-running Bun process** per Telegram bot token. It has no
-HTTP server and no serverless entry point.
+WordSeek is **one long-running Bun process** per Telegram bot token. It runs the
+Telegram poller, the Mini App HTTP server, scheduled jobs and the captcha worker
+together. It has no serverless entry point.
 
 ```
 Telegram Bot API
@@ -19,6 +20,9 @@ Telegram Bot API
       ├─ command router ──► feature commands
       ├─ callback router ─► feature callbacks
       └─ text handler ────► regular/daily guesses
+      ▲
+      │ Telegram Mini App
+      └─ Bun.serve ──► Elysia API + built React frontend
       │
       ├─ PostgreSQL (Kysely + pg)  ── users, games, scores, daily words
       ├─ Redis (ioredis)          ── sessions, votes, tracking, broadcast state
@@ -33,9 +37,10 @@ The process starts in `src/index.ts`:
 2. Mount `createAppComposer()` and the global error handler.
 3. Start the daily-word cron, compaction cron and captcha worker.
 4. Ensure today's daily word exists.
-5. Delete any webhook with pending updates, then start long polling.
-6. Sync the advertised command menu.
-7. Resume an interrupted broadcast, if any.
+5. Delete any webhook with pending updates.
+6. Start the Mini App HTTP server and configure its Telegram menu button.
+7. Start long polling, sync the advertised command menu and resume any
+   interrupted broadcast.
 
 `SIGINT`/`SIGTERM` stop the runner, crons and worker, close Postgres and Redis,
 and force-exit after 10 seconds. Only one process may poll a token; running two
@@ -197,13 +202,13 @@ The Kysely schema is generated into `src/database/schema.ts` by
 
 | Table              | Purpose                                                             |
 | ------------------ | ------------------------------------------------------------------- |
-| `users`            | Telegram users seen by the bot: display name and username.          |
+| `users`            | Telegram identity, plus Mini App nickname and photo.                |
 | `leaderboard`      | One row per scoring win: chat, user, word length, score, timestamp. |
-| `games`            | Active regular game per chat/topic: word, starter, topic.           |
-| `guesses`          | Guesses for a regular game, keyed by game and chat.                 |
+| `games`            | Shared bot/Mini App games, identified by enum source and scope.     |
+| `guesses`          | Ordered guesses per game; `created_at` supplies attempt order.      |
 | `daily_words`      | One row per date: word, meaning, phonetic, sentence, day number.    |
 | `daily_guesses`    | Daily attempts per user and daily word.                             |
-| `user_stats`       | Daily streaks per user.                                             |
+| `user_stats`       | Daily streaks/results and classic wins per user.                    |
 | `banned_users`     | Users blocked from using the bot.                                   |
 | `authorized_users` | Per-chat users allowed to end games.                                |
 | `chat_game_topics` | Forum topics registered for play and their settings.                |
@@ -213,6 +218,13 @@ Conventions:
 
 - Telegram IDs are stored as strings.
 - `word_length` is stored as the string `"4"`, `"5"` or `"6"`.
+- `games.source` is the `game_source` enum (`telegram` or `miniapp`). The
+  Mini App uses a player-specific `active_chat` scope and a word-length topic,
+  while the bot continues to use its existing chat/topic scope.
+- Classic score remains in `leaderboard`; classic guess count is derived from
+  `guesses`. `user_stats.classic_games_won` is the historical win baseline
+  estimated from compacted leaderboard scores and then incremented on each
+  classic win.
 - Group chat IDs start with `-1`; private chat IDs do not. `/stats` uses this to
   classify active chats.
 - Timestamps are `timestamptz`, with `created_at`/`updated_at` defaults and

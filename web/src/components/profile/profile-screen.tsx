@@ -61,7 +61,7 @@ export function ProfileScreen({
               <strong>{stats.totalScore.toLocaleString()}</strong>
             </div>
             <Badge variant="secondary">
-              <Sparkles size={13} /> {stats.gamesPlayed} games
+              <Sparkles size={13} /> {stats.classicWins} classic wins
             </Badge>
           </div>
         </CardContent>
@@ -77,7 +77,7 @@ export function ProfileScreen({
         <StatCard
           label="Classic wins"
           value={stats.classicWins}
-          detail={`${stats.classicGames} tracked · ${stats.classicLosses} losses`}
+          detail="Includes estimated historical wins"
           icon={<Trophy />}
         />
         <StatCard
@@ -89,7 +89,7 @@ export function ProfileScreen({
         <StatCard
           label="Best score"
           value={stats.bestScore}
-          detail={`${stats.classicLosses} classic losses`}
+          detail="Highest single game score"
           icon={<Medal />}
         />
       </div>

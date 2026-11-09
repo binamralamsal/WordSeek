@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { sql } from "kysely";
 
 import {
   down as rollbackMiniAppMigration,
@@ -9,7 +10,33 @@ import { seedScore, seedUser } from "../helpers/fixtures";
 
 const env = setupTestEnvironment();
 
-test("backfills compacted classic and completed daily game totals", async () => {
+test("uses an enum source and keeps classic guess metadata out of storage", async () => {
+  const sourceColumn = await sql<{ dataType: string; udtName: string }>`
+    SELECT data_type, udt_name
+    FROM information_schema.columns
+    WHERE table_name = 'games' AND column_name = 'source'
+  `.execute(env.db);
+  const classicColumns = await sql<{ columnName: string }>`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_name = 'games'
+      AND column_name IN ('attempts_used', 'score', 'finished_at')
+  `.execute(env.db);
+  const guessColumns = await sql<{ columnName: string }>`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_name = 'guesses'
+      AND column_name IN ('user_id', 'attempt_number')
+  `.execute(env.db);
+
+  expect(sourceColumn.rows).toEqual([
+    { dataType: "USER-DEFINED", udtName: "game_source" },
+  ]);
+  expect(classicColumns.rows).toEqual([]);
+  expect(guessColumns.rows).toEqual([]);
+});
+
+test("estimates compacted classic wins and backfills completed daily totals", async () => {
   await seedUser(env.db, { id: "compact", name: "Compact" });
   await seedUser(env.db, { id: "daily-win", name: "Daily win" });
   await seedUser(env.db, { id: "daily-loss", name: "Daily loss" });
@@ -51,7 +78,7 @@ test("backfills compacted classic and completed daily game totals", async () => 
 
   const compactStats = await env.db
     .selectFrom("userStats")
-    .select(["classicGamesPlayed", "classicGamesWon", "classicTotalScore"])
+    .select("classicGamesWon")
     .where("userId", "=", "compact")
     .executeTakeFirstOrThrow();
   const solvedStats = await env.db
@@ -70,11 +97,7 @@ test("backfills compacted classic and completed daily game totals", async () => 
     .where("userId", "=", "unfinished")
     .executeTakeFirstOrThrow();
 
-  expect(compactStats).toEqual({
-    classicGamesPlayed: 5,
-    classicGamesWon: 5,
-    classicTotalScore: 100,
-  });
+  expect(compactStats).toEqual({ classicGamesWon: 5 });
   expect(solvedStats).toEqual({
     dailyGamesPlayed: 1,
     dailyGamesWon: 1,

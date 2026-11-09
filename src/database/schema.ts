@@ -5,6 +5,8 @@
 
 import type { ColumnType } from "kysely";
 
+export type GameSource = "miniapp" | "telegram";
+
 export type Generated<T> =
   T extends ColumnType<infer S, infer I, infer U>
     ? ColumnType<S, I | undefined, U>
@@ -71,13 +73,10 @@ export interface DailyWord {
 
 export interface Game {
   activeChat: string;
-  attemptsUsed: Generated<number>;
   createdAt: Generated<Timestamp>;
-  finishedAt: Timestamp | null;
   gameStatus: Generated<string>;
   id: Generated<number>;
-  score: number | null;
-  source: Generated<string>;
+  source: Generated<GameSource>;
   startedBy: string | null;
   topicId: Generated<string>;
   updatedAt: Generated<Timestamp>;
@@ -85,14 +84,12 @@ export interface Game {
 }
 
 export interface Guess {
-  attemptNumber: number | null;
   chatId: string;
   createdAt: Generated<Timestamp>;
   gameId: number;
   guess: string;
   id: Generated<number>;
   updatedAt: Generated<Timestamp>;
-  userId: string | null;
 }
 
 export interface Leaderboard {
@@ -116,10 +113,7 @@ export interface User {
 }
 
 export interface UserStat {
-  classicGamesLost: Generated<number>;
-  classicGamesPlayed: Generated<number>;
   classicGamesWon: Generated<number>;
-  classicTotalScore: Generated<number>;
   createdAt: Generated<Timestamp>;
   currentStreak: Generated<number>;
   dailyGamesLost: Generated<number>;

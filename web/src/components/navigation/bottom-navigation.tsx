@@ -1,26 +1,37 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageCircle, Settings } from "lucide-react";
+import { MessageCircle, Settings, Trophy, UserRound } from "lucide-react";
 
 export type AppSection = "play" | "settings";
+export type NavigationItem = "game" | "rankings" | "profile" | "settings";
 
 export function BottomNavigation({
   value,
   onChange,
 }: {
-  value: AppSection;
-  onChange: (value: AppSection) => void;
+  value: NavigationItem;
+  onChange: (value: NavigationItem) => void;
 }) {
   return (
     <Tabs
       value={value}
-      onValueChange={(next) => onChange(next as AppSection)}
+      onValueChange={(next) => onChange(next as NavigationItem)}
       className="glass-nav-wrap"
     >
-      <TabsList className={`glass-nav ${value === "settings" ? "at-end" : ""}`}>
+      <TabsList
+        className={`glass-nav at-${value === "game" ? "0" : value === "rankings" ? "1" : value === "profile" ? "2" : "3"}`}
+      >
         <span className="nav-active-pill" aria-hidden="true" />
-        <TabsTrigger value="play">
+        <TabsTrigger value="game">
           <MessageCircle aria-hidden="true" />
           <span>Play</span>
+        </TabsTrigger>
+        <TabsTrigger value="rankings">
+          <Trophy aria-hidden="true" />
+          <span>Ranks</span>
+        </TabsTrigger>
+        <TabsTrigger value="profile">
+          <UserRound aria-hidden="true" />
+          <span>Profile</span>
         </TabsTrigger>
         <TabsTrigger value="settings">
           <Settings aria-hidden="true" />

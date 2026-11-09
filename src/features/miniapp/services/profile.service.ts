@@ -67,9 +67,7 @@ export async function getProfileStats(
       .select([
         "currentStreak",
         "highestStreak",
-        "classicGamesPlayed",
         "classicGamesWon",
-        "classicGamesLost",
         "dailyGamesPlayed",
         "dailyGamesWon",
         "dailyGamesLost",
@@ -98,19 +96,14 @@ export async function getProfileStats(
   ]);
 
   const guesses = dailyRow ?? [];
-  const classicGames = Number(userStats?.classicGamesPlayed ?? 0);
   const classicWins = Number(userStats?.classicGamesWon ?? 0);
-  const classicLosses = Number(userStats?.classicGamesLost ?? 0);
   const dailyGames = Number(userStats?.dailyGamesPlayed ?? 0);
   const dailyWins = Number(userStats?.dailyGamesWon ?? 0);
   const dailyLosses = Number(userStats?.dailyGamesLost ?? 0);
 
   return {
-    gamesPlayed: classicGames + dailyGames,
     totalScore: Number(scoreRow?.totalScore ?? 0),
-    classicGames,
     classicWins,
-    classicLosses,
     dailyGames,
     dailyWins,
     dailyLosses,

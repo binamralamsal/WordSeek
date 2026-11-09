@@ -3,14 +3,10 @@ import type { Kysely } from "kysely";
 import { db } from "#/config/db";
 import type { DB } from "#/database/schema";
 
-export type ClassicOutcome = "won" | "lost";
-
-/** Records one player's completed classic game on the caller's transaction. */
-export async function recordClassicResult(
+/** Records a classic win on the caller's transaction. */
+export async function recordClassicWin(
   executor: Kysely<DB>,
   userId: string,
-  outcome: ClassicOutcome,
-  score: number,
 ): Promise<void> {
   await executor
     .insertInto("userStats")
@@ -20,12 +16,7 @@ export async function recordClassicResult(
 
   await executor
     .updateTable("userStats")
-    .set((eb) => ({
-      classicGamesPlayed: eb("classicGamesPlayed", "+", 1),
-      classicGamesWon: eb("classicGamesWon", "+", outcome === "won" ? 1 : 0),
-      classicGamesLost: eb("classicGamesLost", "+", outcome === "lost" ? 1 : 0),
-      classicTotalScore: eb("classicTotalScore", "+", score),
-    }))
+    .set((eb) => ({ classicGamesWon: eb("classicGamesWon", "+", 1) }))
     .where("userId", "=", userId)
     .execute();
 }

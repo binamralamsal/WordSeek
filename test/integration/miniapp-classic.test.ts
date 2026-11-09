@@ -84,15 +84,11 @@ describe("Mini App classic games", () => {
       .executeTakeFirstOrThrow();
     const stats = await env.db
       .selectFrom("userStats")
-      .select(["classicGamesPlayed", "classicGamesWon", "classicTotalScore"])
+      .select("classicGamesWon")
       .where("userId", "=", "4242")
       .executeTakeFirstOrThrow();
 
     expect(score).toMatchObject({ chatId: "4242", wordLength: "4", score: 30 });
-    expect(stats).toEqual({
-      classicGamesPlayed: 1,
-      classicGamesWon: 1,
-      classicTotalScore: 30,
-    });
+    expect(stats).toEqual({ classicGamesWon: 1 });
   });
 });

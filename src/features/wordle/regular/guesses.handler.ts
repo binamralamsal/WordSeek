@@ -9,7 +9,7 @@ import { requireAllowedTopic } from "../shared/guards/wordle.guard";
 import { buildRichFeedback } from "../shared/helpers/board.helper";
 import { reactWithRandom } from "../shared/helpers/reactions.helper";
 import { ALL_WORDS, MODE_LABEL } from "../shared/helpers/words.helper";
-import { recordClassicResult } from "../shared/services/game-stats.service";
+import { recordClassicWin } from "../shared/services/game-stats.service";
 
 export async function handleRegularGuess(ctx: Context, currentGuess: string) {
   const chatId = ctx.chat!.id.toString();
@@ -58,18 +58,11 @@ export async function handleRegularGuess(ctx: Context, currentGuess: string) {
     if (!ctx.from!.is_bot) {
       const allGuesses = await db
         .selectFrom("guesses")
-        .select("userId")
+        .select("id")
         .where("gameId", "=", currentGame.id)
         .execute();
 
       const score = 30 - allGuesses.length;
-      const participants = new Set(
-        allGuesses
-          .map((row) => row.userId)
-          .filter((id): id is string => Boolean(id)),
-      );
-      if (currentGame.startedBy) participants.add(currentGame.startedBy);
-      participants.add(userId);
 
       await db.transaction().execute(async (trx) => {
         await trx
@@ -77,19 +70,11 @@ export async function handleRegularGuess(ctx: Context, currentGuess: string) {
           .values({
             gameId: currentGame.id,
             chatId,
-            userId,
             guess: currentGuess,
           })
           .execute();
 
-        for (const participant of participants) {
-          await recordClassicResult(
-            trx,
-            participant,
-            participant === userId ? "won" : "lost",
-            participant === userId ? score : 0,
-          );
-        }
+        await recordClassicWin(trx, userId);
 
         await trx
           .insertInto("leaderboard")
@@ -119,27 +104,7 @@ export async function handleRegularGuess(ctx: Context, currentGuess: string) {
         },
       );
     } else {
-      const allGuesses = await db
-        .selectFrom("guesses")
-        .select("userId")
-        .where("gameId", "=", currentGame.id)
-        .execute();
-      const participants = new Set(
-        allGuesses
-          .map((row) => row.userId)
-          .filter((id): id is string => Boolean(id)),
-      );
-      if (currentGame.startedBy) participants.add(currentGame.startedBy);
-
-      await db.transaction().execute(async (trx) => {
-        for (const participant of participants) {
-          await recordClassicResult(trx, participant, "lost", 0);
-        }
-        await trx
-          .deleteFrom("games")
-          .where("id", "=", currentGame.id)
-          .execute();
-      });
+      await db.deleteFrom("games").where("id", "=", currentGame.id).execute();
 
       const additionalMessage = `Anonymous admins or channels don't get points.`;
 
@@ -166,7 +131,6 @@ export async function handleRegularGuess(ctx: Context, currentGuess: string) {
       gameId: currentGame.id,
       guess: currentGuess,
       chatId,
-      userId,
     })
     .execute();
 
@@ -178,19 +142,7 @@ export async function handleRegularGuess(ctx: Context, currentGuess: string) {
     .execute();
 
   if (allGuesses.length === 30) {
-    const participants = new Set(
-      allGuesses
-        .map((row) => row.userId)
-        .filter((id): id is string => Boolean(id)),
-    );
-    if (currentGame.startedBy) participants.add(currentGame.startedBy);
-
-    await db.transaction().execute(async (trx) => {
-      for (const participant of participants) {
-        await recordClassicResult(trx, participant, "lost", 0);
-      }
-      await trx.deleteFrom("games").where("id", "=", currentGame.id).execute();
-    });
+    await db.deleteFrom("games").where("id", "=", currentGame.id).execute();
     return ctx.replyWithRichMessage({
       html: `<h5>🛑 Game Over!</h5>
 <p>The word was <b>${currentGame.word.toUpperCase()}</b>.</p>

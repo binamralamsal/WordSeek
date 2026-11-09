@@ -6,7 +6,6 @@ import {
 import { ProfileScreen } from "@/components/profile/profile-screen";
 import { LeaderboardScreen } from "@/components/rankings/leaderboard-screen";
 import { SettingsScreen } from "@/components/settings/settings-screen";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api-client";
 import { hapticImpact, hapticNotification, initTelegram } from "@/lib/telegram";
 import type { ThemeMode } from "@/lib/telegram-types";
@@ -118,8 +117,6 @@ export function App() {
 
   const daily = boot?.daily;
   const currentGame = gameMode === "daily" ? daily : classic;
-  const changePlayView = (value: string) => setPlayView(value as PlayView);
-
   const selectLength = async (nextLength: WordLength) => {
     const requestId = ++gameRequestId.current;
     setLength(nextLength);
@@ -242,17 +239,6 @@ export function App() {
           />
         ) : (
           <>
-            <Tabs
-              value={playView}
-              onValueChange={changePlayView}
-              className="play-tabs-shell"
-            >
-              <TabsList className="play-tabs">
-                <TabsTrigger value="game">Play</TabsTrigger>
-                <TabsTrigger value="rankings">Ranks</TabsTrigger>
-                <TabsTrigger value="profile">Profile</TabsTrigger>
-              </TabsList>
-            </Tabs>
             {playView === "game" && (
               <GameScreen
                 key={`${gameMode}-${length}-${gameMode === "classic" ? (classic?.id ?? "pending") : (daily?.date ?? "daily")}`}
@@ -318,7 +304,17 @@ export function App() {
           </>
         )}
       </div>
-      <BottomNavigation value={section} onChange={setSection} />
+      <BottomNavigation
+        value={section === "settings" ? "settings" : playView}
+        onChange={(next) => {
+          if (next === "settings") {
+            setSection("settings");
+            return;
+          }
+          setSection("play");
+          setPlayView(next);
+        }}
+      />
     </main>
   );
 }

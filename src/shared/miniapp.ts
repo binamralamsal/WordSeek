@@ -65,11 +65,8 @@ export type MiniAppGroupContext = {
 };
 
 export type MiniAppProfileStats = {
-  gamesPlayed: number;
   totalScore: number;
-  classicGames: number;
   classicWins: number;
-  classicLosses: number;
   dailyGames: number;
   dailyWins: number;
   dailyLosses: number;
