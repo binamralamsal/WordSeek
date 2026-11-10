@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ApiClientError } from "@/lib/api-client";
 import { hapticImpact } from "@/lib/telegram";
 import type { WordLength } from "@shared/leaderboard";
 import type { MiniAppClassicState, MiniAppDailyState } from "@shared/miniapp";
@@ -15,6 +16,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type GameMode = "classic" | "daily";
 type GameState = MiniAppDailyState | NonNullable<MiniAppClassicState>;
+type PendingGuess = {
+  id: number;
+  guess: string;
+  mode: GameMode;
+  wordLength: WordLength;
+  status: "queued" | "checking" | "error";
+  error?: string;
+};
 
 export function GameScreen({
   mode,
@@ -43,7 +52,11 @@ export function GameScreen({
   onSystemInputFocus: (focused: boolean) => void;
   onMode: (mode: GameMode) => void;
   onLength: (length: WordLength) => void;
-  onSubmit: (guess: string) => Promise<GameState | null>;
+  onSubmit: (
+    guess: string,
+    mode: GameMode,
+    wordLength: WordLength,
+  ) => Promise<GameState | null>;
   onNewGame: () => void;
   onError: (error: unknown) => void;
 }) {
@@ -60,29 +73,187 @@ export function GameScreen({
       : null;
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
-  const [revealRow, setRevealRow] = useState<number | null>(null);
-  const [celebrationRow, setCelebrationRow] = useState<number | null>(null);
-  const revealTimer = useRef<number | null>(null);
-  const celebrateTimer = useRef<number | null>(null);
+  const [pendingGuesses, setPendingGuesses] = useState<PendingGuess[]>([]);
+  const [revealRows, setRevealRows] = useState<number[]>([]);
+  const [celebrationRows, setCelebrationRows] = useState<number[]>([]);
+  const draftRef = useRef("");
+  const acceptedCountRef = useRef(guesses.length);
+  acceptedCountRef.current = guesses.length;
+  const pendingRef = useRef<PendingGuess[]>([]);
+  const queueRef = useRef<PendingGuess[]>([]);
+  const queueWorkerRef = useRef(false);
+  const nextGuessIdRef = useRef(0);
+  const onSubmitRef = useRef(onSubmit);
+  const onErrorRef = useRef(onError);
+  const revealTimers = useRef(new Map<number, number>());
+  const celebrateTimers = useRef(new Map<number, number>());
+  const errorTimers = useRef(new Map<number, number>());
   const resultTimer = useRef<number | null>(null);
   const confettiTimer = useRef<number | null>(null);
-  const pendingFirstGuessReveal = useRef(false);
   const [resultOpen, setResultOpen] = useState(false);
   const [confetti, setConfetti] = useState(false);
+  onSubmitRef.current = onSubmit;
+  onErrorRef.current = onError;
   const gameId =
     mode === "classic" && state && "id" in state ? state.id : daily?.date;
   const previousGameId = useRef(gameId);
 
+  const setDraftValue = (value: string) => {
+    draftRef.current = value;
+    setDraft(value);
+  };
+
+  const commitPending = (next: PendingGuess[]) => {
+    pendingRef.current = next;
+    setPendingGuesses(next);
+  };
+
+  const addReveal = (row: number, won: boolean, wordSize: number) => {
+    setRevealRows((rows) => (rows.includes(row) ? rows : [...rows, row]));
+    const revealDuration = 560 + (wordSize - 1) * 110;
+    const revealTimer = window.setTimeout(() => {
+      setRevealRows((rows) => rows.filter((item) => item !== row));
+      revealTimers.current.delete(row);
+    }, revealDuration + 220);
+    revealTimers.current.set(row, revealTimer);
+
+    if (!won) return revealDuration;
+    const celebrateTimer = window.setTimeout(() => {
+      setCelebrationRows((rows) =>
+        rows.includes(row) ? rows : [...rows, row],
+      );
+      const clearTimer = window.setTimeout(() => {
+        setCelebrationRows((rows) => rows.filter((item) => item !== row));
+        celebrateTimers.current.delete(row);
+      }, 850);
+      celebrateTimers.current.set(row, clearTimer);
+    }, revealDuration + 160);
+    celebrateTimers.current.set(row, celebrateTimer);
+    return revealDuration;
+  };
+
+  const removePending = (id: number) => {
+    commitPending(pendingRef.current.filter((item) => item.id !== id));
+  };
+
+  const showRowError = (item: PendingGuess, error: unknown) => {
+    const message =
+      error instanceof Error ? error.message : "Could not check this word.";
+    commitPending(
+      pendingRef.current.map((pending) =>
+        pending.id === item.id
+          ? { ...pending, status: "error", error: message }
+          : pending,
+      ),
+    );
+    const timer = window.setTimeout(() => {
+      removePending(item.id);
+      errorTimers.current.delete(item.id);
+    }, 1500);
+    errorTimers.current.set(item.id, timer);
+
+    const isGuessValidationError =
+      error instanceof ApiClientError &&
+      ["INVALID_WORD", "INVALID_GUESS", "DUPLICATE_GUESS"].includes(error.code);
+    if (!isGuessValidationError) onErrorRef.current(error);
+  };
+
+  const processQueue = useCallback(async () => {
+    if (queueWorkerRef.current) return;
+    queueWorkerRef.current = true;
+    setSending(true);
+
+    try {
+      while (queueRef.current.length > 0) {
+        const item = queueRef.current[0]!;
+        commitPending(
+          pendingRef.current.map((pending) =>
+            pending.id === item.id
+              ? { ...pending, status: "checking" }
+              : pending,
+          ),
+        );
+
+        try {
+          const next = await onSubmitRef.current(
+            item.guess,
+            item.mode,
+            item.wordLength,
+          );
+          if (!next) throw new Error("The guess could not be recorded.");
+
+          queueRef.current.shift();
+          acceptedCountRef.current = next.guesses.length;
+          for (const [id, timer] of errorTimers.current) {
+            window.clearTimeout(timer);
+            errorTimers.current.delete(id);
+          }
+          commitPending(
+            pendingRef.current.filter(
+              (pending) => pending.id !== item.id && pending.status !== "error",
+            ),
+          );
+
+          const row = next.guesses.length - 1;
+          const revealDuration = addReveal(
+            row,
+            next.status === "won",
+            item.wordLength,
+          );
+
+          if (item.mode === "classic" && next.status !== "active") {
+            if (resultTimer.current) window.clearTimeout(resultTimer.current);
+            resultTimer.current = window.setTimeout(() => {
+              setResultOpen(true);
+              if (next.status === "won") {
+                setConfetti(true);
+                if (confettiTimer.current)
+                  window.clearTimeout(confettiTimer.current);
+                confettiTimer.current = window.setTimeout(
+                  () => setConfetti(false),
+                  3200,
+                );
+              }
+            }, revealDuration + 480);
+          }
+
+          const terminal =
+            next.status !== (item.mode === "daily" ? "playing" : "active");
+          if (terminal) {
+            queueRef.current = [];
+            commitPending(
+              pendingRef.current.filter(
+                (pending) => pending.status === "error",
+              ),
+            );
+            break;
+          }
+        } catch (error) {
+          queueRef.current.shift();
+          showRowError(item, error);
+        }
+      }
+    } finally {
+      queueWorkerRef.current = false;
+      setSending(false);
+    }
+  }, []);
+
   useEffect(() => {
-    setDraft("");
-    setRevealRow(null);
-    setCelebrationRow(null);
+    setDraftValue("");
+    commitPending([]);
+    setRevealRows([]);
+    setCelebrationRows([]);
+    queueRef.current = [];
     setResultOpen(false);
     setConfetti(false);
-    pendingFirstGuessReveal.current = false;
     return () => {
-      if (revealTimer.current) window.clearTimeout(revealTimer.current);
-      if (celebrateTimer.current) window.clearTimeout(celebrateTimer.current);
+      for (const timer of revealTimers.current.values())
+        window.clearTimeout(timer);
+      for (const timer of celebrateTimers.current.values())
+        window.clearTimeout(timer);
+      for (const timer of errorTimers.current.values())
+        window.clearTimeout(timer);
       if (resultTimer.current) window.clearTimeout(resultTimer.current);
       if (confettiTimer.current) window.clearTimeout(confettiTimer.current);
     };
@@ -92,104 +263,83 @@ export function GameScreen({
     const previousId = previousGameId.current;
     previousGameId.current = gameId;
     if (gameId === previousId) return;
-    if (pendingFirstGuessReveal.current && gameId != null) {
-      pendingFirstGuessReveal.current = false;
-      return;
-    }
-    pendingFirstGuessReveal.current = false;
     if (previousId == null) return;
 
-    setDraft("");
-    setRevealRow(null);
-    setCelebrationRow(null);
+    setDraftValue("");
+    setRevealRows([]);
+    setCelebrationRows([]);
     setResultOpen(false);
     setConfetti(false);
-    if (revealTimer.current) window.clearTimeout(revealTimer.current);
-    if (celebrateTimer.current) window.clearTimeout(celebrateTimer.current);
+    for (const timer of revealTimers.current.values())
+      window.clearTimeout(timer);
+    for (const timer of celebrateTimers.current.values())
+      window.clearTimeout(timer);
     if (resultTimer.current) window.clearTimeout(resultTimer.current);
     if (confettiTimer.current) window.clearTimeout(confettiTimer.current);
   }, [gameId]);
 
-  const submit = useCallback(async () => {
-    if (draft.length !== wordLength || busy || sending || finished || loading)
+  const submit = useCallback(() => {
+    const guess = draftRef.current.trim().toLowerCase();
+    const reservedAttempts = acceptedCountRef.current + queueRef.current.length;
+    if (
+      guess.length !== wordLength ||
+      busy ||
+      finished ||
+      loading ||
+      (mode === "daily" && !game) ||
+      reservedAttempts >= maxAttempts
+    )
       return;
-    setSending(true);
-    const row = guesses.length;
-    const isFirstClassicGuess = mode === "classic" && !game;
-    if (isFirstClassicGuess) pendingFirstGuessReveal.current = true;
-    try {
-      const next = await onSubmit(draft);
-      if (!next) {
-        pendingFirstGuessReveal.current = false;
-        return;
-      }
-      setDraft("");
-      setRevealRow(row);
-      const revealTime = 560 + (wordLength - 1) * 110;
-      if (revealTimer.current) window.clearTimeout(revealTimer.current);
-      revealTimer.current = window.setTimeout(
-        () => setRevealRow(null),
-        revealTime + 200,
-      );
-      if (next.status === "won") {
-        if (celebrateTimer.current) window.clearTimeout(celebrateTimer.current);
-        celebrateTimer.current = window.setTimeout(
-          () => setCelebrationRow(row),
-          revealTime + 160,
-        );
-      }
-      if (mode === "classic" && next.status !== "active") {
-        if (resultTimer.current) window.clearTimeout(resultTimer.current);
-        resultTimer.current = window.setTimeout(() => {
-          setResultOpen(true);
-          if (next.status === "won") {
-            setConfetti(true);
-            if (confettiTimer.current)
-              window.clearTimeout(confettiTimer.current);
-            confettiTimer.current = window.setTimeout(
-              () => setConfetti(false),
-              3200,
-            );
-          }
-        }, revealTime + 480);
-      }
-    } catch (error) {
-      pendingFirstGuessReveal.current = false;
-      onError(error);
-    } finally {
-      setSending(false);
-    }
+
+    const item: PendingGuess = {
+      id: ++nextGuessIdRef.current,
+      guess,
+      mode,
+      wordLength,
+      status: "queued",
+    };
+    queueRef.current.push(item);
+    commitPending([...pendingRef.current, item]);
+    setDraftValue("");
+    void processQueue();
   }, [
     busy,
-    draft,
     finished,
-    guesses.length,
+    game,
     loading,
+    maxAttempts,
     mode,
-    onError,
-    onSubmit,
-    sending,
+    processQueue,
     wordLength,
   ]);
 
   const pressKey = useCallback(
     (key: string, repeated = false) => {
-      if (busy || sending || finished || loading) return;
+      const isUnavailable =
+        busy || finished || loading || (mode === "daily" && !game);
+      if (
+        isUnavailable ||
+        (key !== "BACKSPACE" &&
+          acceptedCountRef.current + queueRef.current.length >= maxAttempts)
+      )
+        return;
       if (!repeated) hapticImpact("light");
       if (key === "ENTER") {
-        void submit();
+        submit();
         return;
       }
       if (key === "BACKSPACE") {
-        setDraft((value) => value.slice(0, -1));
+        setDraftValue(draftRef.current.slice(0, -1));
         return;
       }
       if (/^[a-z]$/i.test(key))
-        setDraft((value) =>
-          value.length < wordLength ? `${value}${key.toLowerCase()}` : value,
+        setDraftValue(
+          draftRef.current.length < wordLength
+            ? `${draftRef.current}${key.toLowerCase()}`
+            : draftRef.current,
         );
     },
-    [busy, finished, loading, sending, submit, wordLength],
+    [busy, finished, game, loading, maxAttempts, mode, submit, wordLength],
   );
 
   useEffect(() => {
@@ -212,6 +362,13 @@ export function GameScreen({
   }, [pressKey]);
 
   const waitingForGame = loading || (busy && !game);
+  const pendingRequestCount = pendingGuesses.filter(
+    (item) => item.status !== "error",
+  ).length;
+  const globalInputDisabled =
+    loading || busy || (mode === "daily" && !game) || finished;
+  const hasAttemptCapacity =
+    acceptedCountRef.current + queueRef.current.length < maxAttempts;
 
   return (
     <section className="game-screen" aria-label="WordSeek game">
@@ -221,13 +378,24 @@ export function GameScreen({
             type="single"
             value={mode}
             onValueChange={(value) => {
-              if (value) onMode(value as GameMode);
+              if (value && !sending && pendingRequestCount === 0)
+                onMode(value as GameMode);
             }}
             className="mode-switch"
             aria-label="Game mode"
           >
-            <ToggleGroupItem value="classic">Classic</ToggleGroupItem>
-            <ToggleGroupItem value="daily">Daily</ToggleGroupItem>
+            <ToggleGroupItem
+              value="classic"
+              disabled={sending || pendingRequestCount > 0}
+            >
+              Classic
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="daily"
+              disabled={sending || pendingRequestCount > 0}
+            >
+              Daily
+            </ToggleGroupItem>
           </ToggleGroup>
         </div>
         {mode === "daily" ? (
@@ -236,7 +404,8 @@ export function GameScreen({
           </Badge>
         ) : (
           <span className="attempt-count">
-            {Math.max(0, maxAttempts - guesses.length)} guesses left
+            {Math.max(0, maxAttempts - guesses.length - pendingRequestCount)}{" "}
+            guesses left
           </span>
         )}
         <GameHelpDialog />
@@ -261,7 +430,7 @@ export function GameScreen({
               <ToggleGroupItem
                 value={String(value)}
                 key={value}
-                disabled={busy || loading}
+                disabled={busy || loading || sending || pendingRequestCount > 0}
               >
                 {value}
               </ToggleGroupItem>
@@ -300,8 +469,9 @@ export function GameScreen({
           wordLength={wordLength}
           maxAttempts={maxAttempts}
           loading={waitingForGame}
-          revealRow={revealRow}
-          celebrationRow={celebrationRow}
+          pendingGuesses={pendingGuesses}
+          revealRows={revealRows}
+          celebrationRows={celebrationRows}
           finished={finished}
         />
       ) : (
@@ -335,19 +505,17 @@ export function GameScreen({
         states={keyboardStates}
         draft={draft}
         wordLength={wordLength}
-        disabled={
-          loading ||
-          busy ||
-          (mode === "daily" && !game) ||
-          finished ||
-          (inputMethod === "onscreen" && sending)
+        disabled={globalInputDisabled}
+        canSubmit={
+          !globalInputDisabled &&
+          hasAttemptCapacity &&
+          draft.length === wordLength
         }
         processing={sending}
         onKey={pressKey}
         onInputFocus={onSystemInputFocus}
         onInputChange={(value) => {
-          if (sending) return;
-          setDraft(
+          setDraftValue(
             value
               .replace(/[^a-z]/gi, "")
               .slice(0, wordLength)

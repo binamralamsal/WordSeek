@@ -182,11 +182,13 @@ export async function startClassicGame({
 export async function abandonClassicGame(
   userId: string,
   wordLength: WordLength,
-) {
+): Promise<NonNullable<MiniAppClassicState> | null> {
   const game = await findActiveGame(userId, wordLength);
-  if (!game) return;
+  if (!game) return null;
 
+  const endedState = toState(game, await getGuesses(game.id), "lost");
   await db.deleteFrom("games").where("id", "=", game.id).execute();
+  return endedState;
 }
 
 export async function submitClassicGuess(

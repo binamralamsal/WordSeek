@@ -10,6 +10,7 @@ export function GameKeyboard({
   draft,
   wordLength,
   disabled,
+  canSubmit,
   processing,
   onKey,
   onInputFocus,
@@ -20,6 +21,7 @@ export function GameKeyboard({
   draft: string;
   wordLength: number;
   disabled: boolean;
+  canSubmit: boolean;
   processing: boolean;
   onKey: (key: string, repeated?: boolean) => void;
   onInputFocus: (focused: boolean) => void;
@@ -91,7 +93,7 @@ export function GameKeyboard({
             {disabled
               ? "Puzzle complete"
               : processing
-                ? "Checking your guess…"
+                ? `Checking · ${draft.length} / ${wordLength} letters`
                 : `${draft.length} / ${wordLength} letters`}
           </span>
           <span>Phone keyboard</span>
@@ -117,7 +119,7 @@ export function GameKeyboard({
           <Button
             aria-label="Send guess"
             className="system-submit"
-            disabled={disabled || processing}
+            disabled={disabled || !canSubmit}
             onPointerDown={(event) => event.preventDefault()}
             size="icon"
             type="submit"
@@ -143,7 +145,7 @@ export function GameKeyboard({
             <Button
               className="key key-command"
               onClick={() => onKey("ENTER")}
-              disabled={disabled}
+              disabled={disabled || !canSubmit}
             >
               Enter
             </Button>

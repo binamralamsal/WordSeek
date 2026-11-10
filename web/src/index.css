@@ -452,6 +452,41 @@ button {
 .word-row[aria-current="true"] .word-tile:not(.is-filled) .word-tile-front {
   border-color: color-mix(in srgb, var(--foreground) 21%, transparent);
 }
+.guess-row-status {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 14px;
+  margin-top: -2px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+}
+.guess-row-status svg {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+}
+.guess-row-status.is-error,
+.is-row-error .word-tile-front {
+  color: var(--destructive);
+}
+.is-row-error .word-tile-front {
+  border-color: color-mix(in srgb, var(--destructive) 65%, transparent);
+  background: color-mix(in srgb, var(--destructive) 8%, transparent);
+}
+.guess-row-status .is-spinning {
+  animation: guess-check-spin 900ms linear infinite;
+}
+@keyframes guess-check-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .keyboard-dock {
   position: fixed;
@@ -545,6 +580,14 @@ button {
 .system-keyboard-dock {
   padding-inline: 12px;
   transition: bottom 180ms cubic-bezier(0.22, 0.78, 0.18, 1);
+}
+.miniapp:not(.is-system-input-active) .system-keyboard-dock {
+  padding-top: 2px;
+}
+.miniapp:not(.is-system-input-active) .system-keyboard-dock .keyboard-caption {
+  height: 12px;
+  margin-bottom: 2px;
+  font-size: 10px;
 }
 .system-keyboard-row {
   display: grid;
@@ -1172,6 +1215,9 @@ button {
   height: 57px;
   border-color: color-mix(in srgb, #ebc85b 75%, var(--card));
 }
+.podium-player.rank-me {
+  background: color-mix(in srgb, var(--accent) 70%, transparent);
+}
 .podium-platform {
   display: grid;
   width: 100%;
@@ -1199,6 +1245,25 @@ button {
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.podium-name {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+.podium-name b {
+  width: auto;
+  min-width: 0;
+  margin: 0;
+}
+.podium-name [data-slot="badge"] {
+  height: 16px;
+  padding-inline: 4px;
+  font-size: 8px;
 }
 .podium-player > span {
   margin-top: 3px;

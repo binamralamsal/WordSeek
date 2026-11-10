@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { startClassicGame } from "#/features/miniapp/services/classic.service";
 import { handleApiRequest } from "#/web/api";
 import type { AuthContext } from "#/web/auth";
 
@@ -36,6 +37,39 @@ describe("Mini App API", () => {
       auth,
     );
     expect(startResponse.status).toBe(404);
+  });
+
+  test("abandoning a classic game returns its solution before cleanup", async () => {
+    await seedUser(env.db, { id: "4242", name: "Ada Lovelace" });
+    const auth: AuthContext = {
+      userId: "4242",
+      user: { id: 4242, first_name: "Ada" },
+      group: null,
+    };
+    const game = await startClassicGame({ userId: "4242", wordLength: 5 });
+    const stored = await env.db
+      .selectFrom("games")
+      .select("word")
+      .where("id", "=", game.id)
+      .executeTakeFirstOrThrow();
+
+    const response = await handleApiRequest(
+      new Request("http://localhost/api/classic/abandon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wordLength: 5 }),
+      }),
+      auth,
+    );
+    const body = (await response.json()) as {
+      data: { status: string; solution: string };
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.data).toMatchObject({ status: "lost", solution: stored.word });
+    expect(await env.db.selectFrom("games").selectAll().execute()).toHaveLength(
+      0,
+    );
   });
 
   test("leaderboard responses include Telegram user IDs", async () => {

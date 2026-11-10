@@ -237,8 +237,8 @@ async function handleAbandonClassic(
   if (!parsed.success || !isWordLength(parsed.data.wordLength)) {
     throw new ApiRouteError("INVALID_LENGTH", "Word length must be 4, 5 or 6.");
   }
-  await abandonClassicGame(auth.userId, parsed.data.wordLength);
-  return json(await getClassicState(auth.userId, parsed.data.wordLength));
+  const ended = await abandonClassicGame(auth.userId, parsed.data.wordLength);
+  return json(ended);
 }
 
 async function handleLeaderboard(

@@ -194,11 +194,17 @@ export function App() {
     const gameLength = length;
     setBusy(true);
     try {
-      await api<MiniAppClassicState>("/classic/abandon", {
+      const ended = await api<MiniAppClassicState>("/classic/abandon", {
         method: "POST",
         body: JSON.stringify({ wordLength: gameLength }),
       });
       if (requestId === gameRequestId.current) {
+        if (ended?.solution) {
+          setNotice(
+            `Game ended · the word was ${ended.solution.toUpperCase()}`,
+          );
+          window.setTimeout(() => setNotice(""), 4200);
+        }
         setClassic(null);
         setClassicGames((games) => ({ ...games, [gameLength]: null }));
       }
@@ -210,8 +216,12 @@ export function App() {
     }
   };
 
-  const submitGuess = async (guess: string) => {
-    if (gameMode === "daily") {
+  const submitGuess = async (
+    guess: string,
+    submittedMode: "classic" | "daily",
+    submittedLength: WordLength,
+  ) => {
+    if (submittedMode === "daily") {
       const next = await api<MiniAppDailyState>("/daily/guess", {
         method: "POST",
         body: JSON.stringify({ guess }),
@@ -230,10 +240,10 @@ export function App() {
     }
     const next = await api<MiniAppClassicState>("/classic/guess", {
       method: "POST",
-      body: JSON.stringify({ guess, wordLength: length }),
+      body: JSON.stringify({ guess, wordLength: submittedLength }),
     });
     setClassic(next);
-    setClassicGames((games) => ({ ...games, [length]: next }));
+    setClassicGames((games) => ({ ...games, [submittedLength]: next }));
     if (next && next.status !== "active") {
       hapticNotification(next.status === "won" ? "success" : "error");
       void queryClient.invalidateQueries({ queryKey: ["bootstrap"] });

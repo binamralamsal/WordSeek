@@ -167,7 +167,7 @@ function Podium({
         const place = player.rank;
         return (
           <button
-            className={`podium-player place-${place}`}
+            className={`podium-player place-${place} ${player.isMe ? "rank-me" : ""}`}
             key={player.userId}
             onClick={() => onOpenProfile(player.userId)}
             type="button"
@@ -177,7 +177,10 @@ function Podium({
               <span>{place === 1 ? <Crown size={15} /> : place}</span>
             </div>
             <PlayerAvatar name={player.displayName} url={player.photoUrl} />
-            <b>{player.displayName}</b>
+            <div className="podium-name">
+              <b>{player.displayName}</b>
+              {player.isMe && <Badge>You</Badge>}
+            </div>
             <span>{player.score.toLocaleString()} pts</span>
           </button>
         );

@@ -193,7 +193,11 @@ describe("Mini App classic games", () => {
 
     const wrongGuess = ALL_WORDS[4].find((word) => word !== storedGame.word)!;
     await submitClassicGuess("4242", wrongGuess, 4);
-    await abandonClassicGame("4242", 4);
+    const ended = await abandonClassicGame("4242", 4);
+
+    expect(ended?.status).toBe("lost");
+    expect(ended?.solution).toBe(storedGame.word);
+    expect(ended?.guesses).toHaveLength(1);
 
     expect(
       await env.db.selectFrom("games").where("id", "=", game.id).execute(),
