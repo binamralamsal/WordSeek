@@ -2,17 +2,6 @@ import type { ApiResponse } from "@shared/miniapp";
 
 import { telegramInitData } from "./telegram";
 
-export class ApiClientError extends Error {
-  constructor(
-    message: string,
-    readonly code: string,
-    readonly status: number,
-  ) {
-    super(message);
-    this.name = "ApiClientError";
-  }
-}
-
 export async function api<T>(
   path: string,
   options: RequestInit = {},
@@ -30,11 +19,7 @@ export async function api<T>(
   });
   const body = (await response.json()) as ApiResponse<T>;
   if (!response.ok || !("data" in body)) {
-    throw new ApiClientError(
-      "error" in body ? body.error.message : "Request failed.",
-      "error" in body ? body.error.code : "REQUEST_FAILED",
-      response.status,
-    );
+    throw new Error("error" in body ? body.error.message : "Request failed.");
   }
   return body.data;
 }

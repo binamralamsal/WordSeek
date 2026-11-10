@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { ApiClientError } from "@/lib/api-client";
 import { hapticImpact } from "@/lib/telegram";
 import type { WordLength } from "@shared/leaderboard";
 import type { MiniAppClassicState, MiniAppDailyState } from "@shared/miniapp";
@@ -152,10 +151,7 @@ export function GameScreen({
     }, 1500);
     errorTimers.current.set(item.id, timer);
 
-    const isGuessValidationError =
-      error instanceof ApiClientError &&
-      ["INVALID_WORD", "INVALID_GUESS", "DUPLICATE_GUESS"].includes(error.code);
-    if (!isGuessValidationError) onErrorRef.current(error);
+    onErrorRef.current(error);
   };
 
   const processQueue = useCallback(async () => {
@@ -511,7 +507,6 @@ export function GameScreen({
           hasAttemptCapacity &&
           draft.length === wordLength
         }
-        processing={sending}
         onKey={pressKey}
         onInputFocus={onSystemInputFocus}
         onInputChange={(value) => {

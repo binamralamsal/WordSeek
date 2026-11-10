@@ -452,26 +452,29 @@ button {
 .word-row[aria-current="true"] .word-tile:not(.is-filled) .word-tile-front {
   border-color: color-mix(in srgb, var(--foreground) 21%, transparent);
 }
-.guess-row-status {
-  display: flex;
-  grid-column: 1 / -1;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  min-height: 14px;
-  margin-top: -2px;
-  color: var(--muted-foreground);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1.2;
-  text-align: center;
+.word-tile.is-pending .word-tile-front {
+  background-color: color-mix(in srgb, var(--card) 91%, var(--foreground));
+  background-image: linear-gradient(
+    105deg,
+    transparent 25%,
+    color-mix(in srgb, var(--foreground) 12%, transparent) 48%,
+    transparent 72%
+  );
+  background-size: 220% 100%;
+  color: var(--foreground);
+  animation: pending-tile-shimmer 1.25s ease-in-out infinite;
 }
-.guess-row-status svg {
-  width: 12px;
-  height: 12px;
-  flex: 0 0 auto;
+.is-row-error .word-tile-error {
+  position: absolute;
+  z-index: 2;
+  top: -5px;
+  right: -5px;
+  width: clamp(10px, 3vw, 16px);
+  height: clamp(10px, 3vw, 16px);
+  border-radius: 50%;
+  background: var(--background);
+  color: var(--destructive);
 }
-.guess-row-status.is-error,
 .is-row-error .word-tile-front {
   color: var(--destructive);
 }
@@ -479,12 +482,12 @@ button {
   border-color: color-mix(in srgb, var(--destructive) 65%, transparent);
   background: color-mix(in srgb, var(--destructive) 8%, transparent);
 }
-.guess-row-status .is-spinning {
-  animation: guess-check-spin 900ms linear infinite;
-}
-@keyframes guess-check-spin {
+@keyframes pending-tile-shimmer {
+  from {
+    background-position: 110% 0;
+  }
   to {
-    transform: rotate(360deg);
+    background-position: -110% 0;
   }
 }
 
@@ -578,16 +581,8 @@ button {
   max-width: 62px;
 }
 .system-keyboard-dock {
-  padding-inline: 12px;
+  padding: 0 12px 2px;
   transition: bottom 180ms cubic-bezier(0.22, 0.78, 0.18, 1);
-}
-.miniapp:not(.is-system-input-active) .system-keyboard-dock {
-  padding-top: 2px;
-}
-.miniapp:not(.is-system-input-active) .system-keyboard-dock .keyboard-caption {
-  height: 12px;
-  margin-bottom: 2px;
-  font-size: 10px;
 }
 .system-keyboard-row {
   display: grid;
@@ -966,6 +961,15 @@ button {
     min-height 200ms ease,
     margin 200ms ease,
     visibility 170ms;
+}
+.miniapp[data-input-method="system"] .screen-scroll {
+  padding-bottom: calc(82px + env(safe-area-inset-bottom));
+}
+.miniapp[data-input-method="system"] .game-screen {
+  padding-bottom: 82px;
+}
+.miniapp[data-input-method="system"] .system-keyboard-dock {
+  padding-top: 0;
 }
 .miniapp.is-system-input-active .game-mode-row,
 .miniapp.is-system-input-active .classic-toolbar,

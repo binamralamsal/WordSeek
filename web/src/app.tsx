@@ -287,6 +287,7 @@ export function App() {
       ref={miniAppRef}
       className={`miniapp ${section === "play" && playView === "game" ? "is-game" : ""} ${systemInputFocused && preferences.inputMethod === "system" && section === "play" && playView === "game" ? "is-system-input-active" : ""}`}
       data-keyboard-size={preferences.keyboardSize}
+      data-input-method={preferences.inputMethod}
       style={
         {
           "--tile-size-setting": `${preferences.tileSize}px`,

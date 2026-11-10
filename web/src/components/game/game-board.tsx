@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import type { WordLength } from "@shared/leaderboard";
 import type { MiniAppGuess } from "@shared/miniapp";
-import { CircleX, LoaderCircle } from "lucide-react";
+import { CircleX } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 type PendingGuess = {
@@ -92,8 +92,8 @@ export function GameBoard({
 
               return (
                 <div
-                  className={`word-row ${pending?.status === "error" ? "is-row-error" : ""}`}
-                  key={pending ? `pending-${pending.id}` : `row-${row}`}
+                  className={`word-row ${pending && pending.status !== "error" ? "is-pending" : ""} ${pending?.status === "error" ? "is-row-error" : ""}`}
+                  key={row}
                   ref={
                     isActive || (finished && row === guesses.length - 1)
                       ? activeRowRef
@@ -103,6 +103,11 @@ export function GameBoard({
                     pending
                       ? `Guess ${row + 1}, ${pending.status}${pending.error ? `: ${pending.error}` : ""}`
                       : `Guess ${row + 1}`
+                  }
+                  role="group"
+                  aria-live={pending ? "polite" : undefined}
+                  title={
+                    pending?.status === "error" ? pending.error : undefined
                   }
                   aria-current={isActive ? "true" : undefined}
                 >
@@ -114,6 +119,11 @@ export function GameBoard({
                           "word-tile",
                           letters[col] ? "is-filled" : "",
                           state ? `is-${state}` : "",
+                          pending &&
+                          pending.status !== "error" &&
+                          state === undefined
+                            ? "is-pending"
+                            : "",
                         ].join(" ")}
                         style={
                           {
@@ -140,32 +150,17 @@ export function GameBoard({
                             {letters[col]?.toUpperCase()}
                           </span>
                         </span>
+                        {pending?.status === "error" &&
+                          col === wordLength - 1 && (
+                            <CircleX
+                              aria-label={pending.error ?? "Guess rejected"}
+                              className="word-tile-error"
+                              role="img"
+                            />
+                          )}
                       </div>
                     );
                   })}
-                  {pending && (
-                    <div
-                      className={`guess-row-status is-${pending.status}`}
-                      role="status"
-                      aria-live="polite"
-                    >
-                      {pending.status === "checking" ? (
-                        <LoaderCircle
-                          aria-hidden="true"
-                          className="is-spinning"
-                        />
-                      ) : pending.status === "error" ? (
-                        <CircleX aria-hidden="true" />
-                      ) : null}
-                      <span>
-                        {pending.status === "checking"
-                          ? "Checking word…"
-                          : pending.status === "queued"
-                            ? "In line"
-                            : (pending.error ?? "Could not check this word.")}
-                      </span>
-                    </div>
-                  )}
                 </div>
               );
             })}

@@ -11,7 +11,6 @@ export function GameKeyboard({
   wordLength,
   disabled,
   canSubmit,
-  processing,
   onKey,
   onInputFocus,
   onInputChange,
@@ -22,7 +21,6 @@ export function GameKeyboard({
   wordLength: number;
   disabled: boolean;
   canSubmit: boolean;
-  processing: boolean;
   onKey: (key: string, repeated?: boolean) => void;
   onInputFocus: (focused: boolean) => void;
   onInputChange: (value: string) => void;
@@ -88,16 +86,6 @@ export function GameKeyboard({
           );
         }}
       >
-        <div className="keyboard-caption">
-          <span>
-            {disabled
-              ? "Puzzle complete"
-              : processing
-                ? `Checking · ${draft.length} / ${wordLength} letters`
-                : `${draft.length} / ${wordLength} letters`}
-          </span>
-          <span>Phone keyboard</span>
-        </div>
         <div className="system-keyboard-row">
           <input
             ref={systemInputRef}
