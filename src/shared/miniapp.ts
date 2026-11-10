@@ -52,6 +52,7 @@ export type MiniAppClassicState = {
 
 export type MiniAppUser = {
   id: string;
+  profileId: string;
   name: string;
   nickname: string | null;
   displayName: string;
@@ -84,9 +85,18 @@ export type MiniAppProfile = {
   group: MiniAppGroupContext | null;
 };
 
+export type MiniAppPublicUser = Omit<MiniAppUser, "id" | "name" | "nickname">;
+
+export type MiniAppPublicProfile = {
+  user: MiniAppPublicUser;
+  stats: Omit<MiniAppProfileStats, "classicWins">;
+  group: MiniAppGroupContext | null;
+};
+
 export type LeaderboardRow = {
   rank: number;
   userId: string;
+  profileId: string;
   displayName: string;
   username: string | null;
   photoUrl: string | null;

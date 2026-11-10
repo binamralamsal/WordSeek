@@ -5,6 +5,8 @@ import type {
   MiniAppGroupContext,
   MiniAppProfile,
   MiniAppProfileStats,
+  MiniAppPublicProfile,
+  MiniAppPublicUser,
   MiniAppUser,
   NicknameUpdateResponse,
 } from "#/shared/miniapp";
@@ -15,6 +17,7 @@ import { ensureUserStats } from "../../wordle/daily/services/streaks.service";
 
 type UserRow = {
   id: string;
+  publicProfileId: string;
   name: string;
   nickname: string | null;
   username: string | null;
@@ -25,6 +28,7 @@ type UserRow = {
 function toMiniAppUser(user: UserRow): MiniAppUser {
   return {
     id: user.id,
+    profileId: user.publicProfileId,
     name: user.name,
     nickname: user.nickname,
     displayName: user.nickname?.trim() || user.name,
@@ -46,9 +50,108 @@ export async function isUserBanned(userId: string): Promise<boolean> {
 export async function getUserRow(userId: string) {
   return await db
     .selectFrom("users")
-    .select(["id", "name", "nickname", "username", "photoUrl", "createdAt"])
+    .select([
+      "id",
+      "publicProfileId",
+      "name",
+      "nickname",
+      "username",
+      "photoUrl",
+      "createdAt",
+    ])
     .where("id", "=", userId)
     .executeTakeFirst();
+}
+
+function toPublicUser(user: UserRow): MiniAppPublicUser {
+  return {
+    profileId: user.publicProfileId,
+    displayName: user.nickname?.trim() || user.name,
+    username: user.username,
+    photoUrl: user.photoUrl,
+  };
+}
+
+export async function findMiniAppUser(
+  query: string,
+): Promise<MiniAppPublicUser | null> {
+  const normalized = query.trim().replace(/^@/, "");
+  if (!normalized) return null;
+
+  const user = /^\d+$/.test(normalized)
+    ? await db
+        .selectFrom("users")
+        .select([
+          "id",
+          "publicProfileId",
+          "name",
+          "nickname",
+          "username",
+          "photoUrl",
+          "createdAt",
+        ])
+        .where("id", "=", normalized)
+        .executeTakeFirst()
+    : /^[a-zA-Z0-9_]{5,32}$/.test(normalized)
+      ? await db
+          .selectFrom("users")
+          .select([
+            "id",
+            "publicProfileId",
+            "name",
+            "nickname",
+            "username",
+            "photoUrl",
+            "createdAt",
+          ])
+          .where("username", "ilike", normalized)
+          .executeTakeFirst()
+      : undefined;
+
+  return user ? toPublicUser(user) : null;
+}
+
+export async function getMiniAppPublicProfile(
+  profileId: string,
+  group: MiniAppGroupContext | null,
+): Promise<MiniAppPublicProfile | null> {
+  const user = await db
+    .selectFrom("users")
+    .select([
+      "id",
+      "publicProfileId",
+      "name",
+      "nickname",
+      "username",
+      "photoUrl",
+      "createdAt",
+    ])
+    .where("publicProfileId", "=", profileId)
+    .executeTakeFirst();
+
+  if (!user) return null;
+  await ensureUserStats(user.id);
+  const { classicWins: _, ...publicStats } = await getProfileStats(
+    user.id,
+    user.createdAt,
+  );
+
+  return {
+    user: toPublicUser(user),
+    stats: publicStats,
+    group,
+  };
+}
+
+export async function getMiniAppUserIdByProfileId(
+  profileId: string,
+): Promise<string | null> {
+  const user = await db
+    .selectFrom("users")
+    .select("id")
+    .where("publicProfileId", "=", profileId)
+    .executeTakeFirst();
+  return user?.id ?? null;
 }
 
 export async function getProfileStats(
@@ -155,7 +258,15 @@ export async function updateNickname(
     .updateTable("users")
     .set({ nickname: validation.value, updatedAt: new Date() })
     .where("id", "=", userId)
-    .returning(["id", "name", "nickname", "username", "photoUrl", "createdAt"])
+    .returning([
+      "id",
+      "publicProfileId",
+      "name",
+      "nickname",
+      "username",
+      "photoUrl",
+      "createdAt",
+    ])
     .executeTakeFirst();
 
   if (!updated) {

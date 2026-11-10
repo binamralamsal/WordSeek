@@ -19,6 +19,7 @@ type GameState = MiniAppDailyState | NonNullable<MiniAppClassicState>;
 export function GameScreen({
   mode,
   length,
+  inputMethod,
   state,
   daily,
   loading,
@@ -32,6 +33,7 @@ export function GameScreen({
 }: {
   mode: GameMode;
   length: WordLength;
+  inputMethod: "onscreen" | "system";
   state: MiniAppDailyState | MiniAppClassicState | undefined;
   daily?: MiniAppDailyState;
   loading: boolean;
@@ -332,6 +334,7 @@ export function GameScreen({
       {confetti && <ConfettiBurst />}
 
       <GameKeyboard
+        inputMethod={inputMethod}
         states={keyboardStates}
         draft={draft}
         wordLength={wordLength}
@@ -339,6 +342,14 @@ export function GameScreen({
           loading || busy || sending || (mode === "daily" && !game) || finished
         }
         onKey={pressKey}
+        onInputChange={(value) =>
+          setDraft(
+            value
+              .replace(/[^a-z]/gi, "")
+              .slice(0, wordLength)
+              .toLowerCase(),
+          )
+        }
       />
     </section>
   );

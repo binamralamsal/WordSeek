@@ -1,19 +1,29 @@
 import { LeaderboardFilters } from "@/components/rankings/leaderboard-filters";
 import { PlayerAvatar } from "@/components/rankings/player-avatar";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { LeaderboardPeriod, WordLength } from "@shared/leaderboard";
 import type {
   MiniAppLeaderboardScope,
   MiniAppProfile,
+  MiniAppPublicProfile,
   MyRanking,
 } from "@shared/miniapp";
-import { Flame, Medal, Sparkles, Trophy } from "lucide-react";
+import {
+  ArrowLeft,
+  Flame,
+  Medal,
+  Search,
+  Sparkles,
+  Trophy,
+} from "lucide-react";
+import { useState } from "react";
 
 export function ProfileScreen({
   profile,
   loading,
+  isOtherProfile,
   scope,
   period,
   length,
@@ -23,9 +33,12 @@ export function ProfileScreen({
   onScope,
   onPeriod,
   onLength,
+  onSearchProfile,
+  onBack,
 }: {
-  profile?: MiniAppProfile;
+  profile?: MiniAppProfile | MiniAppPublicProfile;
   loading: boolean;
+  isOtherProfile: boolean;
   scope: MiniAppLeaderboardScope;
   period: LeaderboardPeriod;
   length: WordLength;
@@ -35,12 +48,45 @@ export function ProfileScreen({
   onScope: (value: MiniAppLeaderboardScope) => void;
   onPeriod: (value: LeaderboardPeriod) => void;
   onLength: (value: WordLength) => void;
+  onSearchProfile: (query: string) => Promise<void>;
+  onBack: () => void;
 }) {
+  const [search, setSearch] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
+
   if (loading || !profile) return <ProfileSkeleton />;
   const { user, stats } = profile;
 
+  const searchProfile = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSearching(true);
+    setSearchError("");
+    try {
+      await onSearchProfile(search);
+    } catch (error) {
+      setSearchError((error as Error).message || "Could not find that player.");
+    } finally {
+      setSearching(false);
+    }
+  };
+
   return (
     <section className="subpage profile-page">
+      {isOtherProfile ? (
+        <Button
+          className="profile-back-button"
+          onClick={onBack}
+          variant="ghost"
+        >
+          <ArrowLeft /> Back
+        </Button>
+      ) : (
+        <div className="profile-page-heading">
+          <span className="section-kicker">YOUR WORDSEEK ACCOUNT</span>
+          <h1>Profile</h1>
+        </div>
+      )}
       <Card className="profile-card">
         <CardContent>
           <div className="profile-identity">
@@ -50,7 +96,9 @@ export function ProfileScreen({
               className="profile-avatar"
             />
             <div>
-              <span className="section-kicker">WORDSEEK PLAYER</span>
+              <span className="section-kicker">
+                {isOtherProfile ? "WORDSEEK PLAYER" : "YOUR PROFILE"}
+              </span>
               <h1>{user.displayName}</h1>
               <p>{user.username ? `@${user.username}` : "Playing WordSeek"}</p>
             </div>
@@ -60,12 +108,41 @@ export function ProfileScreen({
               <span>CAREER POINTS</span>
               <strong>{stats.totalScore.toLocaleString()}</strong>
             </div>
-            <Badge variant="secondary">
-              <Sparkles size={13} /> {stats.classicWins} classic wins
-            </Badge>
           </div>
         </CardContent>
       </Card>
+
+      {!isOtherProfile && (
+        <Card className="profile-search-card">
+          <CardContent>
+            <div className="profile-search-heading">
+              <div>
+                <b>Find a player</b>
+                <p>Search by Telegram username or user ID.</p>
+              </div>
+              <Search aria-hidden="true" />
+            </div>
+            <form className="profile-search-form" onSubmit={searchProfile}>
+              <input
+                aria-label="Telegram username or user ID"
+                autoComplete="off"
+                className="nickname-input"
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="@username or user ID"
+                value={search}
+              />
+              <Button disabled={searching || !search.trim()} type="submit">
+                {searching ? "Searching…" : "Search"}
+              </Button>
+            </form>
+            {searchError && (
+              <p className="field-error" role="alert">
+                {searchError}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="profile-stat-grid">
         <StatCard
@@ -75,16 +152,20 @@ export function ProfileScreen({
           icon={<Flame />}
         />
         <StatCard
-          label="Classic wins"
-          value={stats.classicWins}
-          detail="Includes estimated historical wins"
-          icon={<Trophy />}
+          label="Daily games"
+          value={stats.dailyGames}
+          detail="Completed daily puzzles"
+          icon={<Sparkles />}
         />
         <StatCard
           label="Daily wins"
           value={stats.dailyWins}
-          detail={`${stats.dailyGames} played · ${stats.dailyLosses} missed`}
-          icon={<Sparkles />}
+          detail={
+            stats.dailyGames
+              ? `${stats.dailyWins} of ${stats.dailyGames} puzzles`
+              : "No puzzles played yet"
+          }
+          icon={<Trophy />}
         />
         <StatCard
           label="Best score"
@@ -97,8 +178,12 @@ export function ProfileScreen({
       <Card className="my-rank-card">
         <CardHeader className="my-rank-heading">
           <div>
-            <span className="section-kicker">YOUR POSITION</span>
-            <CardTitle>My ranking</CardTitle>
+            <span className="section-kicker">
+              {isOtherProfile ? "PLAYER POSITION" : "YOUR POSITION"}
+            </span>
+            <CardTitle>
+              {isOtherProfile ? "Player ranking" : "My ranking"}
+            </CardTitle>
           </div>
           <Trophy />
         </CardHeader>
@@ -113,10 +198,20 @@ export function ProfileScreen({
             onLength={onLength}
           />
           {rankingLoading ? (
-            <div className="my-rank-skeleton">
-              <Skeleton />
-              <Skeleton />
-              <Skeleton />
+            <div className="my-rank-details my-rank-skeleton">
+              <div className="rank-big">
+                <Skeleton className="rank-skeleton-label" />
+                <Skeleton className="rank-skeleton-number" />
+                <Skeleton className="rank-skeleton-caption" />
+              </div>
+              <div className="my-rank-metrics">
+                {[0, 1].map((key) => (
+                  <div key={key}>
+                    <Skeleton className="rank-skeleton-label" />
+                    <Skeleton className="rank-skeleton-value" />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : ranking ? (
             <div className="my-rank-details">
@@ -142,7 +237,11 @@ export function ProfileScreen({
             <div className="rank-empty">
               <Medal />
               <b>No position for these filters</b>
-              <span>Finish a game to appear here.</span>
+              <span>
+                {isOtherProfile
+                  ? "This player has no score in the selected ranking."
+                  : "Finish a game to appear here."}
+              </span>
             </div>
           )}
         </CardContent>

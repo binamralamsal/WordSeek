@@ -5,17 +5,21 @@ import { useCallback, useEffect, useRef } from "react";
 const rows = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 
 export function GameKeyboard({
+  inputMethod,
   states,
   draft,
   wordLength,
   disabled,
   onKey,
+  onInputChange,
 }: {
+  inputMethod: "onscreen" | "system";
   states: Record<string, string>;
   draft: string;
   wordLength: number;
   disabled: boolean;
   onKey: (key: string, repeated?: boolean) => void;
+  onInputChange: (value: string) => void;
 }) {
   const repeatStartTimer = useRef<number | null>(null);
   const repeatTimer = useRef<number | null>(null);
@@ -63,6 +67,43 @@ export function GameKeyboard({
     }
     onKeyRef.current("BACKSPACE");
   };
+
+  if (inputMethod === "system") {
+    return (
+      <form
+        className={`keyboard-dock system-keyboard-dock ${disabled ? "is-disabled" : ""}`}
+        onSubmit={(event) => {
+          event.preventDefault();
+          onKey("ENTER");
+        }}
+      >
+        <div className="keyboard-caption">
+          <span>
+            {disabled ? "Puzzle complete" : `${draft.length} / ${wordLength}`}
+          </span>
+          <span>Use your phone keyboard</span>
+        </div>
+        <div className="system-keyboard-row">
+          <input
+            aria-label="Type your guess"
+            autoCapitalize="characters"
+            autoComplete="off"
+            autoCorrect="off"
+            disabled={disabled}
+            inputMode="text"
+            maxLength={wordLength}
+            onChange={(event) => onInputChange(event.target.value)}
+            placeholder="Type your guess"
+            spellCheck={false}
+            value={draft.toUpperCase()}
+          />
+          <Button className="system-submit" disabled={disabled} type="submit">
+            Enter
+          </Button>
+        </div>
+      </form>
+    );
+  }
 
   return (
     <div className={`keyboard-dock ${disabled ? "is-disabled" : ""}`}>

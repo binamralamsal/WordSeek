@@ -13,7 +13,10 @@ import {
   getMyRanking,
 } from "#/features/miniapp/services/leaderboard.service";
 import {
+  findMiniAppUser,
   getMiniAppProfile,
+  getMiniAppPublicProfile,
+  getMiniAppUserIdByProfileId,
   updateNickname,
 } from "#/features/miniapp/services/profile.service";
 import {
@@ -31,6 +34,7 @@ import {
   type MiniAppLeaderboardPage,
   type MiniAppLeaderboardScope,
   type MiniAppProfile,
+  type MiniAppPublicProfile,
   type NicknameUpdateResponse,
 } from "#/shared/miniapp";
 import { NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH } from "#/shared/nickname";
@@ -58,6 +62,7 @@ const classicGuessSchema = guessSchema.extend({
 const nicknameSchema = z.object({
   nickname: z.unknown(),
 });
+const profileIdSchema = z.string().uuid();
 
 function json<T>(data: T, status = 200): Response {
   return Response.json({ data } satisfies ApiResponse<T>, {
@@ -270,12 +275,91 @@ async function handleMyRanking(url: URL, auth: AuthContext): Promise<Response> {
   return json(ranking);
 }
 
+async function handlePublicProfileSearch(url: URL): Promise<Response> {
+  const query = url.searchParams.get("q")?.trim() ?? "";
+  if (query.length < 1 || query.length > 64) {
+    throw new ApiRouteError(
+      "INVALID_QUERY",
+      "Enter a Telegram username or user ID.",
+    );
+  }
+
+  const user = await findMiniAppUser(query);
+  if (!user) {
+    throw new ApiRouteError(
+      "PROFILE_NOT_FOUND",
+      "No WordSeek player matches that username or ID.",
+      404,
+    );
+  }
+  return json(user);
+}
+
+async function handlePublicProfile(
+  profileIdInput: string,
+  auth: AuthContext,
+): Promise<Response> {
+  const parsed = profileIdSchema.safeParse(profileIdInput);
+  if (!parsed.success) {
+    throw new ApiRouteError(
+      "PROFILE_NOT_FOUND",
+      "Player profile not found.",
+      404,
+    );
+  }
+
+  const profile = await getMiniAppPublicProfile(parsed.data, auth.group);
+  if (!profile) {
+    throw new ApiRouteError(
+      "PROFILE_NOT_FOUND",
+      "Player profile not found.",
+      404,
+    );
+  }
+  return json<MiniAppPublicProfile>(profile);
+}
+
+async function handlePublicProfileRanking(
+  profileIdInput: string,
+  url: URL,
+  auth: AuthContext,
+): Promise<Response> {
+  const parsed = profileIdSchema.safeParse(profileIdInput);
+  if (!parsed.success) {
+    throw new ApiRouteError(
+      "PROFILE_NOT_FOUND",
+      "Player profile not found.",
+      404,
+    );
+  }
+
+  const userId = await getMiniAppUserIdByProfileId(parsed.data);
+  if (!userId) {
+    throw new ApiRouteError(
+      "PROFILE_NOT_FOUND",
+      "Player profile not found.",
+      404,
+    );
+  }
+
+  const filters = parseLeaderboardFilters(url);
+  const ranking = await getMyRanking({
+    scope: filters.scope,
+    period: filters.period,
+    wordLength: filters.wordLength,
+    chatId: leaderboardChatId(filters.scope, auth, userId),
+    userId,
+  });
+  return json(ranking);
+}
+
 function leaderboardChatId(
   scope: MiniAppLeaderboardScope,
   auth: AuthContext,
+  privateUserId = auth.userId,
 ): string | undefined {
   if (scope === "group") return requireGroupChatId(auth);
-  if (scope === "private") return auth.userId;
+  if (scope === "private") return privateUserId;
   return undefined;
 }
 
@@ -351,7 +435,16 @@ export function createMiniAppApi(auth: AuthContext) {
     .get("/leaderboard/me", ({ request }) =>
       handleMyRanking(new URL(request.url), auth),
     )
+    .get("/profile/search", ({ request }) =>
+      handlePublicProfileSearch(new URL(request.url)),
+    )
+    .get("/profile/:profileId/ranking", ({ params, request }) =>
+      handlePublicProfileRanking(params.profileId, new URL(request.url), auth),
+    )
     .get("/profile", () => handleProfile(auth))
+    .get("/profile/:profileId", ({ params }) =>
+      handlePublicProfile(params.profileId, auth),
+    )
     .patch("/profile", ({ request }) => handleNickname(request, auth))
     .post("/nickname", ({ request }) => handleNickname(request, auth))
     .all("/*", () => {

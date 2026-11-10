@@ -14,6 +14,7 @@ export function LeaderboardScreen({
   pageIndex,
   period,
   length,
+  onOpenProfile,
   onPeriod,
   onLength,
   onPage,
@@ -23,6 +24,7 @@ export function LeaderboardScreen({
   pageIndex: number;
   period: LeaderboardPeriod;
   length: WordLength;
+  onOpenProfile: (profileId: string) => void;
   onPeriod: (value: LeaderboardPeriod) => void;
   onLength: (value: WordLength) => void;
   onPage: (value: number) => void;
@@ -50,7 +52,9 @@ export function LeaderboardScreen({
         <RankingSkeleton />
       ) : page?.rows.length ? (
         <>
-          {pageIndex === 1 && <Podium players={podiumPlayers} />}
+          {pageIndex === 1 && (
+            <Podium players={podiumPlayers} onOpenProfile={onOpenProfile} />
+          )}
           <Card className="ranking-card">
             <CardHeader className="ranking-card-header">
               <CardTitle>
@@ -61,10 +65,13 @@ export function LeaderboardScreen({
             <CardContent className="rank-rows">
               {page.rows
                 .filter((player) => !podiumPlayers.includes(player))
-                .map((player, index) => (
-                  <div
-                    className={`rank-row ${player.isMe ? "rank-me" : ""}`}
-                    key={`${page.wordLength}-${page.period}-${page.page}-${index}`}
+                .map((player) => (
+                  <button
+                    className={`rank-row rank-row-button ${player.isMe ? "rank-me" : ""}`}
+                    key={player.profileId}
+                    onClick={() => onOpenProfile(player.profileId)}
+                    type="button"
+                    aria-label={`View ${player.displayName}'s profile`}
                   >
                     <span className="rank-position">
                       {String(player.rank).padStart(2, "0")}
@@ -88,7 +95,7 @@ export function LeaderboardScreen({
                       {player.score.toLocaleString()}
                       <small> pts</small>
                     </strong>
-                  </div>
+                  </button>
                 ))}
               {pageIndex === 1 && page.rows.length <= 3 && (
                 <p className="rank-podium-note">
@@ -145,8 +152,10 @@ export function LeaderboardScreen({
 
 function Podium({
   players,
+  onOpenProfile,
 }: {
   players: NonNullable<MiniAppLeaderboardPage>["rows"];
+  onOpenProfile: (profileId: string) => void;
 }) {
   const order = [players[1], players[0], players[2]];
   if (!players.length) return null;
@@ -157,9 +166,12 @@ function Podium({
           return <div className="podium-empty" key={`empty-${index}`} />;
         const place = player.rank;
         return (
-          <div
+          <button
             className={`podium-player place-${place}`}
-            key={`podium-${index}-${player.username ?? player.displayName}`}
+            key={player.profileId}
+            onClick={() => onOpenProfile(player.profileId)}
+            type="button"
+            aria-label={`View ${player.displayName}'s profile`}
           >
             <div className="podium-platform">
               <span>{place === 1 ? <Crown size={15} /> : place}</span>
@@ -167,7 +179,7 @@ function Podium({
             <PlayerAvatar name={player.displayName} url={player.photoUrl} />
             <b>{player.displayName}</b>
             <span>{player.score.toLocaleString()} pts</span>
-          </div>
+          </button>
         );
       })}
     </div>

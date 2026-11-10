@@ -7,6 +7,11 @@ import { ProfileScreen } from "@/components/profile/profile-screen";
 import { LeaderboardScreen } from "@/components/rankings/leaderboard-screen";
 import { SettingsScreen } from "@/components/settings/settings-screen";
 import { api } from "@/lib/api-client";
+import {
+  type MiniAppPreferences,
+  readPreferences,
+  storePreferences,
+} from "@/lib/preferences";
 import { hapticImpact, hapticNotification, initTelegram } from "@/lib/telegram";
 import type { ThemeMode } from "@/lib/telegram-types";
 import {
@@ -22,9 +27,12 @@ import type {
   MiniAppDailyState,
   MiniAppLeaderboardPage,
   MiniAppLeaderboardScope,
+  MiniAppPublicProfile,
+  MiniAppPublicUser,
   MyRanking,
 } from "@shared/miniapp";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type PlayView = "game" | "rankings" | "profile";
 const EMPTY_CLASSIC_GAMES: Record<WordLength, MiniAppClassicState> = {
@@ -37,26 +45,24 @@ export function App() {
   const [section, setSection] = useState<AppSection>("play");
   const [playView, setPlayView] = useState<PlayView>("game");
   const [mode, setMode] = useState<ThemeMode>(readStoredTheme);
+  const [preferences, setPreferences] =
+    useState<MiniAppPreferences>(readPreferences);
   const [gameMode, setGameMode] = useState<"classic" | "daily">("classic");
   const [length, setLength] = useState<WordLength>(5);
-  const [boot, setBoot] = useState<MiniAppBootstrap | null>(null);
+  const queryClient = useQueryClient();
   const [classicGames, setClassicGames] =
     useState<Record<WordLength, MiniAppClassicState>>(EMPTY_CLASSIC_GAMES);
   const [classic, setClassic] = useState<MiniAppClassicState>(null);
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
-  const [leaderboard, setLeaderboard] = useState<MiniAppLeaderboardPage | null>(
-    null,
-  );
-  const [ranking, setRanking] = useState<MyRanking>();
-  const [rankLoading, setRankLoading] = useState(false);
   const [scope, setScope] = useState<MiniAppLeaderboardScope>("global");
   const [period, setPeriod] = useState<LeaderboardPeriod>("week");
   const [filterLength, setFilterLength] = useState<WordLength>(5);
   const [page, setPage] = useState(1);
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const [profileReturnTo, setProfileReturnTo] = useState<PlayView>("rankings");
   const gameRequestId = useRef(0);
-  const rankingRequestId = useRef(0);
+  const initializedClassicRef = useRef(false);
 
   useEffect(() => {
     initTelegram();
@@ -64,57 +70,74 @@ export function App() {
     return subscribeToTheme(mode, () => {});
   }, [mode]);
 
-  useEffect(() => {
-    let cancelled = false;
-    api<MiniAppBootstrap>("/bootstrap")
-      .then(async (result) => {
-        if (cancelled) return;
-        setBoot(result);
-        setClassicGames(result.classicGames);
-        setClassic(result.classicGames[5]);
-      })
-      .catch((error: Error) => setNotice(error.message))
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const refreshRanking = useCallback(async () => {
-    if (
-      section !== "play" ||
-      (playView !== "rankings" && playView !== "profile")
-    )
-      return;
-    const requestId = ++rankingRequestId.current;
-    setRankLoading(true);
-    const activeScope = playView === "rankings" ? "global" : scope;
-    const query = `scope=${activeScope}&period=${period}&length=${filterLength}`;
-    try {
-      if (playView === "rankings") {
-        const result = await api<MiniAppLeaderboardPage>(
-          `/leaderboard?${query}&page=${page}`,
-        );
-        if (requestId === rankingRequestId.current) setLeaderboard(result);
-      } else {
-        const result = await api<MyRanking>(`/leaderboard/me?${query}`);
-        if (requestId === rankingRequestId.current) setRanking(result);
-      }
-    } catch (error) {
-      if (requestId === rankingRequestId.current)
-        setNotice((error as Error).message);
-    } finally {
-      if (requestId === rankingRequestId.current) setRankLoading(false);
-    }
-  }, [filterLength, page, period, playView, scope, section]);
-
-  useEffect(() => {
-    void refreshRanking();
-  }, [refreshRanking]);
-
+  const bootstrapQuery = useQuery({
+    queryKey: ["bootstrap"],
+    queryFn: () => api<MiniAppBootstrap>("/bootstrap"),
+  });
+  const boot = bootstrapQuery.data;
+  const loading = bootstrapQuery.isPending;
   const daily = boot?.daily;
+
+  useEffect(() => {
+    if (boot && !initializedClassicRef.current) {
+      initializedClassicRef.current = true;
+      setClassicGames(boot.classicGames);
+      setClassic(boot.classicGames[length]);
+    }
+  }, [boot, length]);
+
+  const leaderboardQuery = useQuery({
+    queryKey: ["leaderboard", "global", period, filterLength, page],
+    queryFn: () =>
+      api<MiniAppLeaderboardPage>(
+        `/leaderboard?scope=global&period=${period}&length=${filterLength}&page=${page}`,
+      ),
+    enabled: section === "play" && playView === "rankings",
+  });
+  const ownRankingQuery = useQuery({
+    queryKey: ["my-ranking", scope, period, filterLength],
+    queryFn: () =>
+      api<MyRanking>(
+        `/leaderboard/me?scope=${scope}&period=${period}&length=${filterLength}`,
+      ),
+    enabled: section === "play" && playView === "profile" && !profileId,
+  });
+  const publicProfileQuery = useQuery({
+    queryKey: ["public-profile", profileId],
+    queryFn: () =>
+      api<MiniAppPublicProfile>(`/profile/${encodeURIComponent(profileId!)}`),
+    enabled: Boolean(profileId),
+  });
+  const publicRankingQuery = useQuery({
+    queryKey: [
+      "public-profile-ranking",
+      profileId,
+      scope,
+      period,
+      filterLength,
+    ],
+    queryFn: () =>
+      api<MyRanking>(
+        `/profile/${encodeURIComponent(profileId!)}/ranking?scope=${scope}&period=${period}&length=${filterLength}`,
+      ),
+    enabled: Boolean(profileId) && section === "play" && playView === "profile",
+  });
+
+  useEffect(() => {
+    const issue =
+      bootstrapQuery.error ??
+      leaderboardQuery.error ??
+      ownRankingQuery.error ??
+      publicProfileQuery.error ??
+      publicRankingQuery.error;
+    if (issue) setNotice((issue as Error).message);
+  }, [
+    bootstrapQuery.error,
+    leaderboardQuery.error,
+    ownRankingQuery.error,
+    publicProfileQuery.error,
+    publicRankingQuery.error,
+  ]);
   const currentGame = gameMode === "daily" ? daily : classic;
   const selectLength = (nextLength: WordLength) => {
     gameRequestId.current += 1;
@@ -151,9 +174,16 @@ export function App() {
         method: "POST",
         body: JSON.stringify({ guess }),
       });
-      setBoot((value) => (value ? { ...value, daily: next } : value));
+      queryClient.setQueryData<MiniAppBootstrap>(["bootstrap"], (value) =>
+        value ? { ...value, daily: next } : value,
+      );
       if (next.status !== "playing")
         hapticNotification(next.status === "won" ? "success" : "error");
+      if (next.status !== "playing") {
+        void queryClient.invalidateQueries({ queryKey: ["bootstrap"] });
+        void queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+        void queryClient.invalidateQueries({ queryKey: ["my-ranking"] });
+      }
       return next;
     }
     const next = await api<MiniAppClassicState>("/classic/guess", {
@@ -162,8 +192,16 @@ export function App() {
     });
     setClassic(next);
     setClassicGames((games) => ({ ...games, [length]: next }));
-    if (next && next.status !== "active")
+    if (next && next.status !== "active") {
       hapticNotification(next.status === "won" ? "success" : "error");
+      void queryClient.invalidateQueries({ queryKey: ["bootstrap"] });
+      void queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+      void queryClient.invalidateQueries({ queryKey: ["my-ranking"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["public-profile-ranking"],
+      });
+      void queryClient.invalidateQueries({ queryKey: ["public-profile"] });
+    }
     return next;
   };
 
@@ -195,6 +233,8 @@ export function App() {
   return (
     <main
       className={`miniapp ${section === "play" && playView === "game" ? "is-game" : ""}`}
+      data-keyboard-size={preferences.keyboardSize}
+      data-tile-size={preferences.tileSize}
     >
       {notice && (
         <div className="toast" role="status" onClick={closeNotice}>
@@ -209,17 +249,30 @@ export function App() {
           <SettingsScreen
             user={boot?.profile.user}
             mode={mode}
+            preferences={preferences}
+            onPreferences={(next) => {
+              setPreferences(next);
+              storePreferences(next);
+            }}
             onMode={(next) => {
               setMode(next);
               storeTheme(next);
             }}
-            onSaved={(user) =>
-              setBoot((value) =>
-                value
-                  ? { ...value, profile: { ...value.profile, user } }
-                  : value,
-              )
-            }
+            onSaved={(user) => {
+              queryClient.setQueryData<MiniAppBootstrap>(
+                ["bootstrap"],
+                (value) =>
+                  value
+                    ? { ...value, profile: { ...value.profile, user } }
+                    : value,
+              );
+              void queryClient.invalidateQueries({
+                queryKey: ["leaderboard"],
+              });
+              void queryClient.invalidateQueries({
+                queryKey: ["public-profile"],
+              });
+            }}
           />
         ) : (
           <>
@@ -228,6 +281,7 @@ export function App() {
                 key={`${gameMode}-${length}`}
                 mode={gameMode}
                 length={length}
+                inputMethod={preferences.inputMethod}
                 state={currentGame}
                 daily={daily}
                 loading={loading}
@@ -253,8 +307,8 @@ export function App() {
             )}
             {playView === "rankings" && (
               <LeaderboardScreen
-                page={leaderboard}
-                loading={rankLoading}
+                page={leaderboardQuery.data ?? null}
+                loading={leaderboardQuery.isPending}
                 pageIndex={page}
                 period={period}
                 length={filterLength}
@@ -267,21 +321,44 @@ export function App() {
                   setPage(1);
                 }}
                 onPage={setPage}
+                onOpenProfile={(id) => {
+                  setProfileReturnTo("rankings");
+                  setProfileId(id);
+                  setPlayView("profile");
+                }}
               />
             )}
             {playView === "profile" && (
               <ProfileScreen
-                profile={boot?.profile}
-                loading={loading}
+                profile={profileId ? publicProfileQuery.data : boot?.profile}
+                loading={profileId ? publicProfileQuery.isPending : loading}
+                isOtherProfile={Boolean(profileId)}
                 scope={scope}
                 period={period}
                 length={filterLength}
-                ranking={ranking}
-                rankingLoading={rankLoading}
+                ranking={
+                  profileId ? publicRankingQuery.data : ownRankingQuery.data
+                }
+                rankingLoading={
+                  profileId
+                    ? publicRankingQuery.isPending
+                    : ownRankingQuery.isPending
+                }
                 groupAvailable={Boolean(boot?.profile.group)}
                 onScope={(next) => setScope(next)}
                 onPeriod={(next) => setPeriod(next)}
                 onLength={(next) => setFilterLength(next)}
+                onSearchProfile={async (query) => {
+                  const user = await api<MiniAppPublicUser>(
+                    `/profile/search?q=${encodeURIComponent(query)}`,
+                  );
+                  setProfileReturnTo("profile");
+                  setProfileId(user.profileId);
+                }}
+                onBack={() => {
+                  setProfileId(null);
+                  setPlayView(profileReturnTo);
+                }}
               />
             )}
           </>
@@ -290,6 +367,7 @@ export function App() {
       <BottomNavigation
         value={section === "settings" ? "settings" : playView}
         onChange={(next) => {
+          setProfileId(null);
           if (next === "settings") {
             setSection("settings");
             return;
