@@ -134,7 +134,7 @@ describe("Mini App API", () => {
     expect(profileResponse.status).toBe(200);
     expect(profileBody.data.user.displayName).toBe("Grace Hopper");
     expect(profileBody.data.user.id).toBe(userId);
-    expect(profileBody.data.stats).not.toHaveProperty("classicWins");
+    expect(profileBody.data.stats.classicWins).toBe(0);
 
     const rankingResponse = await handleApiRequest(
       new Request(

@@ -88,7 +88,7 @@ export type MiniAppPublicUser = Omit<MiniAppUser, "name" | "nickname">;
 
 export type MiniAppPublicProfile = {
   user: MiniAppPublicUser;
-  stats: Omit<MiniAppProfileStats, "classicWins">;
+  stats: MiniAppProfileStats;
   group: MiniAppGroupContext | null;
 };
 

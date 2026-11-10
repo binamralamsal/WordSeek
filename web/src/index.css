@@ -124,13 +124,7 @@ button {
   height: 100%;
   margin: 0 auto;
   overflow: hidden;
-  background:
-    radial-gradient(
-      80% 35% at 50% -16%,
-      color-mix(in srgb, var(--primary) 13%, transparent),
-      transparent 75%
-    ),
-    var(--background);
+  background: var(--background);
 }
 .screen-scroll {
   height: 100%;
@@ -408,7 +402,10 @@ button {
   border-radius: inherit;
   backface-visibility: hidden;
   color: var(--foreground);
-  font-size: clamp(21px, 7vw, 29px);
+  font-size: max(
+    12px,
+    min(var(--tile-font-size-setting, 28px), var(--tile-size), 29px)
+  );
   line-height: 1;
   font-weight: 800;
   text-transform: uppercase;
@@ -463,6 +460,14 @@ button {
   background: color-mix(in srgb, var(--background) 91%, transparent);
   backdrop-filter: blur(24px) saturate(1.3);
   -webkit-backdrop-filter: blur(24px) saturate(1.3);
+}
+.miniapp[data-keyboard-size="small"] .keyboard-dock:not(.system-keyboard-dock) {
+  padding-block: 4px 5px;
+}
+.miniapp[data-keyboard-size="small"] .keyboard-caption {
+  height: 15px;
+  margin-bottom: 3px;
+  font-size: 11px;
 }
 .keyboard-caption {
   display: flex;
@@ -888,6 +893,32 @@ button {
   width: min(calc(100% - 26px), 370px);
   transform: translateX(-50%);
   display: block;
+}
+.miniapp.is-system-input-active .glass-nav-wrap {
+  display: none;
+}
+.miniapp.is-system-input-active .game-mode-row,
+.miniapp.is-system-input-active .classic-toolbar,
+.miniapp.is-system-input-active .daily-heading {
+  display: none;
+}
+.miniapp.is-system-input-active .screen-scroll {
+  padding-top: 0;
+  padding-bottom: calc(
+    82px + env(safe-area-inset-bottom) + var(--system-keyboard-offset, 0px)
+  );
+}
+.miniapp.is-system-input-active .game-screen {
+  padding-bottom: 82px;
+}
+.miniapp.is-system-input-active .board-viewport {
+  min-height: 120px;
+  max-height: max(120px, calc(var(--visual-viewport-height, 100dvh) - 170px));
+}
+.miniapp.is-system-input-active .system-keyboard-dock {
+  bottom: calc(
+    env(safe-area-inset-bottom) + var(--system-keyboard-offset, 0px)
+  );
 }
 .glass-nav {
   position: relative;

@@ -152,10 +152,10 @@ export function ProfileScreen({
           icon={<Flame />}
         />
         <StatCard
-          label="Daily games"
-          value={stats.dailyGames}
-          detail="Completed daily puzzles"
-          icon={<Sparkles />}
+          label="Classic wins"
+          value={stats.classicWins}
+          detail="Classic games solved"
+          icon={<Trophy />}
         />
         <StatCard
           label="Daily wins"
@@ -165,7 +165,7 @@ export function ProfileScreen({
               ? `${stats.dailyWins} of ${stats.dailyGames} puzzles`
               : "No puzzles played yet"
           }
-          icon={<Trophy />}
+          icon={<Sparkles />}
         />
         <StatCard
           label="Best score"

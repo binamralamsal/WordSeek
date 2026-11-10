@@ -53,6 +53,9 @@ export function App() {
   const [mode, setMode] = useState<ThemeMode>(readStoredTheme);
   const [preferences, setPreferences] =
     useState<MiniAppPreferences>(readPreferences);
+  const miniAppRef = useRef<HTMLElement>(null);
+  const [systemInputFocused, setSystemInputFocused] = useState(false);
+  const [systemKeyboardOffset, setSystemKeyboardOffset] = useState(0);
   const [gameMode, setGameMode] = useState<"classic" | "daily">("classic");
   const [length, setLength] = useState<WordLength>(5);
   const queryClient = useQueryClient();
@@ -75,6 +78,42 @@ export function App() {
     applyTheme(mode);
     return subscribeToTheme(mode, () => {});
   }, [mode]);
+
+  useEffect(() => {
+    if (!systemInputFocused || preferences.inputMethod !== "system") {
+      setSystemKeyboardOffset(0);
+      miniAppRef.current?.style.removeProperty("--visual-viewport-height");
+      return;
+    }
+
+    const updateKeyboardOffset = () => {
+      const viewport = window.visualViewport;
+      const offset = viewport
+        ? window.innerHeight - viewport.height - viewport.offsetTop
+        : 0;
+      setSystemKeyboardOffset(Math.max(0, Math.round(offset)));
+      miniAppRef.current?.style.setProperty(
+        "--visual-viewport-height",
+        `${viewport?.height ?? window.innerHeight}px`,
+      );
+    };
+
+    updateKeyboardOffset();
+    window.addEventListener("resize", updateKeyboardOffset);
+    window.visualViewport?.addEventListener("resize", updateKeyboardOffset);
+    window.visualViewport?.addEventListener("scroll", updateKeyboardOffset);
+    return () => {
+      window.removeEventListener("resize", updateKeyboardOffset);
+      window.visualViewport?.removeEventListener(
+        "resize",
+        updateKeyboardOffset,
+      );
+      window.visualViewport?.removeEventListener(
+        "scroll",
+        updateKeyboardOffset,
+      );
+    };
+  }, [preferences.inputMethod, systemInputFocused]);
 
   const bootstrapQuery = useQuery({
     queryKey: ["bootstrap"],
@@ -241,12 +280,15 @@ export function App() {
 
   return (
     <main
-      className={`miniapp ${section === "play" && playView === "game" ? "is-game" : ""}`}
+      ref={miniAppRef}
+      className={`miniapp ${section === "play" && playView === "game" ? "is-game" : ""} ${systemInputFocused && preferences.inputMethod === "system" && section === "play" && playView === "game" ? "is-system-input-active" : ""}`}
       data-keyboard-size={preferences.keyboardSize}
       style={
         {
           "--tile-size-setting": `${preferences.tileSize}px`,
+          "--tile-font-size-setting": `${Math.max(12, Math.round(preferences.tileSize - 10))}px`,
           "--tile-gap-setting": `${Math.max(3, Math.round(preferences.tileSize / 8))}px`,
+          "--system-keyboard-offset": `${systemKeyboardOffset}px`,
         } as CSSProperties
       }
     >
@@ -301,6 +343,7 @@ export function App() {
                 loading={loading}
                 busy={busy}
                 keyboardStates={keyboardStates}
+                onSystemInputFocus={setSystemInputFocused}
                 onMode={(next) => {
                   if (next === "daily") {
                     setGameMode("daily");
@@ -383,9 +426,11 @@ export function App() {
         onChange={(next) => {
           setTargetUserId(null);
           if (next === "settings") {
+            setSystemInputFocused(false);
             setSection("settings");
             return;
           }
+          setSystemInputFocused(false);
           setSection("play");
           setPlayView(next);
         }}

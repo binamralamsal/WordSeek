@@ -25,6 +25,7 @@ export function GameScreen({
   loading,
   busy,
   keyboardStates,
+  onSystemInputFocus,
   onMode,
   onLength,
   onSubmit,
@@ -39,6 +40,7 @@ export function GameScreen({
   loading: boolean;
   busy: boolean;
   keyboardStates: Record<string, string>;
+  onSystemInputFocus: (focused: boolean) => void;
   onMode: (mode: GameMode) => void;
   onLength: (length: WordLength) => void;
   onSubmit: (guess: string) => Promise<GameState | null>;
@@ -342,6 +344,7 @@ export function GameScreen({
         }
         processing={sending}
         onKey={pressKey}
+        onInputFocus={onSystemInputFocus}
         onInputChange={(value) => {
           if (sending) return;
           setDraft(

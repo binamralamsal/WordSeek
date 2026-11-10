@@ -100,14 +100,11 @@ export async function getMiniAppPublicProfile(
 
   if (!user) return null;
   await ensureUserStats(user.id);
-  const { classicWins: _, ...publicStats } = await getProfileStats(
-    user.id,
-    user.createdAt,
-  );
+  const stats = await getProfileStats(user.id, user.createdAt);
 
   return {
     user: toPublicUser(user),
-    stats: publicStats,
+    stats,
     group,
   };
 }

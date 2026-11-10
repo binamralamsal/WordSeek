@@ -94,11 +94,9 @@ export function applyTheme(mode: ThemeMode) {
     ? color("section_bg_color", color("secondary_bg_color", fallback.card))
     : telegramBackground;
   const neutralDark = dark && isNeutralNearBlack(telegramBackground);
-  const background = neutralDark
-    ? `color-mix(in srgb, ${telegramBackground} 50%, #17212b)`
-    : telegramBackground;
+  const background = telegramBackground;
   const card = neutralDark
-    ? `color-mix(in srgb, ${telegramCard} 34%, #263542)`
+    ? `color-mix(in srgb, ${telegramCard} 34%, #303030)`
     : telegramCard;
   const primary = color("button_color", color("link_color", fallback.primary));
   const primaryForeground = color(

@@ -12,6 +12,7 @@ export function GameKeyboard({
   disabled,
   processing,
   onKey,
+  onInputFocus,
   onInputChange,
 }: {
   inputMethod: "onscreen" | "system";
@@ -21,6 +22,7 @@ export function GameKeyboard({
   disabled: boolean;
   processing: boolean;
   onKey: (key: string, repeated?: boolean) => void;
+  onInputFocus: (focused: boolean) => void;
   onInputChange: (value: string) => void;
 }) {
   const repeatStartTimer = useRef<number | null>(null);
@@ -105,7 +107,9 @@ export function GameKeyboard({
             enterKeyHint="send"
             inputMode="text"
             maxLength={wordLength}
+            onBlur={() => onInputFocus(false)}
             onChange={(event) => onInputChange(event.target.value)}
+            onFocus={() => onInputFocus(true)}
             placeholder="Type a word…"
             spellCheck={false}
             value={draft.toUpperCase()}
