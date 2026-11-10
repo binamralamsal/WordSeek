@@ -63,6 +63,7 @@ export function GameScreen({
   const celebrateTimer = useRef<number | null>(null);
   const resultTimer = useRef<number | null>(null);
   const confettiTimer = useRef<number | null>(null);
+  const pendingFirstGuessReveal = useRef(false);
   const [resultOpen, setResultOpen] = useState(false);
   const [confetti, setConfetti] = useState(false);
   const gameId =
@@ -76,6 +77,7 @@ export function GameScreen({
     setShakeRow(null);
     setResultOpen(false);
     setConfetti(false);
+    pendingFirstGuessReveal.current = false;
     return () => {
       if (revealTimer.current) window.clearTimeout(revealTimer.current);
       if (celebrateTimer.current) window.clearTimeout(celebrateTimer.current);
@@ -87,7 +89,13 @@ export function GameScreen({
   useEffect(() => {
     const previousId = previousGameId.current;
     previousGameId.current = gameId;
-    if (previousId == null || gameId === previousId) return;
+    if (gameId === previousId) return;
+    if (pendingFirstGuessReveal.current && gameId != null) {
+      pendingFirstGuessReveal.current = false;
+      return;
+    }
+    pendingFirstGuessReveal.current = false;
+    if (previousId == null) return;
 
     setDraft("");
     setRevealRow(null);
@@ -105,9 +113,14 @@ export function GameScreen({
       return;
     setSending(true);
     const row = guesses.length;
+    const isFirstClassicGuess = mode === "classic" && !game;
+    if (isFirstClassicGuess) pendingFirstGuessReveal.current = true;
     try {
       const next = await onSubmit(draft);
-      if (!next) return;
+      if (!next) {
+        pendingFirstGuessReveal.current = false;
+        return;
+      }
       setDraft("");
       setRevealRow(row);
       const revealTime = 560 + (wordLength - 1) * 110;
@@ -139,6 +152,7 @@ export function GameScreen({
         }, revealTime + 480);
       }
     } catch (error) {
+      pendingFirstGuessReveal.current = false;
       onError(error);
       setShakeRow(row);
       window.setTimeout(() => setShakeRow(null), 520);
@@ -280,6 +294,7 @@ export function GameScreen({
 
       {game || waitingForGame || mode === "classic" ? (
         <GameBoard
+          key={gameId ?? "no-game"}
           guesses={guesses}
           draft={draft}
           wordLength={wordLength}

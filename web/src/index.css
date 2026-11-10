@@ -112,6 +112,17 @@ html[data-theme-mode="auto"] {
   --tile-absent: #3a3d40;
 }
 
+.dark
+  .keyboard-dock
+  .key:not(.key-command):not(.key-correct):not(.key-present):not(.key-absent) {
+  background: #4b5056;
+  color: #f3f6f9;
+}
+.dark .keyboard-dock .key-absent {
+  background: #2c3035;
+  color: #c5cbd1;
+}
+
 html[data-theme-mode="auto"].dark {
   --background: var(--tg-theme-bg-color, #101418);
   --foreground: var(--tg-theme-text-color, #f3f6f9);
@@ -378,7 +389,8 @@ button {
   scrollbar-width: none;
   overscroll-behavior: contain;
   scroll-behavior: smooth;
-  padding: 1px 0 2px;
+  padding: 1px 0 14px;
+  scroll-padding-block: 44px 54px;
 }
 .word-board {
   width: 100%;
@@ -923,8 +935,8 @@ button {
   font-size: 12px;
   font-weight: 620;
   transition:
-    color 160ms ease,
-    transform 160ms ease;
+    color 140ms ease,
+    background-color 140ms ease;
 }
 .glass-nav [role="tab"] svg {
   width: 21px;
@@ -933,9 +945,6 @@ button {
 }
 .glass-nav [role="tab"][data-state="active"] {
   color: var(--accent-foreground);
-}
-.glass-nav [role="tab"]:active {
-  transform: scale(0.96);
 }
 
 .subpage {
@@ -1935,56 +1944,23 @@ button {
 
 @media (hover: hover) and (pointer: fine) {
   .glass-nav [role="tab"],
-  .game-help-trigger,
-  .game-new-button,
-  .key,
+  .play-tabs [role="tab"],
   .mode-switch [role="radio"],
   .word-length-toggle [role="radio"],
-  .pagination button,
-  .rank-row,
-  .help-hint,
-  .profile-stat-card,
-  .settings-card {
+  .rank-length-toggle [role="radio"],
+  .theme-toggle [role="radio"] {
     transition:
-      transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
-      box-shadow 160ms ease,
-      border-color 160ms ease,
-      background-color 160ms ease;
+      color 140ms ease,
+      background-color 140ms ease;
   }
-  .glass-nav [role="tab"]:hover,
-  .game-help-trigger:hover,
-  .game-new-button:hover,
-  .mode-switch [role="radio"]:hover,
-  .pagination button:not(:disabled):hover {
-    transform: translateY(-2px);
-  }
-  .key:not(:disabled):hover {
-    transform: translateY(-2px) scale(1.04);
-    box-shadow: 0 5px 11px
-      color-mix(in srgb, var(--foreground) 14%, transparent);
-  }
-  .word-length-toggle [role="radio"]:not([data-state="on"]):hover {
-    background: color-mix(in srgb, var(--primary) 12%, transparent);
-    color: var(--accent-foreground);
-  }
-  .rank-row:hover {
-    transform: translateY(-1px);
-    background: color-mix(in srgb, var(--accent) 58%, transparent);
-  }
-  .help-hint:hover {
-    transform: translateX(3px);
-    border-color: color-mix(in srgb, var(--primary) 32%, var(--border));
-  }
-  .dialog-close:hover {
-    transform: rotate(90deg);
-    background: var(--accent);
-    color: var(--accent-foreground);
-  }
-  .profile-stat-card:hover,
-  .settings-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 24px
-      color-mix(in srgb, var(--foreground) 9%, transparent);
+  .glass-nav [role="tab"]:not([data-state="active"]):hover,
+  .play-tabs [role="tab"]:not([data-state="active"]):hover,
+  .mode-switch [role="radio"]:not([data-state="on"]):hover,
+  .word-length-toggle [role="radio"]:not([data-state="on"]):hover,
+  .rank-length-toggle [role="radio"]:not([data-state="on"]):hover,
+  .theme-toggle [role="radio"]:not([data-state="on"]):hover {
+    background-color: color-mix(in srgb, var(--foreground) 7%, transparent);
+    color: var(--foreground);
   }
 }
 
