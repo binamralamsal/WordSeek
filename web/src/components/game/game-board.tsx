@@ -11,7 +11,6 @@ export function GameBoard({
   loading,
   revealRow,
   celebrationRow,
-  shakeRow,
   finished,
 }: {
   guesses: MiniAppGuess[];
@@ -21,7 +20,6 @@ export function GameBoard({
   loading: boolean;
   revealRow: number | null;
   celebrationRow: number | null;
-  shakeRow: number | null;
   finished: boolean;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -77,7 +75,7 @@ export function GameBoard({
 
               return (
                 <div
-                  className={`word-row ${shakeRow === row ? "is-invalid" : ""}`}
+                  className="word-row"
                   key={row}
                   ref={
                     isActive || (finished && row === guesses.length - 1)

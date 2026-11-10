@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Delete } from "lucide-react";
+import { Delete, Send } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 
 const rows = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
@@ -10,6 +10,7 @@ export function GameKeyboard({
   draft,
   wordLength,
   disabled,
+  processing,
   onKey,
   onInputChange,
 }: {
@@ -18,12 +19,14 @@ export function GameKeyboard({
   draft: string;
   wordLength: number;
   disabled: boolean;
+  processing: boolean;
   onKey: (key: string, repeated?: boolean) => void;
   onInputChange: (value: string) => void;
 }) {
   const repeatStartTimer = useRef<number | null>(null);
   const repeatTimer = useRef<number | null>(null);
   const suppressBackspaceClick = useRef(false);
+  const systemInputRef = useRef<HTMLInputElement>(null);
   const onKeyRef = useRef(onKey);
   onKeyRef.current = onKey;
 
@@ -74,31 +77,48 @@ export function GameKeyboard({
         className={`keyboard-dock system-keyboard-dock ${disabled ? "is-disabled" : ""}`}
         onSubmit={(event) => {
           event.preventDefault();
+          systemInputRef.current?.focus({ preventScroll: true });
           onKey("ENTER");
+          window.requestAnimationFrame(() =>
+            systemInputRef.current?.focus({ preventScroll: true }),
+          );
         }}
       >
         <div className="keyboard-caption">
           <span>
-            {disabled ? "Puzzle complete" : `${draft.length} / ${wordLength}`}
+            {disabled
+              ? "Puzzle complete"
+              : processing
+                ? "Checking your guess…"
+                : `${draft.length} / ${wordLength} letters`}
           </span>
-          <span>Use your phone keyboard</span>
+          <span>Phone keyboard</span>
         </div>
         <div className="system-keyboard-row">
           <input
+            ref={systemInputRef}
             aria-label="Type your guess"
             autoCapitalize="characters"
             autoComplete="off"
             autoCorrect="off"
             disabled={disabled}
+            enterKeyHint="send"
             inputMode="text"
             maxLength={wordLength}
             onChange={(event) => onInputChange(event.target.value)}
-            placeholder="Type your guess"
+            placeholder="Type a word…"
             spellCheck={false}
             value={draft.toUpperCase()}
           />
-          <Button className="system-submit" disabled={disabled} type="submit">
-            Enter
+          <Button
+            aria-label="Send guess"
+            className="system-submit"
+            disabled={disabled || processing}
+            onPointerDown={(event) => event.preventDefault()}
+            size="icon"
+            type="submit"
+          >
+            <Send aria-hidden="true" />
           </Button>
         </div>
       </form>

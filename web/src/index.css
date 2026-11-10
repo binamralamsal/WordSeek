@@ -38,7 +38,7 @@
   --radius: 1.1rem;
   --background: #ffffff;
   --foreground: #17212b;
-  --card: #f1f1f1;
+  --card: #ffffff;
   --card-foreground: #17212b;
   --popover: #ffffff;
   --popover-foreground: #17212b;
@@ -59,7 +59,7 @@
   --tile-present: #b59f3b;
   --tile-absent: #787c7e;
   --tg-theme-bg-color: #ffffff;
-  --tg-theme-secondary-bg-color: #f1f1f1;
+  --tg-theme-secondary-bg-color: #ffffff;
   --tg-theme-text-color: #17212b;
   --tg-theme-hint-color: #82909c;
   --tg-theme-button-color: #2481cc;
@@ -348,8 +348,8 @@ button {
 }
 .word-board {
   width: 100%;
-  --tile-cap: 56px;
-  --tile-gap: 7px;
+  --tile-cap: var(--tile-size-setting, 56px);
+  --tile-gap: var(--tile-gap-setting, 7px);
   --tile-size: min(var(--tile-cap), calc((100vw - 64px) / 5));
   display: flex;
   flex-direction: column;
@@ -366,9 +366,6 @@ button {
   scroll-margin-block: 48px;
   animation: row-enter 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-.word-row.is-invalid {
-  animation: invalid-shake 440ms cubic-bezier(0.3, 0.7, 0.3, 1) both;
-}
 .length-4 {
   --word-length: 4;
 }
@@ -379,26 +376,11 @@ button {
   --word-length: 6;
 }
 .word-board.length-4 {
-  --tile-cap: 56px;
   --tile-size: min(var(--tile-cap), calc((100vw - 70px) / 4));
 }
 .word-board.length-6 {
-  --tile-cap: 51px;
+  --tile-cap: min(var(--tile-size-setting, 56px), 54px);
   --tile-size: min(var(--tile-cap), calc((100vw - 72px) / 6));
-}
-.miniapp[data-tile-size="small"] .word-board {
-  --tile-cap: 47px;
-  --tile-gap: 5px;
-}
-.miniapp[data-tile-size="large"] .word-board {
-  --tile-cap: 63px;
-  --tile-gap: 8px;
-}
-.miniapp[data-tile-size="large"] .word-board.length-4 {
-  --tile-cap: 66px;
-}
-.miniapp[data-tile-size="large"] .word-board.length-6 {
-  --tile-cap: 55px;
 }
 .word-tile {
   position: relative;
@@ -556,22 +538,25 @@ button {
 }
 .system-keyboard-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) 48px;
+  align-items: center;
   gap: 9px;
 }
 .system-keyboard-row input {
   min-width: 0;
   height: 48px;
   border: 1px solid var(--border);
-  border-radius: 13px;
+  border-radius: 24px;
   outline: none;
-  background: var(--card);
-  padding: 0 13px;
+  background: color-mix(in srgb, var(--card) 84%, var(--background));
+  padding: 0 18px;
   color: var(--foreground);
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  font-size: 16px;
+  font-weight: 550;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  caret-color: var(--primary);
+  -webkit-appearance: none;
 }
 .system-keyboard-row input:focus {
   border-color: var(--primary);
@@ -585,8 +570,15 @@ button {
   text-transform: none;
 }
 .system-submit {
-  min-width: 70px;
-  border-radius: 13px;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 50%;
+  padding: 0;
+}
+.system-submit svg {
+  width: 19px;
+  height: 19px;
 }
 .key-command svg {
   width: 18px;
@@ -914,7 +906,7 @@ button {
         --nav-shadow-color,
         color-mix(in srgb, var(--foreground) 16%, transparent)
       ),
-    inset 0 1px 0 color-mix(in srgb, var(--foreground) 8%, transparent);
+    inset 0 1px 0 var(--nav-inset-highlight, rgba(255, 255, 255, 0.4));
   padding: 4px;
   isolation: isolate;
   backdrop-filter: blur(28px) saturate(1.55);
@@ -934,9 +926,7 @@ button {
     color-mix(in srgb, var(--primary) 25%, var(--card)),
     color-mix(in srgb, var(--primary) 16%, var(--card))
   );
-  box-shadow:
-    inset 0 1px 1px color-mix(in srgb, var(--foreground) 11%, transparent),
-    0 2px 8px color-mix(in srgb, var(--foreground) 12%, transparent);
+  box-shadow: var(--nav-pill-shadow);
   transition: transform 350ms cubic-bezier(0.22, 0.78, 0.18, 1.1);
 }
 .glass-nav.at-1 .nav-active-pill {
@@ -1164,7 +1154,7 @@ button {
   border: 1px solid var(--border);
   border-radius: 19px;
   background: var(--card);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.025);
+  box-shadow: none;
 }
 .ranking-card-header {
   display: flex;
@@ -1426,12 +1416,8 @@ button {
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 21px;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--primary) 13%, var(--card)),
-    var(--card) 70%
-  );
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.035);
+  background: var(--card);
+  box-shadow: none;
 }
 .profile-card > [data-slot="card-content"] {
   padding: 18px;
@@ -1889,29 +1875,21 @@ button {
 .tile-preview {
   display: flex;
   justify-content: center;
-  gap: 6px;
+  align-items: center;
+  gap: var(--preview-tile-gap, 6px);
   margin: 15px auto 0;
 }
 .tile-preview span {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: var(--preview-tile-size, 42px);
+  height: var(--preview-tile-size, 42px);
+  flex: 0 1 var(--preview-tile-size, 42px);
   place-items: center;
   border: 2px solid color-mix(in srgb, var(--foreground) 20%, transparent);
   border-radius: 7px;
   color: var(--foreground);
-  font-size: 18px;
+  font-size: var(--preview-tile-font, 18px);
   font-weight: 750;
-}
-.tile-preview.size-small span {
-  width: 34px;
-  height: 34px;
-  font-size: 15px;
-}
-.tile-preview.size-large span {
-  width: 49px;
-  height: 49px;
-  font-size: 20px;
 }
 .tile-preview .tile-preview-correct {
   border-color: transparent;
@@ -1922,6 +1900,39 @@ button {
   border-color: transparent;
   background: var(--tile-present);
   color: #fff;
+}
+.tile-size-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 620;
+}
+.tile-size-control output {
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+}
+.tile-size-slider {
+  display: block;
+  width: 100%;
+  height: 30px;
+  margin: 6px 0 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+  touch-action: pan-y;
+}
+.tile-size-slider:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.tile-size-range-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -1px;
+  color: var(--muted-foreground);
+  font-size: 11px;
 }
 .settings-preview-caption {
   margin: 9px 0 0;
@@ -2057,24 +2068,6 @@ button {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-@keyframes invalid-shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  20% {
-    transform: translateX(-7px);
-  }
-  40% {
-    transform: translateX(6px);
-  }
-  60% {
-    transform: translateX(-4px);
-  }
-  80% {
-    transform: translateX(3px);
   }
 }
 @keyframes tile-pop {

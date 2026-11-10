@@ -3,15 +3,17 @@ export type InputMethod = "onscreen" | "system";
 
 export type MiniAppPreferences = {
   keyboardSize: SizeOption;
-  tileSize: SizeOption;
+  tileSize: number;
   inputMethod: InputMethod;
 };
 
 const STORAGE_KEY = "wordseek:game-preferences";
+export const MIN_TILE_SIZE = 24;
+export const MAX_TILE_SIZE = 64;
 
 export const DEFAULT_PREFERENCES: MiniAppPreferences = {
   keyboardSize: "medium",
-  tileSize: "medium",
+  tileSize: 56,
   inputMethod: "onscreen",
 };
 
@@ -24,9 +26,7 @@ export function readPreferences(): MiniAppPreferences {
       keyboardSize: isSizeOption(parsed?.keyboardSize)
         ? parsed.keyboardSize
         : DEFAULT_PREFERENCES.keyboardSize,
-      tileSize: isSizeOption(parsed?.tileSize)
-        ? parsed.tileSize
-        : DEFAULT_PREFERENCES.tileSize,
+      tileSize: normalizeTileSize(parsed?.tileSize),
       inputMethod: parsed?.inputMethod === "system" ? "system" : "onscreen",
     };
   } catch {
@@ -40,4 +40,11 @@ export function storePreferences(value: MiniAppPreferences): void {
 
 function isSizeOption(value: unknown): value is SizeOption {
   return value === "small" || value === "medium" || value === "large";
+}
+
+function normalizeTileSize(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value))
+    return DEFAULT_PREFERENCES.tileSize;
+  const clamped = Math.min(MAX_TILE_SIZE, Math.max(MIN_TILE_SIZE, value));
+  return MIN_TILE_SIZE + Math.round((clamped - MIN_TILE_SIZE) / 2) * 2;
 }

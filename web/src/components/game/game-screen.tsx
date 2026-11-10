@@ -60,7 +60,6 @@ export function GameScreen({
   const [sending, setSending] = useState(false);
   const [revealRow, setRevealRow] = useState<number | null>(null);
   const [celebrationRow, setCelebrationRow] = useState<number | null>(null);
-  const [shakeRow, setShakeRow] = useState<number | null>(null);
   const revealTimer = useRef<number | null>(null);
   const celebrateTimer = useRef<number | null>(null);
   const resultTimer = useRef<number | null>(null);
@@ -76,7 +75,6 @@ export function GameScreen({
     setDraft("");
     setRevealRow(null);
     setCelebrationRow(null);
-    setShakeRow(null);
     setResultOpen(false);
     setConfetti(false);
     pendingFirstGuessReveal.current = false;
@@ -156,8 +154,6 @@ export function GameScreen({
     } catch (error) {
       pendingFirstGuessReveal.current = false;
       onError(error);
-      setShakeRow(row);
-      window.setTimeout(() => setShakeRow(null), 520);
     } finally {
       setSending(false);
     }
@@ -304,7 +300,6 @@ export function GameScreen({
           loading={waitingForGame}
           revealRow={revealRow}
           celebrationRow={celebrationRow}
-          shakeRow={shakeRow}
           finished={finished}
         />
       ) : (
@@ -339,17 +334,23 @@ export function GameScreen({
         draft={draft}
         wordLength={wordLength}
         disabled={
-          loading || busy || sending || (mode === "daily" && !game) || finished
+          loading ||
+          busy ||
+          (mode === "daily" && !game) ||
+          finished ||
+          (inputMethod === "onscreen" && sending)
         }
+        processing={sending}
         onKey={pressKey}
-        onInputChange={(value) =>
+        onInputChange={(value) => {
+          if (sending) return;
           setDraft(
             value
               .replace(/[^a-z]/gi, "")
               .slice(0, wordLength)
               .toLowerCase(),
-          )
-        }
+          );
+        }}
       />
     </section>
   );

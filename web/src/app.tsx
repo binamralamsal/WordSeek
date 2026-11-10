@@ -32,7 +32,13 @@ import type {
   MyRanking,
 } from "@shared/miniapp";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 type PlayView = "game" | "rankings" | "profile";
 const EMPTY_CLASSIC_GAMES: Record<WordLength, MiniAppClassicState> = {
@@ -237,7 +243,12 @@ export function App() {
     <main
       className={`miniapp ${section === "play" && playView === "game" ? "is-game" : ""}`}
       data-keyboard-size={preferences.keyboardSize}
-      data-tile-size={preferences.tileSize}
+      style={
+        {
+          "--tile-size-setting": `${preferences.tileSize}px`,
+          "--tile-gap-setting": `${Math.max(3, Math.round(preferences.tileSize / 8))}px`,
+        } as CSSProperties
+      }
     >
       {notice && (
         <div className="toast" role="status" onClick={closeNotice}>

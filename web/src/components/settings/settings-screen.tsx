@@ -7,6 +7,7 @@ import type {
   MiniAppPreferences,
   SizeOption,
 } from "@/lib/preferences";
+import { MAX_TILE_SIZE, MIN_TILE_SIZE } from "@/lib/preferences";
 import type { ThemeMode } from "@/lib/telegram-types";
 import type { MiniAppUser } from "@shared/miniapp";
 import {
@@ -183,15 +184,42 @@ export function SettingsScreen({
               <p>Adjust the guess boxes to fit your screen.</p>
             </div>
           </div>
-          <div className="settings-control-label">Tile size</div>
-          <SizeChoice
+          <div className="tile-size-control">
+            <label htmlFor="tile-size-slider">Tile size</label>
+            <output htmlFor="tile-size-slider">
+              {preferences.tileSize} px
+            </output>
+          </div>
+          <input
+            id="tile-size-slider"
+            className="tile-size-slider"
+            type="range"
+            min={MIN_TILE_SIZE}
+            max={MAX_TILE_SIZE}
+            step={2}
             value={preferences.tileSize}
-            label="Tile size"
-            onChange={(tileSize) => onPreferences({ ...preferences, tileSize })}
+            aria-label="Game tile size"
+            onChange={(event) =>
+              onPreferences({
+                ...preferences,
+                tileSize: Number(event.target.value),
+              })
+            }
           />
+          <div className="tile-size-range-labels" aria-hidden="true">
+            <span>Compact</span>
+            <span>Roomy</span>
+          </div>
           <div
-            className={`tile-preview size-${preferences.tileSize}`}
-            aria-label={`Tile preview, ${preferences.tileSize} size`}
+            className="tile-preview"
+            aria-label={`Tile preview, ${preferences.tileSize} pixels`}
+            style={
+              {
+                "--preview-tile-size": `${preferences.tileSize}px`,
+                "--preview-tile-font": `${Math.max(11, Math.round(preferences.tileSize * 0.42))}px`,
+                "--preview-tile-gap": `${Math.max(3, Math.round(preferences.tileSize / 9))}px`,
+              } as React.CSSProperties
+            }
           >
             {["W", "O", "R", "D", "S"].map((letter, index) => (
               <span
@@ -209,7 +237,8 @@ export function SettingsScreen({
             ))}
           </div>
           <p className="settings-preview-caption">
-            Preview updates immediately and applies to the game board.
+            The preview updates as you drag. Tiles scale down automatically to
+            fit smaller screens.
           </p>
         </CardContent>
       </Card>
