@@ -189,13 +189,14 @@ export function ProfileScreen({
         </CardHeader>
         <CardContent>
           <LeaderboardFilters
-            scope={scope}
+            scope={isOtherProfile ? undefined : scope}
             period={period}
             length={length}
             groupAvailable={groupAvailable}
-            onScope={onScope}
+            onScope={isOtherProfile ? undefined : onScope}
             onPeriod={onPeriod}
             onLength={onLength}
+            lengthVisible={!isOtherProfile}
           />
           {rankingLoading ? (
             <div className="my-rank-details my-rank-skeleton">

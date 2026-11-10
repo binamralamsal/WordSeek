@@ -123,7 +123,7 @@ export type MyRanking = {
   totalPlayers: number;
   scope: MiniAppLeaderboardScope;
   period: LeaderboardPeriod;
-  wordLength: WordLength;
+  wordLength: WordLength | "all";
 } | null;
 
 export type MiniAppBootstrap = {

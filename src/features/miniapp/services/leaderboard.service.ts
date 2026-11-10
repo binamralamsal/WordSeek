@@ -27,12 +27,17 @@ type LeaderboardQueryInput = {
   pageSize?: number;
 };
 
+type LeaderboardTotalsInput = Omit<
+  LeaderboardQueryInput,
+  "page" | "pageSize" | "wordLength"
+> & { wordLength: WordLength | "all" };
+
 function buildTotalsQuery({
   scope,
   period,
   wordLength,
   chatId,
-}: Omit<LeaderboardQueryInput, "page" | "pageSize">) {
+}: LeaderboardTotalsInput) {
   let query = db
     .selectFrom("leaderboard")
     .select("leaderboard.userId")
@@ -42,8 +47,17 @@ function buildTotalsQuery({
       sql<number>`cast(rank() over (order by sum(score) desc) as integer)`.as(
         "rank",
       ),
-    )
-    .where("leaderboard.wordLength", "=", toDbWordLength(wordLength))
+    );
+
+  if (wordLength !== "all") {
+    query = query.where(
+      "leaderboard.wordLength",
+      "=",
+      toDbWordLength(wordLength),
+    );
+  }
+
+  query = query
     .where(
       "leaderboard.userId",
       "not in",
@@ -135,9 +149,7 @@ export async function getLeaderboardPage(
 }
 
 export async function getMyRanking(
-  input: Omit<LeaderboardQueryInput, "page" | "pageSize"> & {
-    userId: string;
-  },
+  input: LeaderboardTotalsInput & { userId: string },
 ): Promise<MyRanking> {
   const totals = buildTotalsQuery(input);
 

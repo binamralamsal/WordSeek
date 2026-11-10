@@ -156,16 +156,10 @@ export function App() {
     enabled: Boolean(targetUserId),
   });
   const publicRankingQuery = useQuery({
-    queryKey: [
-      "public-profile-ranking",
-      targetUserId,
-      scope,
-      period,
-      filterLength,
-    ],
+    queryKey: ["public-profile-ranking", targetUserId, period],
     queryFn: () =>
       api<MyRanking>(
-        `/profile/${encodeURIComponent(targetUserId!)}/ranking?scope=${scope}&period=${period}&length=${filterLength}`,
+        `/profile/${encodeURIComponent(targetUserId!)}/ranking?period=${period}`,
       ),
     enabled:
       Boolean(targetUserId) && section === "play" && playView === "profile",
@@ -287,6 +281,12 @@ export function App() {
         {
           "--tile-size-setting": `${preferences.tileSize}px`,
           "--tile-font-size-setting": `${Math.max(12, Math.round(preferences.tileSize - 10))}px`,
+          "--tile-font-weight-setting":
+            preferences.tileSize <= 32
+              ? 650
+              : preferences.tileSize <= 40
+                ? 700
+                : 800,
           "--tile-gap-setting": `${Math.max(3, Math.round(preferences.tileSize / 8))}px`,
           "--system-keyboard-offset": `${systemKeyboardOffset}px`,
         } as CSSProperties

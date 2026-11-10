@@ -318,7 +318,6 @@ async function handlePublicProfile(
 async function handlePublicProfileRanking(
   userIdInput: string,
   url: URL,
-  auth: AuthContext,
 ): Promise<Response> {
   const parsed = telegramUserIdSchema.safeParse(userIdInput);
   if (!parsed.success) {
@@ -331,12 +330,15 @@ async function handlePublicProfileRanking(
 
   const userId = parsed.data;
 
-  const filters = parseLeaderboardFilters(url);
+  const periodRaw = url.searchParams.get("period") ?? "week";
+  if (!isLeaderboardPeriod(periodRaw)) {
+    throw new ApiRouteError("INVALID_PERIOD", "Unknown leaderboard period.");
+  }
+
   const ranking = await getMyRanking({
-    scope: filters.scope,
-    period: filters.period,
-    wordLength: filters.wordLength,
-    chatId: leaderboardChatId(filters.scope, auth, userId),
+    scope: "global",
+    period: periodRaw,
+    wordLength: "all",
     userId,
   });
   return json(ranking);
@@ -428,7 +430,7 @@ export function createMiniAppApi(auth: AuthContext) {
       handlePublicProfileSearch(new URL(request.url)),
     )
     .get("/profile/:userId/ranking", ({ params, request }) =>
-      handlePublicProfileRanking(params.userId, new URL(request.url), auth),
+      handlePublicProfileRanking(params.userId, new URL(request.url)),
     )
     .get("/profile", () => handleProfile(auth))
     .get("/profile/:userId", ({ params }) =>

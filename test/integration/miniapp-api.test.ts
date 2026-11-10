@@ -92,6 +92,12 @@ describe("Mini App API", () => {
       username: "gracehopper",
     });
     await seedScore(env.db, { userId: "7777", score: 20, wordLength: "5" });
+    await seedScore(env.db, {
+      userId: "7777",
+      chatId: "7777",
+      score: 10,
+      wordLength: "4",
+    });
     const auth: AuthContext = {
       userId: "4242",
       user: { id: 4242, first_name: "Ada" },
@@ -138,15 +144,25 @@ describe("Mini App API", () => {
 
     const rankingResponse = await handleApiRequest(
       new Request(
-        `http://localhost/api/profile/${userId}/ranking?scope=global&period=all&length=5`,
+        `http://localhost/api/profile/${userId}/ranking?scope=private&period=all&length=4`,
       ),
       auth,
     );
     const rankingBody = (await rankingResponse.json()) as {
-      data: { rank: number; score: number };
+      data: {
+        rank: number;
+        score: number;
+        scope: string;
+        wordLength: string;
+      };
     };
 
     expect(rankingResponse.status).toBe(200);
-    expect(rankingBody.data).toMatchObject({ rank: 1, score: 20 });
+    expect(rankingBody.data).toMatchObject({
+      rank: 1,
+      score: 30,
+      scope: "global",
+      wordLength: "all",
+    });
   });
 });

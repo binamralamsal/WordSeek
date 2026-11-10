@@ -411,7 +411,7 @@ button {
     min(var(--tile-font-size-setting, 28px), var(--tile-size), 29px)
   );
   line-height: 1;
-  font-weight: 800;
+  font-weight: var(--tile-font-weight-setting, 800);
   text-transform: uppercase;
 }
 .word-tile-front {
@@ -544,6 +544,7 @@ button {
 }
 .system-keyboard-dock {
   padding-inline: 12px;
+  transition: bottom 180ms cubic-bezier(0.22, 0.78, 0.18, 1);
 }
 .system-keyboard-row {
   display: grid;
@@ -897,14 +898,42 @@ button {
   width: min(calc(100% - 26px), 370px);
   transform: translateX(-50%);
   display: block;
+  transition:
+    opacity 180ms ease,
+    transform 220ms ease,
+    visibility 180ms;
 }
 .miniapp.is-system-input-active .glass-nav-wrap {
-  display: none;
+  transform: translate(-50%, 14px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.game-mode-row,
+.classic-toolbar,
+.daily-heading {
+  max-height: 88px;
+  overflow: hidden;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 170ms ease,
+    transform 200ms ease,
+    max-height 200ms ease,
+    min-height 200ms ease,
+    margin 200ms ease,
+    visibility 170ms;
 }
 .miniapp.is-system-input-active .game-mode-row,
 .miniapp.is-system-input-active .classic-toolbar,
 .miniapp.is-system-input-active .daily-heading {
-  display: none;
+  min-height: 0;
+  max-height: 0;
+  margin-block: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  visibility: hidden;
+  pointer-events: none;
 }
 .miniapp.is-system-input-active .screen-scroll {
   padding-top: 0;
@@ -917,7 +946,7 @@ button {
 }
 .miniapp.is-system-input-active .board-viewport {
   min-height: 120px;
-  max-height: max(120px, calc(var(--visual-viewport-height, 100dvh) - 170px));
+  max-height: max(120px, calc(var(--visual-viewport-height, 100dvh) - 104px));
 }
 .miniapp.is-system-input-active .system-keyboard-dock {
   bottom: calc(

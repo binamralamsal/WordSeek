@@ -20,6 +20,7 @@ export function LeaderboardFilters({
   scope,
   onScope,
   groupAvailable = false,
+  lengthVisible = true,
 }: {
   period: LeaderboardPeriod;
   length: WordLength;
@@ -28,6 +29,7 @@ export function LeaderboardFilters({
   scope?: MiniAppLeaderboardScope;
   onScope?: (value: MiniAppLeaderboardScope) => void;
   groupAvailable?: boolean;
+  lengthVisible?: boolean;
 }) {
   return (
     <div className="filter-stack">
@@ -69,21 +71,23 @@ export function LeaderboardFilters({
           </SelectContent>
         </Select>
       </div>
-      <ToggleGroup
-        type="single"
-        value={String(length)}
-        onValueChange={(value) => {
-          if (value) onLength(Number(value) as WordLength);
-        }}
-        className="rank-length-toggle"
-        aria-label="Rankings word length"
-      >
-        {lengths.map((value) => (
-          <ToggleGroupItem value={String(value)} key={value}>
-            {value} letters
-          </ToggleGroupItem>
-        ))}
-      </ToggleGroup>
+      {lengthVisible && (
+        <ToggleGroup
+          type="single"
+          value={String(length)}
+          onValueChange={(value) => {
+            if (value) onLength(Number(value) as WordLength);
+          }}
+          className="rank-length-toggle"
+          aria-label="Rankings word length"
+        >
+          {lengths.map((value) => (
+            <ToggleGroupItem value={String(value)} key={value}>
+              {value} letters
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      )}
     </div>
   );
 }
