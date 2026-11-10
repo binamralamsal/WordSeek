@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Delete } from "lucide-react";
+import { useCallback, useEffect, useRef } from "react";
 
 const rows = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 
@@ -14,8 +15,55 @@ export function GameKeyboard({
   draft: string;
   wordLength: number;
   disabled: boolean;
-  onKey: (key: string) => void;
+  onKey: (key: string, repeated?: boolean) => void;
 }) {
+  const repeatStartTimer = useRef<number | null>(null);
+  const repeatTimer = useRef<number | null>(null);
+  const suppressBackspaceClick = useRef(false);
+  const onKeyRef = useRef(onKey);
+  onKeyRef.current = onKey;
+
+  const stopBackspaceRepeat = useCallback(() => {
+    if (repeatStartTimer.current !== null) {
+      window.clearTimeout(repeatStartTimer.current);
+      repeatStartTimer.current = null;
+    }
+    if (repeatTimer.current !== null) {
+      window.clearInterval(repeatTimer.current);
+      repeatTimer.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (disabled) stopBackspaceRepeat();
+    return stopBackspaceRepeat;
+  }, [disabled, stopBackspaceRepeat]);
+
+  const startBackspaceRepeat = () => {
+    stopBackspaceRepeat();
+    suppressBackspaceClick.current = false;
+    repeatStartTimer.current = window.setTimeout(() => {
+      suppressBackspaceClick.current = true;
+      onKeyRef.current("BACKSPACE", true);
+      repeatTimer.current = window.setInterval(
+        () => onKeyRef.current("BACKSPACE", true),
+        75,
+      );
+    }, 350);
+  };
+
+  const finishBackspaceRepeat = () => {
+    stopBackspaceRepeat();
+  };
+
+  const clickBackspace = () => {
+    if (suppressBackspaceClick.current) {
+      suppressBackspaceClick.current = false;
+      return;
+    }
+    onKeyRef.current("BACKSPACE");
+  };
+
   return (
     <div className={`keyboard-dock ${disabled ? "is-disabled" : ""}`}>
       <div className="keyboard-caption">
@@ -57,9 +105,22 @@ export function GameKeyboard({
             <Button
               variant="secondary"
               className="key key-command key-delete"
-              onClick={() => onKey("BACKSPACE")}
+              onClick={clickBackspace}
+              onPointerDown={(event) => {
+                if (event.button !== 0) return;
+                event.currentTarget.setPointerCapture(event.pointerId);
+                startBackspaceRepeat();
+              }}
+              onPointerUp={finishBackspaceRepeat}
+              onPointerCancel={() => {
+                finishBackspaceRepeat();
+                suppressBackspaceClick.current = false;
+              }}
+              onLostPointerCapture={finishBackspaceRepeat}
+              onContextMenu={(event) => event.preventDefault()}
               disabled={disabled}
               aria-label="Delete last letter"
+              title="Hold to delete continuously"
             >
               <Delete />
             </Button>

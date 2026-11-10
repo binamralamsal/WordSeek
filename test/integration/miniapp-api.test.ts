@@ -41,6 +41,16 @@ describe("Mini App API", () => {
   test("leaderboard responses do not expose Telegram user IDs", async () => {
     await seedUser(env.db, { id: "4242", name: "Ada Lovelace" });
     await seedUser(env.db, { id: "7777", name: "Grace Hopper" });
+    await env.db
+      .updateTable("users")
+      .set({ photoUrl: "https://t.me/i/userpic/320/grace.jpg" })
+      .where("id", "=", "7777")
+      .execute();
+    await env.db
+      .updateTable("users")
+      .set({ photoUrl: "https://t.me/i/userpic/320/ada.jpg" })
+      .where("id", "=", "4242")
+      .execute();
     await seedScore(env.db, { userId: "4242", score: 10, wordLength: "5" });
     await seedScore(env.db, { userId: "7777", score: 20, wordLength: "5" });
 
@@ -66,5 +76,9 @@ describe("Mini App API", () => {
     ]);
     expect(body.data.rows.every((row) => !("userId" in row))).toBe(true);
     expect(body.data.rows.map((row) => row.isMe)).toEqual([false, true]);
+    expect(body.data.rows.map((row) => row.photoUrl)).toEqual([
+      "https://t.me/i/userpic/320/grace.jpg",
+      "https://t.me/i/userpic/320/ada.jpg",
+    ]);
   });
 });

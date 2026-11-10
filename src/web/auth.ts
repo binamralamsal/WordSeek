@@ -275,7 +275,7 @@ async function persistUser(
     id: userId,
     name: displayNameForTelegramUser(user),
     username: user.username ?? null,
-    photoUrl: user.photo_url ?? null,
+    ...(user.photo_url ? { photoUrl: user.photo_url } : {}),
   });
 }
 

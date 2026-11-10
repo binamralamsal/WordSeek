@@ -173,9 +173,9 @@ export function GameScreen({
   ]);
 
   const pressKey = useCallback(
-    (key: string) => {
+    (key: string, repeated = false) => {
       if (busy || sending || finished || loading) return;
-      hapticImpact("light");
+      if (!repeated) hapticImpact("light");
       if (key === "ENTER") {
         void submit();
         return;
