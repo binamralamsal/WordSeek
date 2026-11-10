@@ -133,10 +133,6 @@ export function ProfileScreen({
                   <b>{ranking.score.toLocaleString()}</b>
                 </div>
                 <div>
-                  <span>WINS</span>
-                  <b>{ranking.gamesWon}</b>
-                </div>
-                <div>
                   <span>BEST</span>
                   <b>{ranking.bestScore}</b>
                 </div>

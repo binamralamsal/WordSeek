@@ -1,6 +1,12 @@
 import { Bot } from "grammy";
 
-import type { Message, Update, User, UserFromGetMe } from "grammy/types";
+import type {
+  Message,
+  Update,
+  User,
+  UserFromGetMe,
+  UserProfilePhotos,
+} from "grammy/types";
 
 import { createAppComposer } from "#/app";
 import { env } from "#/config/env";
@@ -282,6 +288,7 @@ export class TestBot {
   readonly errors: unknown[] = [];
 
   chatMemberStatus: ChatMemberStatus = "member";
+  profilePhotos: UserProfilePhotos = { total_count: 0, photos: [] };
   private nextId = 5_000;
 
   constructor() {
@@ -335,6 +342,8 @@ export class TestBot {
         };
       case "getChatAdministrators":
         return [];
+      case "getUserProfilePhotos":
+        return this.profilePhotos;
       case "createForumTopic":
         return {
           message_thread_id: this.nextMessageId(),

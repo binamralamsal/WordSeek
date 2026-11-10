@@ -27,6 +27,8 @@ export function LeaderboardScreen({
   onLength: (value: WordLength) => void;
   onPage: (value: number) => void;
 }) {
+  const podiumPlayers = pageIndex === 1 ? (page?.rows.slice(0, 3) ?? []) : [];
+
   return (
     <section className="subpage rankings-page">
       <div className="page-heading">
@@ -48,7 +50,7 @@ export function LeaderboardScreen({
         <RankingSkeleton />
       ) : page?.rows.length ? (
         <>
-          {pageIndex === 1 && <Podium players={page.rows.slice(0, 3)} />}
+          {pageIndex === 1 && <Podium players={podiumPlayers} />}
           <Card className="ranking-card">
             <CardHeader className="ranking-card-header">
               <CardTitle>
@@ -57,35 +59,42 @@ export function LeaderboardScreen({
               <Badge variant="secondary">GLOBAL</Badge>
             </CardHeader>
             <CardContent className="rank-rows">
-              {page.rows.map((player) => (
-                <div
-                  className={`rank-row ${player.isMe ? "rank-me" : ""}`}
-                  key={player.rank}
-                >
-                  <span className="rank-position">
-                    {String(player.rank).padStart(2, "0")}
-                  </span>
-                  <PlayerAvatar
-                    name={player.displayName}
-                    url={player.photoUrl}
-                  />
-                  <div className="rank-person">
-                    <b>
-                      {player.displayName}
-                      {player.isMe && <Badge variant="outline">You</Badge>}
-                    </b>
-                    <small>
-                      {player.username
-                        ? `@${player.username}`
-                        : "WordSeek player"}
-                    </small>
+              {page.rows
+                .filter((player) => !podiumPlayers.includes(player))
+                .map((player, index) => (
+                  <div
+                    className={`rank-row ${player.isMe ? "rank-me" : ""}`}
+                    key={`${page.wordLength}-${page.period}-${page.page}-${index}`}
+                  >
+                    <span className="rank-position">
+                      {String(player.rank).padStart(2, "0")}
+                    </span>
+                    <PlayerAvatar
+                      name={player.displayName}
+                      url={player.photoUrl}
+                    />
+                    <div className="rank-person">
+                      <b>
+                        {player.displayName}
+                        {player.isMe && <Badge variant="outline">You</Badge>}
+                      </b>
+                      <small>
+                        {player.username
+                          ? `@${player.username}`
+                          : "WordSeek player"}
+                      </small>
+                    </div>
+                    <strong>
+                      {player.score.toLocaleString()}
+                      <small> pts</small>
+                    </strong>
                   </div>
-                  <strong>
-                    {player.score.toLocaleString()}
-                    <small> pts</small>
-                  </strong>
-                </div>
-              ))}
+                ))}
+              {pageIndex === 1 && page.rows.length <= 3 && (
+                <p className="rank-podium-note">
+                  The top players are shown on the podium above.
+                </p>
+              )}
             </CardContent>
           </Card>
           <div className="pagination">
@@ -148,7 +157,10 @@ function Podium({
           return <div className="podium-empty" key={`empty-${index}`} />;
         const place = player.rank;
         return (
-          <div className={`podium-player place-${place}`} key={player.rank}>
+          <div
+            className={`podium-player place-${place}`}
+            key={`podium-${index}-${player.username ?? player.displayName}`}
+          >
             <div className="podium-platform">
               <span>{place === 1 ? <Crown size={15} /> : place}</span>
             </div>

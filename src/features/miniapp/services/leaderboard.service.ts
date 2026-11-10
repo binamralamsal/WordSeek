@@ -31,7 +31,6 @@ type TotalRow = {
   userId: string;
   totalScore: number;
   rank: number;
-  gamesWon: number;
   bestScore: number;
 };
 
@@ -45,7 +44,6 @@ function buildTotalsQuery({
     .selectFrom("leaderboard")
     .select("leaderboard.userId")
     .select(sql<number>`cast(sum(score) as integer)`.as("totalScore"))
-    .select(sql<number>`cast(count(*) as integer)`.as("gamesWon"))
     .select(sql<number>`cast(max(least(score, 30)) as integer)`.as("bestScore"))
     .select(
       sql<number>`cast(rank() over (order by sum(score) desc) as integer)`.as(
@@ -100,7 +98,6 @@ export async function getLeaderboardPage(
         "totals.rank",
         "totals.userId",
         "totals.totalScore",
-        "totals.gamesWon",
         "totals.bestScore",
         "users.name",
         "users.nickname",
@@ -154,12 +151,7 @@ export async function getMyRanking(
   const [row, countRow] = await Promise.all([
     db
       .selectFrom(totals.as("totals"))
-      .select([
-        "totals.rank",
-        "totals.totalScore",
-        "totals.gamesWon",
-        "totals.bestScore",
-      ])
+      .select(["totals.rank", "totals.totalScore", "totals.bestScore"])
       .where("totals.userId", "=", input.userId)
       .executeTakeFirst(),
     db
@@ -173,7 +165,6 @@ export async function getMyRanking(
   return {
     rank: Number(row.rank),
     score: Number(row.totalScore),
-    gamesWon: Number(row.gamesWon),
     bestScore: Number(row.bestScore),
     totalPlayers: Number(countRow?.total ?? 0),
     scope: input.scope,

@@ -40,6 +40,14 @@ export function GameKeyboard({
               className={`key ${states[key] ? `key-${states[key]}` : ""}`}
               onClick={() => onKey(key)}
               disabled={disabled}
+              aria-label={
+                states[key]
+                  ? `${key.toUpperCase()}, ${states[key]}`
+                  : `Enter ${key.toUpperCase()}`
+              }
+              title={
+                states[key] ? `${key.toUpperCase()}: ${states[key]}` : undefined
+              }
               key={key}
             >
               {key}

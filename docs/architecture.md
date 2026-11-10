@@ -103,8 +103,8 @@ Files live in `src/features/wordle/regular/`.
 - `/new`, `/new4`, `/new5`, `/new6` call `startGame`.
 - Guards require an allowed forum topic and no active daily session.
 - Per-topic settings in `chat_game_topics` can restrict allowed lengths.
-- A game is a row in `games`: `active_chat` is unique, and `topic_id`
-  distinguishes forum topics. This prevents two games in one chat/topic.
+- A Telegram game is a row in `games` with a `telegram` source; the source,
+  `active_chat` and `topic_id` identify its active scope.
 - A valid guess is stored in `guesses` (`game_id`, `chat_id`, unique per chat
   word). Duplicate guesses are rejected before the insert.
 - A correct guess scores `30 - number_of_guesses_so_far` and inserts a
@@ -204,7 +204,7 @@ The Kysely schema is generated into `src/database/schema.ts` by
 | ------------------ | ------------------------------------------------------------------- |
 | `users`            | Telegram identity, plus Mini App nickname and photo.                |
 | `leaderboard`      | One row per scoring win: chat, user, word length, score, timestamp. |
-| `games`            | Shared bot/Mini App games, identified by enum source and scope.     |
+| `games`            | Active bot/Mini App games, identified by enum source and scope.     |
 | `guesses`          | Ordered guesses per game; `created_at` supplies attempt order.      |
 | `daily_words`      | One row per date: word, meaning, phonetic, sentence, day number.    |
 | `daily_guesses`    | Daily attempts per user and daily word.                             |
@@ -221,6 +221,9 @@ Conventions:
 - `games.source` is the `game_source` enum (`telegram` or `miniapp`). The
   Mini App uses a player-specific `active_chat` scope and a word-length topic,
   while the bot continues to use its existing chat/topic scope.
+- A `games` row exists only while its game is active. Winning, exhausting
+  guesses, or abandoning a Mini App classic game deletes the game and its
+  cascading guesses; completion status is returned to the current client only.
 - Classic score remains in `leaderboard`; classic guess count is derived from
   `guesses`. `user_stats.classic_games_won` is the historical win baseline
   estimated from compacted leaderboard scores and then incremented on each
@@ -310,7 +313,8 @@ are DM-and-admin-only, and rich-message drafts are not used.
 
 - Group updates are serialized per chat to preserve game ordering. Private
   chats and callbacks are not, to keep interactions snappy.
-- `games.active_chat` is unique, preventing duplicate active games.
+- The source, `active_chat` and `topic_id` unique index prevents duplicate
+  active games in the same scope.
 - User and chat sync use upserts and do not block the update.
 - Duplicate-key errors are treated as expected in a few flows and not logged as
   errors.

@@ -6,6 +6,7 @@ import { createLogger } from "#/core/logging/logger.service";
 
 import { apiErrorResponse, handleApiRequest, isApiPath } from "./api";
 import { authenticateRequest } from "./auth";
+import { createMiniAppAvatarApi } from "./avatar";
 
 const log = createLogger("web.server");
 
@@ -103,6 +104,8 @@ export function createFetchHandler({
   staticDir = env.MINIAPP_STATIC_DIR,
   api = bot.api,
 }: Omit<ServeOptions, "port"> = {}) {
+  const avatarApi = createMiniAppAvatarApi(api);
+
   return async function fetchHandler(request: Request): Promise<Response> {
     const url = new URL(request.url);
 
@@ -115,6 +118,14 @@ export function createFetchHandler({
         { data: { ok: true, service: "wordseek-miniapp" } },
         { headers: { "Cache-Control": "no-store", ...SECURITY_HEADERS } },
       );
+    }
+
+    if (url.pathname.startsWith("/api/avatar/")) {
+      const response = await avatarApi.handle(request);
+      for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+        response.headers.set(key, value);
+      }
+      return response;
     }
 
     if (isApiPath(url.pathname)) {

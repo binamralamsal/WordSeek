@@ -114,7 +114,6 @@ export type MiniAppLeaderboardPage = Omit<LeaderboardPage, "rows"> & {
 export type MyRanking = {
   rank: number;
   score: number;
-  gamesWon: number;
   bestScore: number;
   totalPlayers: number;
   scope: MiniAppLeaderboardScope;
@@ -125,7 +124,7 @@ export type MyRanking = {
 export type MiniAppBootstrap = {
   profile: MiniAppProfile;
   daily: MiniAppDailyState;
-  classic: MiniAppClassicState;
+  classicGames: Record<WordLength, MiniAppClassicState>;
   config: {
     dailyAttempts: typeof DAILY_ATTEMPTS;
     classicAttempts: typeof CLASSIC_ATTEMPTS;

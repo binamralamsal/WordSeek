@@ -9,6 +9,35 @@ import { seedScore, seedUser } from "../helpers/fixtures";
 const env = setupTestEnvironment();
 
 describe("Mini App API", () => {
+  test("reading classic lengths never creates game rows", async () => {
+    await seedUser(env.db, { id: "4242", name: "Ada Lovelace" });
+    const auth: AuthContext = {
+      userId: "4242",
+      user: { id: 4242, first_name: "Ada" },
+      group: null,
+    };
+
+    for (const length of [4, 5, 6]) {
+      const response = await handleApiRequest(
+        new Request(`http://localhost/api/classic?length=${length}`),
+        auth,
+      );
+      const body = (await response.json()) as { data: unknown };
+
+      expect(response.status).toBe(200);
+      expect(body.data).toBeNull();
+    }
+
+    expect(await env.db.selectFrom("games").selectAll().execute()).toHaveLength(
+      0,
+    );
+    const startResponse = await handleApiRequest(
+      new Request("http://localhost/api/classic/start", { method: "POST" }),
+      auth,
+    );
+    expect(startResponse.status).toBe(404);
+  });
+
   test("leaderboard responses do not expose Telegram user IDs", async () => {
     await seedUser(env.db, { id: "4242", name: "Ada Lovelace" });
     await seedUser(env.db, { id: "7777", name: "Grace Hopper" });

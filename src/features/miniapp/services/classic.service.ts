@@ -12,25 +12,20 @@ import { recordClassicWin } from "../../wordle/shared/services/game-stats.servic
 const log = createLogger("features.miniapp.services.classic.service");
 
 export const CLASSIC_ATTEMPTS = 30;
-const RESULT_VISIBLE_MS = 24 * 60 * 60 * 1000;
 const MINIAPP_TOPIC_PREFIX = "classic:";
 const selector = new WordSelector();
 
 type ClassicGameRow = {
   id: number;
-  startedBy: string | null;
   activeChat: string;
-  topicId: string;
   word: string;
-  gameStatus: string;
   createdAt: Date;
-  updatedAt: Date;
 };
 
 type ClassicGuessRow = { guess: string; createdAt: Date };
 
 export type ClassicErrorCode =
-  "GAME_NOT_FOUND" | "INVALID_WORD" | "DUPLICATE_GUESS" | "GAME_FINISHED";
+  "GAME_NOT_FOUND" | "INVALID_WORD" | "DUPLICATE_GUESS";
 
 export type ClassicResult =
   | { ok: true; state: NonNullable<MiniAppClassicState> }
@@ -47,10 +42,10 @@ function topicForLength(wordLength: WordLength) {
 function toState(
   game: ClassicGameRow,
   guesses: ClassicGuessRow[],
+  status: NonNullable<MiniAppClassicState>["status"] = "active",
 ): NonNullable<MiniAppClassicState> {
-  const finished = game.gameStatus !== "active";
   const wordLength = game.word.length as WordLength;
-  const won = game.gameStatus === "won";
+  const won = status === "won";
 
   return {
     id: game.id,
@@ -60,8 +55,8 @@ function toState(
       guess: row.guess,
       states: evaluateGuess(row.guess, game.word),
     })),
-    status: game.gameStatus as "active" | "won" | "lost",
-    solution: finished ? game.word : null,
+    status,
+    solution: status === "active" ? null : game.word,
     score: won ? Math.max(1, CLASSIC_ATTEMPTS - guesses.length + 1) : null,
     startedAt: game.createdAt.toISOString(),
   };
@@ -84,35 +79,66 @@ async function findActiveGame(userId: string, wordLength: WordLength) {
     .where("source", "=", "miniapp")
     .where("activeChat", "=", playerGameKey(userId))
     .where("topicId", "=", topicForLength(wordLength))
-    .where("gameStatus", "=", "active")
     .executeTakeFirst();
 }
 
-/** Returns the selected length's active game or its recent completed result. */
+/** Returns the selected length's active game, if one exists. */
 export async function getClassicState(
   userId: string,
   wordLength: WordLength = 5,
 ): Promise<MiniAppClassicState> {
   const active = await findActiveGame(userId, wordLength);
-  const game =
-    active ??
-    (await db
-      .selectFrom("games")
-      .selectAll()
-      .where("source", "=", "miniapp")
-      .where("activeChat", "=", playerGameKey(userId))
-      .where("topicId", "=", topicForLength(wordLength))
-      .where("gameStatus", "!=", "active")
-      .where("updatedAt", ">=", new Date(Date.now() - RESULT_VISIBLE_MS))
-      .orderBy("updatedAt", "desc")
-      .limit(1)
-      .executeTakeFirst());
-
-  if (!game) return null;
-  return toState(game, await getGuesses(game.id));
+  if (!active) return null;
+  return toState(active, await getGuesses(active.id));
 }
 
-/** Switching lengths reuses that length's active game, without closing others. */
+/** Loads all existing lengths so switching tabs never creates a game row. */
+export async function getClassicStates(
+  userId: string,
+): Promise<Record<WordLength, MiniAppClassicState>> {
+  const result: Record<WordLength, MiniAppClassicState> = {
+    4: null,
+    5: null,
+    6: null,
+  };
+  const games = await db
+    .selectFrom("games")
+    .selectAll()
+    .where("source", "=", "miniapp")
+    .where("activeChat", "=", playerGameKey(userId))
+    .where("topicId", "in", ["classic:4", "classic:5", "classic:6"])
+    .execute();
+
+  if (!games.length) return result;
+
+  const guesses = await db
+    .selectFrom("guesses")
+    .select(["gameId", "guess", "createdAt"])
+    .where(
+      "gameId",
+      "in",
+      games.map((game) => game.id),
+    )
+    .orderBy("createdAt", "asc")
+    .orderBy("id", "asc")
+    .execute();
+  const guessesByGame = new Map<number, ClassicGuessRow[]>();
+
+  for (const guess of guesses) {
+    const list = guessesByGame.get(guess.gameId) ?? [];
+    list.push(guess);
+    guessesByGame.set(guess.gameId, list);
+  }
+
+  for (const game of games) {
+    const length = game.word.length as WordLength;
+    result[length] = toState(game, guessesByGame.get(game.id) ?? []);
+  }
+
+  return result;
+}
+
+/** Switching lengths reuses that length's active game. */
 export async function startClassicGame({
   userId,
   wordLength,
@@ -122,14 +148,6 @@ export async function startClassicGame({
 }): Promise<NonNullable<MiniAppClassicState>> {
   const active = await findActiveGame(userId, wordLength);
   if (active) return toState(active, await getGuesses(active.id));
-
-  await db
-    .deleteFrom("games")
-    .where("source", "=", "miniapp")
-    .where("activeChat", "=", playerGameKey(userId))
-    .where("gameStatus", "!=", "active")
-    .where("updatedAt", "<", new Date(Date.now() - RESULT_VISIBLE_MS))
-    .execute();
 
   const word = await selector.getRandomWord(
     `${playerGameKey(userId)}:${wordLength}`,
@@ -144,7 +162,6 @@ export async function startClassicGame({
         topicId: topicForLength(wordLength),
         startedBy: userId,
         source: "miniapp",
-        gameStatus: "active",
         word,
       })
       .returningAll()
@@ -169,12 +186,7 @@ export async function abandonClassicGame(
   const game = await findActiveGame(userId, wordLength);
   if (!game) return;
 
-  await db
-    .updateTable("games")
-    .set({ gameStatus: "lost" })
-    .where("id", "=", game.id)
-    .where("gameStatus", "=", "active")
-    .execute();
+  await db.deleteFrom("games").where("id", "=", game.id).execute();
 }
 
 export async function submitClassicGuess(
@@ -182,16 +194,6 @@ export async function submitClassicGuess(
   rawGuess: string,
   wordLength: WordLength,
 ): Promise<ClassicResult> {
-  const game = await findActiveGame(userId, wordLength);
-
-  if (!game) {
-    return {
-      ok: false,
-      code: "GAME_NOT_FOUND",
-      message: "Start a classic game first.",
-    };
-  }
-
   const guess = rawGuess.trim().toLowerCase();
   if (
     guess.length !== wordLength ||
@@ -204,6 +206,15 @@ export async function submitClassicGuess(
       message: `${rawGuess.toUpperCase()} is not a valid ${wordLength}-letter word.`,
     };
   }
+
+  let game:
+    NonNullable<Awaited<ReturnType<typeof findActiveGame>>> | undefined =
+    await findActiveGame(userId, wordLength);
+  if (!game) {
+    await startClassicGame({ userId, wordLength });
+    game = await findActiveGame(userId, wordLength);
+  }
+  if (!game) throw new Error("Classic game could not be created.");
 
   const existing = await getGuesses(game.id);
   if (existing.some((row) => row.guess === guess)) {
@@ -218,6 +229,8 @@ export async function submitClassicGuess(
   const won = guess === game.word;
   const lost = !won && attemptNumber >= CLASSIC_ATTEMPTS;
   const score = won ? Math.max(1, CLASSIC_ATTEMPTS - existing.length) : null;
+  const nextGuesses = [...existing, { guess, createdAt: new Date() }];
+  const status = won ? "won" : lost ? "lost" : "active";
 
   await db.transaction().execute(async (trx) => {
     await trx
@@ -227,13 +240,6 @@ export async function submitClassicGuess(
         chatId: game.activeChat,
         guess,
       })
-      .execute();
-
-    await trx
-      .updateTable("games")
-      .set({ gameStatus: won ? "won" : lost ? "lost" : "active" })
-      .where("id", "=", game.id)
-      .where("gameStatus", "=", "active")
       .execute();
 
     if (won) {
@@ -248,13 +254,12 @@ export async function submitClassicGuess(
         .execute();
       await recordClassicWin(trx, userId);
     }
+
+    if (won || lost) {
+      await trx.deleteFrom("games").where("id", "=", game.id).execute();
+    }
   });
 
-  const updated = await db
-    .selectFrom("games")
-    .selectAll()
-    .where("id", "=", game.id)
-    .executeTakeFirstOrThrow();
-
-  return { ok: true, state: toState(updated, await getGuesses(game.id)) };
+  const state = toState(game, nextGuesses, status);
+  return { ok: true, state };
 }

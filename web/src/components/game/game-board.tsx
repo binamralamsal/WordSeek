@@ -30,7 +30,9 @@ export function GameBoard({
   const hasMounted = useRef(false);
   const visibleCount = Math.min(
     maxAttempts,
-    Math.max(4, guesses.length + (finished ? 0 : 3)),
+    maxAttempts === 6
+      ? maxAttempts
+      : Math.max(6, guesses.length + (finished ? 0 : 3)),
   );
 
   useEffect(() => {
@@ -61,7 +63,7 @@ export function GameBoard({
     <div className="board-viewport" ref={viewportRef}>
       <div className={`word-board length-${wordLength}`}>
         {loading
-          ? Array.from({ length: 4 }, (_, row) => (
+          ? Array.from({ length: Math.min(maxAttempts, 6) }, (_, row) => (
               <div className="word-row" key={row}>
                 {Array.from({ length: wordLength }, (_, col) => (
                   <Skeleton className="word-tile-skeleton" key={col} />
@@ -105,6 +107,7 @@ export function GameBoard({
                         <span
                           className={[
                             "word-tile-cube",
+                            turn && state ? "is-revealed" : "",
                             revealRow === row ? "is-revealing" : "",
                             celebrationRow === row ? "is-celebrating" : "",
                           ].join(" ")}

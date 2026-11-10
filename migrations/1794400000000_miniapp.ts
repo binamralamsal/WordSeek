@@ -17,30 +17,63 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("source", sql`game_source`, (col) =>
       col.notNull().defaultTo(sql`'telegram'::game_source`),
     )
-    .addColumn("game_status", "varchar(10)", (col) =>
-      col.notNull().defaultTo("active"),
-    )
     .execute();
 
-  await sql`
-    ALTER TABLE games
-    ADD CONSTRAINT games_status_check
-    CHECK (game_status IN ('active', 'won', 'lost'));
-  `.execute(db);
   await sql`
     ALTER TABLE games
     DROP CONSTRAINT IF EXISTS games_active_chat_topic_id_unique;
   `.execute(db);
   await sql`
-    CREATE UNIQUE INDEX games_active_source_scope_idx
-    ON games (source, active_chat, topic_id)
-    WHERE game_status = 'active';
+    CREATE UNIQUE INDEX games_source_scope_unique
+    ON games (source, active_chat, topic_id);
   `.execute(db);
+
+  // A prior test build created separate Mini App game tables. Carry forward
+  // unfinished games into the shared tables before dropping that old storage.
   await sql`
-    CREATE INDEX games_miniapp_scope_updated_idx
-    ON games (active_chat, topic_id, updated_at)
-    WHERE source = 'miniapp';
+    DO $$
+    BEGIN
+      IF to_regclass('mini_app_games') IS NOT NULL THEN
+        EXECUTE $migration$
+          INSERT INTO games (
+            word, active_chat, topic_id, created_at, updated_at,
+            source, started_by
+          )
+          SELECT word,
+            'miniapp:' || user_id,
+            'classic:' || word_length::text,
+            started_at,
+            updated_at,
+            'miniapp'::game_source,
+            user_id
+          FROM mini_app_games
+          WHERE status = 'active'
+          ON CONFLICT (source, active_chat, topic_id) DO NOTHING
+        $migration$;
+
+        IF to_regclass('mini_app_guesses') IS NOT NULL THEN
+          EXECUTE $migration$
+            INSERT INTO guesses (game_id, chat_id, guess, created_at, updated_at)
+            SELECT games.id, games.active_chat, legacy_guesses.guess,
+              legacy_guesses.created_at, legacy_guesses.updated_at
+            FROM mini_app_games AS legacy_games
+            JOIN games ON games.source = 'miniapp'
+              AND games.active_chat = 'miniapp:' || legacy_games.user_id
+              AND games.topic_id = 'classic:' || legacy_games.word_length::text
+              AND games.word = legacy_games.word
+            JOIN mini_app_guesses AS legacy_guesses
+              ON legacy_guesses.game_id = legacy_games.id
+            WHERE legacy_games.status = 'active'
+            ORDER BY legacy_games.user_id, legacy_games.word_length,
+              legacy_guesses.attempt_number
+            ON CONFLICT DO NOTHING
+          $migration$;
+        END IF;
+      END IF;
+    END $$;
   `.execute(db);
+  await sql`DROP TABLE IF EXISTS mini_app_guesses CASCADE`.execute(db);
+  await sql`DROP TABLE IF EXISTS mini_app_games CASCADE`.execute(db);
 
   await db.schema
     .alterTable("user_stats")
@@ -113,6 +146,7 @@ export async function up(db: Kysely<any>): Promise<void> {
 export async function down(db: Kysely<any>): Promise<void> {
   await sql`DROP INDEX IF EXISTS games_miniapp_scope_updated_idx`.execute(db);
   await sql`DROP INDEX IF EXISTS games_active_source_scope_idx`.execute(db);
+  await sql`DROP INDEX IF EXISTS games_source_scope_unique`.execute(db);
   await sql`
     DO $$
     BEGIN
@@ -150,9 +184,9 @@ export async function down(db: Kysely<any>): Promise<void> {
   await sql`
     ALTER TABLE games
       DROP CONSTRAINT IF EXISTS games_status_check,
-      DROP COLUMN IF EXISTS game_status,
       DROP COLUMN IF EXISTS source;
   `.execute(db);
+  await sql`ALTER TABLE games DROP COLUMN IF EXISTS game_status`.execute(db);
   await sql`DROP TYPE IF EXISTS game_source`.execute(db);
   await sql`
     ALTER TABLE users

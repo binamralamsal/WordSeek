@@ -15,6 +15,7 @@ export const redisKeys = {
     phrase: "helloBaby" | "byee",
     date: string,
   ) => `greetingTrack:${userId}:${phrase}:${date}`,
+  profilePhotoSync: (userId: string | number) => `profile_photo_sync:${userId}`,
   geminiFailedKeys: "seek-gemini:failed_keys",
   broadcastState: "broadcast:state",
   broadcastLock: "broadcast:lock",

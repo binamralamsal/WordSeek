@@ -1,6 +1,8 @@
 import { GameBoard } from "@/components/game/game-board";
+import { GameHelpDialog } from "@/components/game/game-help-dialog";
 import { GameKeyboard } from "@/components/game/game-keyboard";
 import { GameResultCard } from "@/components/game/game-result-card";
+import { GameResultDialog } from "@/components/game/game-result-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,7 +10,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { hapticImpact } from "@/lib/telegram";
 import type { WordLength } from "@shared/leaderboard";
 import type { MiniAppClassicState, MiniAppDailyState } from "@shared/miniapp";
-import { Flame, Sparkles } from "lucide-react";
+import { Flame, RotateCcw, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type GameMode = "classic" | "daily";
@@ -48,6 +50,10 @@ export function GameScreen({
   const finished = Boolean(
     game && game.status !== (mode === "daily" ? "playing" : "active"),
   );
+  const classicState =
+    mode === "classic" && state
+      ? (state as NonNullable<MiniAppClassicState>)
+      : null;
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [revealRow, setRevealRow] = useState<number | null>(null);
@@ -55,17 +61,44 @@ export function GameScreen({
   const [shakeRow, setShakeRow] = useState<number | null>(null);
   const revealTimer = useRef<number | null>(null);
   const celebrateTimer = useRef<number | null>(null);
+  const resultTimer = useRef<number | null>(null);
+  const confettiTimer = useRef<number | null>(null);
+  const [resultOpen, setResultOpen] = useState(false);
+  const [confetti, setConfetti] = useState(false);
+  const gameId =
+    mode === "classic" && state && "id" in state ? state.id : daily?.date;
+  const previousGameId = useRef(gameId);
 
   useEffect(() => {
     setDraft("");
     setRevealRow(null);
     setCelebrationRow(null);
     setShakeRow(null);
+    setResultOpen(false);
+    setConfetti(false);
     return () => {
       if (revealTimer.current) window.clearTimeout(revealTimer.current);
       if (celebrateTimer.current) window.clearTimeout(celebrateTimer.current);
+      if (resultTimer.current) window.clearTimeout(resultTimer.current);
+      if (confettiTimer.current) window.clearTimeout(confettiTimer.current);
     };
-  }, [mode, length]);
+  }, [length, mode]);
+
+  useEffect(() => {
+    const previousId = previousGameId.current;
+    previousGameId.current = gameId;
+    if (previousId == null || gameId === previousId) return;
+
+    setDraft("");
+    setRevealRow(null);
+    setCelebrationRow(null);
+    setResultOpen(false);
+    setConfetti(false);
+    if (revealTimer.current) window.clearTimeout(revealTimer.current);
+    if (celebrateTimer.current) window.clearTimeout(celebrateTimer.current);
+    if (resultTimer.current) window.clearTimeout(resultTimer.current);
+    if (confettiTimer.current) window.clearTimeout(confettiTimer.current);
+  }, [gameId]);
 
   const submit = useCallback(async () => {
     if (draft.length !== wordLength || busy || sending || finished || loading)
@@ -87,8 +120,23 @@ export function GameScreen({
         if (celebrateTimer.current) window.clearTimeout(celebrateTimer.current);
         celebrateTimer.current = window.setTimeout(
           () => setCelebrationRow(row),
-          revealTime - 100,
+          revealTime + 160,
         );
+      }
+      if (mode === "classic" && next.status !== "active") {
+        if (resultTimer.current) window.clearTimeout(resultTimer.current);
+        resultTimer.current = window.setTimeout(() => {
+          setResultOpen(true);
+          if (next.status === "won") {
+            setConfetti(true);
+            if (confettiTimer.current)
+              window.clearTimeout(confettiTimer.current);
+            confettiTimer.current = window.setTimeout(
+              () => setConfetti(false),
+              3200,
+            );
+          }
+        }, revealTime + 480);
       }
     } catch (error) {
       onError(error);
@@ -103,6 +151,7 @@ export function GameScreen({
     finished,
     guesses.length,
     loading,
+    mode,
     onError,
     onSubmit,
     sending,
@@ -176,6 +225,7 @@ export function GameScreen({
             {Math.max(0, maxAttempts - guesses.length)} guesses left
           </span>
         )}
+        <GameHelpDialog />
       </div>
 
       {mode === "classic" && (
@@ -197,12 +247,23 @@ export function GameScreen({
               <ToggleGroupItem
                 value={String(value)}
                 key={value}
-                disabled={busy}
+                disabled={busy || loading}
               >
                 {value}
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
+          <Button
+            variant="outline"
+            size="icon-sm"
+            className="game-new-button"
+            onClick={onNewGame}
+            disabled={busy || loading || sending}
+            aria-label="Start a new classic game"
+            title="Start a new game"
+          >
+            <RotateCcw aria-hidden="true" />
+          </Button>
         </div>
       )}
       {mode === "daily" && (
@@ -217,7 +278,7 @@ export function GameScreen({
         </div>
       )}
 
-      {game || waitingForGame ? (
+      {game || waitingForGame || mode === "classic" ? (
         <GameBoard
           guesses={guesses}
           draft={draft}
@@ -235,33 +296,66 @@ export function GameScreen({
             <Sparkles />
             <b>Couldn’t load this puzzle</b>
             <span>Check your connection and try again.</span>
-            <Button
-              variant="outline"
-              onClick={() =>
-                mode === "classic" ? onNewGame() : window.location.reload()
-              }
-            >
+            <Button variant="outline" onClick={() => window.location.reload()}>
               Try again
             </Button>
           </CardContent>
         </Card>
       )}
 
-      {finished && game && (
-        <GameResultCard
-          kind={mode}
-          state={game}
-          onNewGame={mode === "classic" ? onNewGame : undefined}
+      {finished && game && mode === "daily" && (
+        <GameResultCard kind="daily" state={game} />
+      )}
+      {mode === "classic" && classicState && finished && (
+        <GameResultDialog
+          open={resultOpen}
+          onOpenChange={setResultOpen}
+          state={classicState}
+          onPlayAgain={onNewGame}
         />
       )}
+      {confetti && <ConfettiBurst />}
 
       <GameKeyboard
         states={keyboardStates}
         draft={draft}
         wordLength={wordLength}
-        disabled={loading || busy || sending || !game || finished}
+        disabled={
+          loading || busy || sending || (mode === "daily" && !game) || finished
+        }
         onKey={pressKey}
       />
     </section>
+  );
+}
+
+function ConfettiBurst() {
+  const colors = [
+    "var(--primary)",
+    "var(--tile-correct)",
+    "var(--tile-present)",
+    "#f48fb1",
+    "#ffd166",
+  ];
+
+  return (
+    <div className="confetti-burst" aria-hidden="true">
+      {Array.from({ length: 42 }, (_, index) => (
+        <span
+          className="confetti-piece"
+          key={index}
+          style={
+            {
+              "--confetti-x": `${(index * 47) % 100}%`,
+              "--confetti-drift": `${((index * 37) % 150) - 75}px`,
+              "--confetti-duration": `${1900 + ((index * 29) % 1100)}ms`,
+              "--confetti-delay": `${(index * 31) % 340}ms`,
+              "--confetti-rotation": `${index * 83}deg`,
+              "--confetti-color": colors[index % colors.length],
+            } as React.CSSProperties
+          }
+        />
+      ))}
+    </div>
   );
 }

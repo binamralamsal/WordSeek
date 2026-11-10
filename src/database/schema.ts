@@ -74,7 +74,6 @@ export interface DailyWord {
 export interface Game {
   activeChat: string;
   createdAt: Generated<Timestamp>;
-  gameStatus: Generated<string>;
   id: Generated<number>;
   source: Generated<GameSource>;
   startedBy: string | null;

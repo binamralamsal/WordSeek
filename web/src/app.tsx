@@ -27,6 +27,11 @@ import type {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type PlayView = "game" | "rankings" | "profile";
+const EMPTY_CLASSIC_GAMES: Record<WordLength, MiniAppClassicState> = {
+  4: null,
+  5: null,
+  6: null,
+};
 
 export function App() {
   const [section, setSection] = useState<AppSection>("play");
@@ -35,6 +40,8 @@ export function App() {
   const [gameMode, setGameMode] = useState<"classic" | "daily">("classic");
   const [length, setLength] = useState<WordLength>(5);
   const [boot, setBoot] = useState<MiniAppBootstrap | null>(null);
+  const [classicGames, setClassicGames] =
+    useState<Record<WordLength, MiniAppClassicState>>(EMPTY_CLASSIC_GAMES);
   const [classic, setClassic] = useState<MiniAppClassicState>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -63,16 +70,8 @@ export function App() {
       .then(async (result) => {
         if (cancelled) return;
         setBoot(result);
-        if (result.classic) {
-          setClassic(result.classic);
-          setLength(result.classic.wordLength);
-        } else {
-          const initialGame = await api<MiniAppClassicState>("/classic/start", {
-            method: "POST",
-            body: JSON.stringify({ wordLength: 5 }),
-          });
-          if (!cancelled) setClassic(initialGame);
-        }
+        setClassicGames(result.classicGames);
+        setClassic(result.classicGames[5]);
       })
       .catch((error: Error) => setNotice(error.message))
       .finally(() => {
@@ -117,43 +116,27 @@ export function App() {
 
   const daily = boot?.daily;
   const currentGame = gameMode === "daily" ? daily : classic;
-  const selectLength = async (nextLength: WordLength) => {
-    const requestId = ++gameRequestId.current;
+  const selectLength = (nextLength: WordLength) => {
+    gameRequestId.current += 1;
     setLength(nextLength);
     setGameMode("classic");
-    setClassic(null);
-    setBusy(true);
+    setClassic(classicGames[nextLength]);
     setNotice("");
-    try {
-      let next = await api<MiniAppClassicState>(
-        `/classic?length=${nextLength}`,
-      );
-      if (!next) {
-        next = await api<MiniAppClassicState>("/classic/start", {
-          method: "POST",
-          body: JSON.stringify({ wordLength: nextLength }),
-        });
-      }
-      if (requestId === gameRequestId.current) setClassic(next);
-    } catch (error) {
-      if (requestId === gameRequestId.current)
-        setNotice((error as Error).message);
-    } finally {
-      if (requestId === gameRequestId.current) setBusy(false);
-    }
   };
 
   const startNewClassic = async () => {
     const requestId = ++gameRequestId.current;
     const gameLength = length;
     setBusy(true);
-    setClassic(null);
     try {
-      const next = await api<MiniAppClassicState>("/classic/start", {
+      await api<MiniAppClassicState>("/classic/abandon", {
         method: "POST",
         body: JSON.stringify({ wordLength: gameLength }),
       });
-      if (requestId === gameRequestId.current) setClassic(next);
+      if (requestId === gameRequestId.current) {
+        setClassic(null);
+        setClassicGames((games) => ({ ...games, [gameLength]: null }));
+      }
     } catch (error) {
       if (requestId === gameRequestId.current)
         setNotice((error as Error).message);
@@ -178,6 +161,7 @@ export function App() {
       body: JSON.stringify({ guess, wordLength: length }),
     });
     setClassic(next);
+    setClassicGames((games) => ({ ...games, [length]: next }));
     if (next && next.status !== "active")
       hapticNotification(next.status === "won" ? "success" : "error");
     return next;
@@ -241,7 +225,7 @@ export function App() {
           <>
             {playView === "game" && (
               <GameScreen
-                key={`${gameMode}-${length}-${gameMode === "classic" ? (classic?.id ?? "pending") : (daily?.date ?? "daily")}`}
+                key={`${gameMode}-${length}`}
                 mode={gameMode}
                 length={length}
                 state={currentGame}
@@ -255,11 +239,10 @@ export function App() {
                     hapticImpact("light");
                   } else {
                     setGameMode("classic");
-                    void selectLength(length);
                   }
                 }}
                 onLength={(next) => {
-                  void selectLength(next);
+                  selectLength(next);
                 }}
                 onSubmit={submitGuess}
                 onNewGame={() => {

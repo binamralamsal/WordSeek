@@ -21,19 +21,19 @@ export function BottomNavigation({
         className={`glass-nav at-${value === "game" ? "0" : value === "rankings" ? "1" : value === "profile" ? "2" : "3"}`}
       >
         <span className="nav-active-pill" aria-hidden="true" />
-        <TabsTrigger value="game">
+        <TabsTrigger value="game" title="Play WordSeek">
           <MessageCircle aria-hidden="true" />
           <span>Play</span>
         </TabsTrigger>
-        <TabsTrigger value="rankings">
+        <TabsTrigger value="rankings" title="View global rankings">
           <Trophy aria-hidden="true" />
           <span>Ranks</span>
         </TabsTrigger>
-        <TabsTrigger value="profile">
+        <TabsTrigger value="profile" title="View your profile and ranking">
           <UserRound aria-hidden="true" />
           <span>Profile</span>
         </TabsTrigger>
-        <TabsTrigger value="settings">
+        <TabsTrigger value="settings" title="Open settings">
           <Settings aria-hidden="true" />
           <span>Settings</span>
         </TabsTrigger>

@@ -118,6 +118,43 @@ describe("sync user/chat middleware", () => {
     ).toMatchObject({ id: String(GROUP_ID), name: "Test Chat" });
   });
 
+  test("syncs the sender's largest Telegram profile photo", async () => {
+    const bot = new TestBot();
+    bot.profilePhotos = {
+      total_count: 1,
+      photos: [
+        [
+          {
+            file_id: "small-profile-photo",
+            file_unique_id: "small-profile-unique",
+            width: 80,
+            height: 80,
+          },
+          {
+            file_id: "large-profile-photo",
+            file_unique_id: "large-profile-unique",
+            width: 640,
+            height: 640,
+          },
+        ],
+      ],
+    };
+
+    await bot.sendText("hello", { id: PLAYER_ID });
+    await flushAsyncWork();
+    await bot.sendText("another message", { id: PLAYER_ID });
+    await flushAsyncWork();
+
+    expect(bot.callsTo("getUserProfilePhotos")).toHaveLength(1);
+    expect(
+      await envState.db
+        .selectFrom("users")
+        .select("photoUrl")
+        .where("id", "=", String(PLAYER_ID))
+        .executeTakeFirst(),
+    ).toEqual({ photoUrl: "telegram-file:large-profile-photo" });
+  });
+
   test("skips channel chats", async () => {
     const bot = new TestBot();
 

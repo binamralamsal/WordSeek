@@ -5,7 +5,7 @@ import { env } from "#/config/env";
 import {
   abandonClassicGame,
   getClassicState,
-  startClassicGame,
+  getClassicStates,
   submitClassicGuess,
 } from "#/features/miniapp/services/classic.service";
 import {
@@ -153,10 +153,10 @@ async function readJson(request: Request): Promise<unknown> {
 }
 
 async function handleBootstrap(auth: AuthContext): Promise<Response> {
-  const [profile, daily, classic] = await Promise.all([
+  const [profile, daily, classicGames] = await Promise.all([
     getMiniAppProfile(auth.userId, auth.group),
     getDailyState(auth.userId),
-    getClassicState(auth.userId, 5),
+    getClassicStates(auth.userId),
   ]);
 
   if (!profile) {
@@ -174,7 +174,7 @@ async function handleBootstrap(auth: AuthContext): Promise<Response> {
   return json<MiniAppBootstrap>({
     profile,
     daily: daily.state,
-    classic,
+    classicGames,
     config: {
       dailyAttempts: DAILY_ATTEMPTS,
       classicAttempts: CLASSIC_ATTEMPTS,
@@ -203,24 +203,6 @@ async function handleDailyGuess(
   }
 
   return json<MiniAppDailyState>(result.state);
-}
-
-async function handleStartClassic(
-  request: Request,
-  auth: AuthContext,
-): Promise<Response> {
-  const parsed = startClassicSchema.safeParse(await readJson(request));
-
-  if (!parsed.success || !isWordLength(parsed.data.wordLength)) {
-    throw new ApiRouteError("INVALID_LENGTH", "Word length must be 4, 5 or 6.");
-  }
-
-  const state = await startClassicGame({
-    userId: auth.userId,
-    wordLength: parsed.data.wordLength,
-  });
-
-  return json<MiniAppClassicState>(state);
 }
 
 async function handleClassicGuess(
@@ -359,7 +341,6 @@ export function createMiniAppApi(auth: AuthContext) {
         await getClassicState(auth.userId, length),
       );
     })
-    .post("/classic/start", ({ request }) => handleStartClassic(request, auth))
     .post("/classic/guess", ({ request }) => handleClassicGuess(request, auth))
     .post("/classic/abandon", ({ request }) =>
       handleAbandonClassic(request, auth),
