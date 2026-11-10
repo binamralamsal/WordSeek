@@ -38,7 +38,7 @@ describe("Mini App API", () => {
     expect(startResponse.status).toBe(404);
   });
 
-  test("leaderboard responses do not expose Telegram user IDs", async () => {
+  test("leaderboard responses include Telegram user IDs", async () => {
     await seedUser(env.db, { id: "4242", name: "Ada Lovelace" });
     await seedUser(env.db, { id: "7777", name: "Grace Hopper" });
     await env.db
@@ -74,18 +74,18 @@ describe("Mini App API", () => {
       "Grace Hopper",
       "Ada Lovelace",
     ]);
-    expect(body.data.rows.every((row) => !("userId" in row))).toBe(true);
+    expect(body.data.rows.map((row) => row.userId)).toEqual(["7777", "4242"]);
     expect(body.data.rows.map((row) => row.isMe)).toEqual([false, true]);
     expect(body.data.rows.map((row) => row.photoUrl)).toEqual([
       "https://t.me/i/userpic/320/grace.jpg",
       "https://t.me/i/userpic/320/ada.jpg",
     ]);
-    expect(
-      body.data.rows.every((row) => typeof row.profileId === "string"),
-    ).toBe(true);
+    expect(body.data.rows.every((row) => typeof row.userId === "string")).toBe(
+      true,
+    );
   });
 
-  test("players can be found and opened without exposing Telegram IDs", async () => {
+  test("players can be found and opened using Telegram IDs", async () => {
     await seedUser(env.db, {
       id: "7777",
       name: "Grace Hopper",
@@ -105,11 +105,11 @@ describe("Mini App API", () => {
     const searchBody = (await searchResponse.json()) as {
       data: Record<string, unknown>;
     };
-    const profileId = searchBody.data.profileId as string;
+    const userId = searchBody.data.id as string;
 
     expect(searchResponse.status).toBe(200);
     expect(searchBody.data.username).toBe("gracehopper");
-    expect(searchBody.data).not.toHaveProperty("id");
+    expect(userId).toBe("7777");
 
     const idSearchResponse = await handleApiRequest(
       new Request("http://localhost/api/profile/search?q=7777"),
@@ -118,11 +118,10 @@ describe("Mini App API", () => {
     const idSearchBody = (await idSearchResponse.json()) as {
       data: Record<string, unknown>;
     };
-    expect(idSearchBody.data.profileId).toBe(profileId);
-    expect(idSearchBody.data).not.toHaveProperty("id");
+    expect(idSearchBody.data.id).toBe(userId);
 
     const profileResponse = await handleApiRequest(
-      new Request(`http://localhost/api/profile/${profileId}`),
+      new Request(`http://localhost/api/profile/${userId}`),
       auth,
     );
     const profileBody = (await profileResponse.json()) as {
@@ -134,12 +133,12 @@ describe("Mini App API", () => {
 
     expect(profileResponse.status).toBe(200);
     expect(profileBody.data.user.displayName).toBe("Grace Hopper");
-    expect(profileBody.data.user).not.toHaveProperty("id");
+    expect(profileBody.data.user.id).toBe(userId);
     expect(profileBody.data.stats).not.toHaveProperty("classicWins");
 
     const rankingResponse = await handleApiRequest(
       new Request(
-        `http://localhost/api/profile/${profileId}/ranking?scope=global&period=all&length=5`,
+        `http://localhost/api/profile/${userId}/ranking?scope=global&period=all&length=5`,
       ),
       auth,
     );

@@ -59,7 +59,7 @@ export function App() {
   const [period, setPeriod] = useState<LeaderboardPeriod>("week");
   const [filterLength, setFilterLength] = useState<WordLength>(5);
   const [page, setPage] = useState(1);
-  const [profileId, setProfileId] = useState<string | null>(null);
+  const [targetUserId, setTargetUserId] = useState<string | null>(null);
   const [profileReturnTo, setProfileReturnTo] = useState<PlayView>("rankings");
   const gameRequestId = useRef(0);
   const initializedClassicRef = useRef(false);
@@ -100,27 +100,30 @@ export function App() {
       api<MyRanking>(
         `/leaderboard/me?scope=${scope}&period=${period}&length=${filterLength}`,
       ),
-    enabled: section === "play" && playView === "profile" && !profileId,
+    enabled: section === "play" && playView === "profile" && !targetUserId,
   });
   const publicProfileQuery = useQuery({
-    queryKey: ["public-profile", profileId],
+    queryKey: ["public-profile", targetUserId],
     queryFn: () =>
-      api<MiniAppPublicProfile>(`/profile/${encodeURIComponent(profileId!)}`),
-    enabled: Boolean(profileId),
+      api<MiniAppPublicProfile>(
+        `/profile/${encodeURIComponent(targetUserId!)}`,
+      ),
+    enabled: Boolean(targetUserId),
   });
   const publicRankingQuery = useQuery({
     queryKey: [
       "public-profile-ranking",
-      profileId,
+      targetUserId,
       scope,
       period,
       filterLength,
     ],
     queryFn: () =>
       api<MyRanking>(
-        `/profile/${encodeURIComponent(profileId!)}/ranking?scope=${scope}&period=${period}&length=${filterLength}`,
+        `/profile/${encodeURIComponent(targetUserId!)}/ranking?scope=${scope}&period=${period}&length=${filterLength}`,
       ),
-    enabled: Boolean(profileId) && section === "play" && playView === "profile",
+    enabled:
+      Boolean(targetUserId) && section === "play" && playView === "profile",
   });
 
   useEffect(() => {
@@ -321,26 +324,26 @@ export function App() {
                   setPage(1);
                 }}
                 onPage={setPage}
-                onOpenProfile={(id) => {
+                onOpenProfile={(userId) => {
                   setProfileReturnTo("rankings");
-                  setProfileId(id);
+                  setTargetUserId(userId);
                   setPlayView("profile");
                 }}
               />
             )}
             {playView === "profile" && (
               <ProfileScreen
-                profile={profileId ? publicProfileQuery.data : boot?.profile}
-                loading={profileId ? publicProfileQuery.isPending : loading}
-                isOtherProfile={Boolean(profileId)}
+                profile={targetUserId ? publicProfileQuery.data : boot?.profile}
+                loading={targetUserId ? publicProfileQuery.isPending : loading}
+                isOtherProfile={Boolean(targetUserId)}
                 scope={scope}
                 period={period}
                 length={filterLength}
                 ranking={
-                  profileId ? publicRankingQuery.data : ownRankingQuery.data
+                  targetUserId ? publicRankingQuery.data : ownRankingQuery.data
                 }
                 rankingLoading={
-                  profileId
+                  targetUserId
                     ? publicRankingQuery.isPending
                     : ownRankingQuery.isPending
                 }
@@ -353,10 +356,10 @@ export function App() {
                     `/profile/search?q=${encodeURIComponent(query)}`,
                   );
                   setProfileReturnTo("profile");
-                  setProfileId(user.profileId);
+                  setTargetUserId(user.id);
                 }}
                 onBack={() => {
-                  setProfileId(null);
+                  setTargetUserId(null);
                   setPlayView(profileReturnTo);
                 }}
               />
@@ -367,7 +370,7 @@ export function App() {
       <BottomNavigation
         value={section === "settings" ? "settings" : playView}
         onChange={(next) => {
-          setProfileId(null);
+          setTargetUserId(null);
           if (next === "settings") {
             setSection("settings");
             return;

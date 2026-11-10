@@ -107,7 +107,6 @@ export interface User {
   name: string;
   nickname: string | null;
   photoUrl: string | null;
-  publicProfileId: Generated<string>;
   updatedAt: Generated<Timestamp>;
   username: string | null;
 }

@@ -52,7 +52,6 @@ export type MiniAppClassicState = {
 
 export type MiniAppUser = {
   id: string;
-  profileId: string;
   name: string;
   nickname: string | null;
   displayName: string;
@@ -85,7 +84,7 @@ export type MiniAppProfile = {
   group: MiniAppGroupContext | null;
 };
 
-export type MiniAppPublicUser = Omit<MiniAppUser, "id" | "name" | "nickname">;
+export type MiniAppPublicUser = Omit<MiniAppUser, "name" | "nickname">;
 
 export type MiniAppPublicProfile = {
   user: MiniAppPublicUser;
@@ -96,7 +95,6 @@ export type MiniAppPublicProfile = {
 export type LeaderboardRow = {
   rank: number;
   userId: string;
-  profileId: string;
   displayName: string;
   username: string | null;
   photoUrl: string | null;
@@ -116,10 +114,7 @@ export type LeaderboardPage = {
   wordLength: WordLength;
 };
 
-/** Public Mini App shape deliberately excludes Telegram user IDs. */
-export type MiniAppLeaderboardPage = Omit<LeaderboardPage, "rows"> & {
-  rows: Omit<LeaderboardRow, "userId">[];
-};
+export type MiniAppLeaderboardPage = LeaderboardPage;
 
 export type MyRanking = {
   rank: number;

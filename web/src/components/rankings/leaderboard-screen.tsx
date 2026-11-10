@@ -24,7 +24,7 @@ export function LeaderboardScreen({
   pageIndex: number;
   period: LeaderboardPeriod;
   length: WordLength;
-  onOpenProfile: (profileId: string) => void;
+  onOpenProfile: (userId: string) => void;
   onPeriod: (value: LeaderboardPeriod) => void;
   onLength: (value: WordLength) => void;
   onPage: (value: number) => void;
@@ -68,8 +68,8 @@ export function LeaderboardScreen({
                 .map((player) => (
                   <button
                     className={`rank-row rank-row-button ${player.isMe ? "rank-me" : ""}`}
-                    key={player.profileId}
-                    onClick={() => onOpenProfile(player.profileId)}
+                    key={player.userId}
+                    onClick={() => onOpenProfile(player.userId)}
                     type="button"
                     aria-label={`View ${player.displayName}'s profile`}
                   >
@@ -155,7 +155,7 @@ function Podium({
   onOpenProfile,
 }: {
   players: NonNullable<MiniAppLeaderboardPage>["rows"];
-  onOpenProfile: (profileId: string) => void;
+  onOpenProfile: (userId: string) => void;
 }) {
   const order = [players[1], players[0], players[2]];
   if (!players.length) return null;
@@ -168,8 +168,8 @@ function Podium({
         return (
           <button
             className={`podium-player place-${place}`}
-            key={player.profileId}
-            onClick={() => onOpenProfile(player.profileId)}
+            key={player.userId}
+            onClick={() => onOpenProfile(player.userId)}
             type="button"
             aria-label={`View ${player.displayName}'s profile`}
           >

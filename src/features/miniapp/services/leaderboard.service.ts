@@ -96,7 +96,6 @@ export async function getLeaderboardPage(
         "users.nickname",
         "users.username",
         "users.photoUrl",
-        "users.publicProfileId",
       ])
       .orderBy("totals.rank", "asc")
       .orderBy("totals.userId", "asc")
@@ -115,7 +114,6 @@ export async function getLeaderboardPage(
   const mapped: LeaderboardRow[] = rows.map((row) => ({
     rank: Number(row.rank),
     userId: row.userId,
-    profileId: row.publicProfileId,
     displayName: row.nickname?.trim() || row.name,
     username: row.username,
     photoUrl: row.photoUrl,

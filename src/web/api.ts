@@ -16,7 +16,6 @@ import {
   findMiniAppUser,
   getMiniAppProfile,
   getMiniAppPublicProfile,
-  getMiniAppUserIdByProfileId,
   updateNickname,
 } from "#/features/miniapp/services/profile.service";
 import {
@@ -62,7 +61,7 @@ const classicGuessSchema = guessSchema.extend({
 const nicknameSchema = z.object({
   nickname: z.unknown(),
 });
-const profileIdSchema = z.string().uuid();
+const telegramUserIdSchema = z.string().regex(/^\d{1,20}$/);
 
 function json<T>(data: T, status = 200): Response {
   return Response.json({ data } satisfies ApiResponse<T>, {
@@ -142,10 +141,7 @@ function withIsMe(
 ): MiniAppLeaderboardPage {
   return {
     ...page,
-    rows: page.rows.map(({ userId: rowUserId, ...row }) => ({
-      ...row,
-      isMe: rowUserId === userId,
-    })),
+    rows: page.rows.map((row) => ({ ...row, isMe: row.userId === userId })),
   };
 }
 
@@ -296,10 +292,10 @@ async function handlePublicProfileSearch(url: URL): Promise<Response> {
 }
 
 async function handlePublicProfile(
-  profileIdInput: string,
+  userIdInput: string,
   auth: AuthContext,
 ): Promise<Response> {
-  const parsed = profileIdSchema.safeParse(profileIdInput);
+  const parsed = telegramUserIdSchema.safeParse(userIdInput);
   if (!parsed.success) {
     throw new ApiRouteError(
       "PROFILE_NOT_FOUND",
@@ -320,11 +316,11 @@ async function handlePublicProfile(
 }
 
 async function handlePublicProfileRanking(
-  profileIdInput: string,
+  userIdInput: string,
   url: URL,
   auth: AuthContext,
 ): Promise<Response> {
-  const parsed = profileIdSchema.safeParse(profileIdInput);
+  const parsed = telegramUserIdSchema.safeParse(userIdInput);
   if (!parsed.success) {
     throw new ApiRouteError(
       "PROFILE_NOT_FOUND",
@@ -333,14 +329,7 @@ async function handlePublicProfileRanking(
     );
   }
 
-  const userId = await getMiniAppUserIdByProfileId(parsed.data);
-  if (!userId) {
-    throw new ApiRouteError(
-      "PROFILE_NOT_FOUND",
-      "Player profile not found.",
-      404,
-    );
-  }
+  const userId = parsed.data;
 
   const filters = parseLeaderboardFilters(url);
   const ranking = await getMyRanking({
@@ -438,12 +427,12 @@ export function createMiniAppApi(auth: AuthContext) {
     .get("/profile/search", ({ request }) =>
       handlePublicProfileSearch(new URL(request.url)),
     )
-    .get("/profile/:profileId/ranking", ({ params, request }) =>
-      handlePublicProfileRanking(params.profileId, new URL(request.url), auth),
+    .get("/profile/:userId/ranking", ({ params, request }) =>
+      handlePublicProfileRanking(params.userId, new URL(request.url), auth),
     )
     .get("/profile", () => handleProfile(auth))
-    .get("/profile/:profileId", ({ params }) =>
-      handlePublicProfile(params.profileId, auth),
+    .get("/profile/:userId", ({ params }) =>
+      handlePublicProfile(params.userId, auth),
     )
     .patch("/profile", ({ request }) => handleNickname(request, auth))
     .post("/nickname", ({ request }) => handleNickname(request, auth))
