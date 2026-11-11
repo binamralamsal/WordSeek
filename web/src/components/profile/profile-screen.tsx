@@ -118,17 +118,17 @@ export function ProfileScreen({
             <div className="profile-search-heading">
               <div>
                 <b>Find a player</b>
-                <p>Search by Telegram username, nickname or user ID.</p>
+                <p>Search by Telegram username or user ID.</p>
               </div>
               <Search aria-hidden="true" />
             </div>
             <form className="profile-search-form" onSubmit={searchProfile}>
               <input
-                aria-label="Telegram username, nickname or user ID"
+                aria-label="Telegram username or user ID"
                 autoComplete="off"
                 className="nickname-input"
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="@username, nickname or ID"
+                placeholder="@username or user ID"
                 value={search}
               />
               <Button disabled={searching || !search.trim()} type="submit">

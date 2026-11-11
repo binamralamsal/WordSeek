@@ -11,12 +11,6 @@ import { MAX_TILE_SIZE, MIN_TILE_SIZE } from "@/lib/preferences";
 import type { ThemeMode } from "@/lib/telegram-types";
 import type { MiniAppUser } from "@shared/miniapp";
 import {
-  NICKNAME_MAX_LENGTH,
-  NICKNAME_MIN_LENGTH,
-  NICKNAME_RULES,
-  validateNickname,
-} from "@shared/nickname";
-import {
   Check,
   Grid3X3,
   Keyboard,
@@ -26,7 +20,7 @@ import {
   SunMoon,
   UserRound,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 export function SettingsScreen({
   user,
@@ -52,21 +46,7 @@ export function SettingsScreen({
     setNickname(user?.nickname ?? "");
   }, [user?.nickname]);
 
-  const nicknameLength = [...nickname].length;
-  const validation = useMemo(
-    () => (nickname.trim() ? validateNickname(nickname) : null),
-    [nickname],
-  );
-  const nextNickname = validation?.ok ? validation.value : nickname.trim();
-  const changed = nextNickname !== (user?.nickname ?? "");
-  const canSave = Boolean(user && validation?.ok && changed);
-  const hint =
-    validation && !validation.ok
-      ? validation.message
-      : nicknameHint(nicknameLength);
-
   const save = async () => {
-    if (!canSave) return;
     setSaving(true);
     setSaved(false);
     setError("");
@@ -75,7 +55,6 @@ export function SettingsScreen({
         method: "PATCH",
         body: JSON.stringify({ nickname }),
       });
-      setNickname(result.user.nickname ?? "");
       onSaved(result.user);
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2200);
@@ -281,39 +260,19 @@ export function SettingsScreen({
             id="nickname"
             className="nickname-input"
             value={nickname}
-            minLength={NICKNAME_MIN_LENGTH}
-            maxLength={NICKNAME_MAX_LENGTH}
+            minLength={3}
+            maxLength={20}
             autoComplete="nickname"
-            aria-invalid={Boolean(validation && !validation.ok)}
-            aria-describedby="nickname-help"
             onChange={(event) => {
               setNickname(event.target.value);
               setSaved(false);
-              setError("");
             }}
-            placeholder={`${NICKNAME_MIN_LENGTH}–${NICKNAME_MAX_LENGTH} characters`}
+            placeholder="3–20 characters"
           />
           <div className="nickname-meta">
-            <span
-              id="nickname-help"
-              className={validation && !validation.ok ? "is-error" : ""}
-              role={validation && !validation.ok ? "status" : undefined}
-            >
-              {hint}
-            </span>
-            <span
-              className={
-                nicknameLength > NICKNAME_MAX_LENGTH ? "is-over" : undefined
-              }
-            >
-              {nicknameLength}/{NICKNAME_MAX_LENGTH}
-            </span>
+            <span>Letters, numbers, spaces, _ and -</span>
+            <span>{nickname.length}/20</span>
           </div>
-          <ul className="nickname-rules">
-            {NICKNAME_RULES.map((rule) => (
-              <li key={rule}>{rule}</li>
-            ))}
-          </ul>
           {error && (
             <p className="field-error" role="alert">
               {error}
@@ -322,7 +281,7 @@ export function SettingsScreen({
           <Button
             className="save-nickname"
             onClick={() => void save()}
-            disabled={saving || !canSave}
+            disabled={saving || !user || nickname === (user.nickname ?? "")}
           >
             {saved ? (
               <>
@@ -342,16 +301,6 @@ export function SettingsScreen({
       </p>
     </section>
   );
-}
-
-function nicknameHint(length: number) {
-  if (length === 0)
-    return `${NICKNAME_MIN_LENGTH}–${NICKNAME_MAX_LENGTH} characters. Letters, numbers, spaces, . _ -`;
-  if (length < NICKNAME_MIN_LENGTH) {
-    const remaining = NICKNAME_MIN_LENGTH - length;
-    return `Add ${remaining} more ${remaining === 1 ? "character" : "characters"}.`;
-  }
-  return "Looks good. Save to update your profile and rankings.";
 }
 
 function SizeChoice({

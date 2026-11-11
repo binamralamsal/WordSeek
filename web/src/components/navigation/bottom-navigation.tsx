@@ -25,7 +25,7 @@ export function BottomNavigation({
           <MessageCircle aria-hidden="true" />
           <span>Play</span>
         </TabsTrigger>
-        <TabsTrigger value="rankings" title="View leaderboards">
+        <TabsTrigger value="rankings" title="View global rankings">
           <Trophy aria-hidden="true" />
           <span>Ranks</span>
         </TabsTrigger>

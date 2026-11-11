@@ -68,39 +68,26 @@ export async function findMiniAppUser(
   const normalized = query.trim().replace(/^@/, "");
   if (!normalized) return null;
 
-  if (/^\d+$/.test(normalized)) {
-    const user = await db
-      .selectFrom("users")
-      .select(["id", "name", "nickname", "username", "photoUrl", "createdAt"])
-      .where("id", "=", normalized)
-      .executeTakeFirst();
-    return user ? toPublicUser(user) : null;
-  }
-
-  const username = /^[a-zA-Z0-9_]{5,32}$/.test(normalized) ? normalized : null;
-  const nickname = /^[\p{L}\p{N} ._-]{1,64}$/u.test(normalized)
-    ? normalized
-    : null;
-
-  if (!username && !nickname) return null;
-
-  const user = await db
-    .selectFrom("users")
-    .select(["id", "name", "nickname", "username", "photoUrl", "createdAt"])
-    .where((builder) => {
-      const conditions = [];
-      if (username) {
-        conditions.push(builder("username", "ilike", username));
-      }
-      if (nickname) {
-        conditions.push(builder("nickname", "ilike", nickname));
-      }
-      return builder.or(conditions);
-    })
-    .orderBy(
-      sql`case when lower(coalesce(nickname, '')) = lower(${normalized}) or lower(coalesce(username, '')) = lower(${normalized}) then 0 else 1 end`,
-    )
-    .executeTakeFirst();
+  const user = /^\d+$/.test(normalized)
+    ? await db
+        .selectFrom("users")
+        .select(["id", "name", "nickname", "username", "photoUrl", "createdAt"])
+        .where("id", "=", normalized)
+        .executeTakeFirst()
+    : /^[a-zA-Z0-9_]{5,32}$/.test(normalized)
+      ? await db
+          .selectFrom("users")
+          .select([
+            "id",
+            "name",
+            "nickname",
+            "username",
+            "photoUrl",
+            "createdAt",
+          ])
+          .where("username", "ilike", normalized)
+          .executeTakeFirst()
+      : undefined;
 
   return user ? toPublicUser(user) : null;
 }

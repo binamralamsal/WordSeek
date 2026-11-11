@@ -12,12 +12,6 @@ import type { MiniAppLeaderboardScope } from "@shared/miniapp";
 const periods: LeaderboardPeriod[] = ["today", "week", "month", "year", "all"];
 const lengths: WordLength[] = [4, 5, 6];
 
-const scopeLabels: Record<MiniAppLeaderboardScope, string> = {
-  global: "Global",
-  group: "Group",
-  private: "Private",
-};
-
 export function LeaderboardFilters({
   period,
   length,
@@ -41,33 +35,21 @@ export function LeaderboardFilters({
     <div className="filter-stack">
       <div className="filter-topline">
         {scope && onScope ? (
-          <ToggleGroup
-            type="single"
+          <Select
             value={scope}
-            onValueChange={(value) => {
-              if (value) onScope(value as MiniAppLeaderboardScope);
-            }}
-            className="rank-scope-toggle"
-            aria-label="Ranking scope"
+            onValueChange={(value) => onScope(value as MiniAppLeaderboardScope)}
           >
-            <ToggleGroupItem value="global" title="All WordSeek players">
-              Global
-            </ToggleGroupItem>
-            {groupAvailable && (
-              <ToggleGroupItem
-                value="group"
-                title="Scores from this group chat"
-              >
-                Group
-              </ToggleGroupItem>
-            )}
-            <ToggleGroupItem
-              value="private"
-              title="Scores from your private chat with the bot"
-            >
-              Private
-            </ToggleGroupItem>
-          </ToggleGroup>
+            <SelectTrigger aria-label="Ranking scope">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="global">Global</SelectItem>
+              <SelectItem value="private">Private chat</SelectItem>
+              {groupAvailable && (
+                <SelectItem value="group">Current group</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
         ) : (
           <div className="global-label">
             <span className="global-dot" /> Global rankings
@@ -106,14 +88,6 @@ export function LeaderboardFilters({
           ))}
         </ToggleGroup>
       )}
-      {scope === "group" && groupAvailable && (
-        <p className="scope-note">
-          Showing scores earned in this group chat. Open WordSeek from a group
-          to compare with that group.
-        </p>
-      )}
     </div>
   );
 }
-
-export { scopeLabels };

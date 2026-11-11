@@ -131,25 +131,6 @@ Files live in `src/features/wordle/daily/`.
 - `/pausedaily` clears the Redis session so regular play is allowed; attempts
   remain in the database and still count when the player returns.
 
-### Telegram Mini App
-
-Files live in `web/` (React UI), `src/web/` (HTTP server and API) and
-`src/features/miniapp/` (classic games, profile and paginated leaderboards).
-
-- `Bun.serve` serves the built Vite bundle and the JSON API from the same process
-  as the bot. `MINIAPP_URL` enables the chat menu button and `/app`.
-- Every request validates Telegram Web App `initData` HMAC and age. Group
-  context comes from the signed `chat` or `start_param` and is checked with
-  `getChatMember` before group rankings are exposed.
-- Daily play reuses `daily_play.service.ts`, so bot and Mini App attempts,
-  streaks and results cannot diverge. Classic play stores active games in
-  `games` with the `miniapp` source and a per-player scope.
-- Rankings expose global, group and private scopes with pagination and a
-  personal rank under the same filters. Nicknames replace Telegram names in
-  Mini App and bot leaderboards, while Telegram account data is unchanged.
-- The UI follows Telegram theme parameters, supports Auto/Light/Dark, and keeps
-  game state in shared API types from `src/shared/`.
-
 ### Scores and leaderboards
 
 Files live in `src/features/scores/`.

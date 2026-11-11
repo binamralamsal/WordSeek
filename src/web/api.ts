@@ -276,7 +276,7 @@ async function handlePublicProfileSearch(url: URL): Promise<Response> {
   if (query.length < 1 || query.length > 64) {
     throw new ApiRouteError(
       "INVALID_QUERY",
-      "Enter a Telegram username, nickname or user ID.",
+      "Enter a Telegram username or user ID.",
     );
   }
 
@@ -284,7 +284,7 @@ async function handlePublicProfileSearch(url: URL): Promise<Response> {
   if (!user) {
     throw new ApiRouteError(
       "PROFILE_NOT_FOUND",
-      "No WordSeek player matches that username, nickname or ID.",
+      "No WordSeek player matches that username or ID.",
       404,
     );
   }

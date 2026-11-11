@@ -1,4 +1,3 @@
-import { AppError } from "@/components/common/app-status";
 import { GameScreen } from "@/components/game/game-screen";
 import {
   type AppSection,
@@ -133,10 +132,10 @@ export function App() {
   }, [boot, length]);
 
   const leaderboardQuery = useQuery({
-    queryKey: ["leaderboard", scope, period, filterLength, page],
+    queryKey: ["leaderboard", "global", period, filterLength, page],
     queryFn: () =>
       api<MiniAppLeaderboardPage>(
-        `/leaderboard?scope=${scope}&period=${period}&length=${filterLength}&page=${page}`,
+        `/leaderboard?scope=global&period=${period}&length=${filterLength}&page=${page}`,
       ),
     enabled: section === "play" && playView === "rankings",
   });
@@ -146,9 +145,7 @@ export function App() {
       api<MyRanking>(
         `/leaderboard/me?scope=${scope}&period=${period}&length=${filterLength}`,
       ),
-    enabled:
-      section === "play" &&
-      (playView === "rankings" || (playView === "profile" && !targetUserId)),
+    enabled: section === "play" && playView === "profile" && !targetUserId,
   });
   const publicProfileQuery = useQuery({
     queryKey: ["public-profile", targetUserId],
@@ -167,11 +164,6 @@ export function App() {
     enabled:
       Boolean(targetUserId) && section === "play" && playView === "profile",
   });
-
-  useEffect(() => {
-    const resolvedPage = leaderboardQuery.data?.page;
-    if (resolvedPage && resolvedPage !== page) setPage(resolvedPage);
-  }, [leaderboardQuery.data?.page, page]);
 
   useEffect(() => {
     const issue =
@@ -290,20 +282,6 @@ export function App() {
     hapticNotification("error");
   };
 
-  if (bootstrapQuery.isError && !boot) {
-    return (
-      <main className="miniapp">
-        <AppError
-          message={
-            (bootstrapQuery.error as Error)?.message ??
-            "The WordSeek service is unavailable."
-          }
-          onRetry={() => void bootstrapQuery.refetch()}
-        />
-      </main>
-    );
-  }
-
   return (
     <main
       ref={miniAppRef}
@@ -400,22 +378,8 @@ export function App() {
                 page={leaderboardQuery.data ?? null}
                 loading={leaderboardQuery.isPending}
                 pageIndex={page}
-                scope={scope}
                 period={period}
                 length={filterLength}
-                ranking={ownRankingQuery.data}
-                rankingLoading={ownRankingQuery.isPending}
-                groupAvailable={Boolean(boot?.profile.group)}
-                groupTitle={boot?.profile.group?.title}
-                error={
-                  leaderboardQuery.isError
-                    ? ((leaderboardQuery.error as Error)?.message ?? null)
-                    : null
-                }
-                onScope={(next) => {
-                  setScope(next);
-                  setPage(1);
-                }}
                 onPeriod={(next) => {
                   setPeriod(next);
                   setPage(1);
@@ -425,11 +389,6 @@ export function App() {
                   setPage(1);
                 }}
                 onPage={setPage}
-                onRetry={() => void leaderboardQuery.refetch()}
-                onOpenOwnProfile={() => {
-                  setTargetUserId(null);
-                  setPlayView("profile");
-                }}
                 onOpenProfile={(userId) => {
                   setProfileReturnTo("rankings");
                   setTargetUserId(userId);

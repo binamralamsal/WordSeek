@@ -48,9 +48,9 @@ export function GameHelpDialog() {
             ))}
           </div>
           <p className="game-help-tip">
-            Press Enter to submit and Backspace to edit. Daily gives you six
-            tries for today’s word. Classic lets you practise any 4, 5 or
-            6-letter word with up to 30 guesses.
+            Press Enter to submit and Backspace to edit. Classic games are saved
+            when you make your first valid guess, and you can change word length
+            at any time.
           </p>
         </DialogContent>
       </Dialog>
