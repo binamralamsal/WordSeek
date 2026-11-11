@@ -1,35 +1,69 @@
-import { LeaderboardFilters } from "@/components/rankings/leaderboard-filters";
+import {
+  LeaderboardFilters,
+  scopeLabels,
+} from "@/components/rankings/leaderboard-filters";
 import { PlayerAvatar } from "@/components/rankings/player-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { LeaderboardPeriod, WordLength } from "@shared/leaderboard";
-import type { MiniAppLeaderboardPage } from "@shared/miniapp";
-import { ChevronLeft, ChevronRight, Crown, Trophy } from "lucide-react";
+import type {
+  MiniAppLeaderboardPage,
+  MiniAppLeaderboardScope,
+  MyRanking,
+} from "@shared/miniapp";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Crown,
+  RefreshCw,
+  Trophy,
+  UserRound,
+  WifiOff,
+} from "lucide-react";
 
 export function LeaderboardScreen({
   page,
   loading,
   pageIndex,
+  scope,
   period,
   length,
+  ranking,
+  rankingLoading,
+  groupAvailable,
+  groupTitle,
+  error,
   onOpenProfile,
+  onOpenOwnProfile,
+  onScope,
   onPeriod,
   onLength,
   onPage,
+  onRetry,
 }: {
   page: MiniAppLeaderboardPage | null;
   loading: boolean;
   pageIndex: number;
+  scope: MiniAppLeaderboardScope;
   period: LeaderboardPeriod;
   length: WordLength;
+  ranking?: MyRanking;
+  rankingLoading: boolean;
+  groupAvailable: boolean;
+  groupTitle?: string | null;
+  error?: string | null;
   onOpenProfile: (userId: string) => void;
+  onOpenOwnProfile: () => void;
+  onScope: (value: MiniAppLeaderboardScope) => void;
   onPeriod: (value: LeaderboardPeriod) => void;
   onLength: (value: WordLength) => void;
   onPage: (value: number) => void;
+  onRetry: () => void;
 }) {
   const podiumPlayers = pageIndex === 1 ? (page?.rows.slice(0, 3) ?? []) : [];
+  const activeScope = page?.scope ?? scope;
 
   return (
     <section className="subpage rankings-page">
@@ -43,13 +77,32 @@ export function LeaderboardScreen({
         </div>
       </div>
       <LeaderboardFilters
+        scope={scope}
+        groupAvailable={groupAvailable}
         period={period}
         length={length}
+        onScope={onScope}
         onPeriod={onPeriod}
         onLength={onLength}
       />
+      <MyRankingStrip
+        ranking={ranking}
+        loading={rankingLoading}
+        onOpenProfile={onOpenOwnProfile}
+      />
       {loading && !page ? (
         <RankingSkeleton />
+      ) : error && !page ? (
+        <Card className="empty-state is-error">
+          <CardContent>
+            <WifiOff />
+            <b>Couldn’t load rankings</b>
+            <p>{error}</p>
+            <Button variant="outline" onClick={onRetry}>
+              <RefreshCw /> Try again
+            </Button>
+          </CardContent>
+        </Card>
       ) : page?.rows.length ? (
         <>
           {pageIndex === 1 && (
@@ -58,10 +111,16 @@ export function LeaderboardScreen({
           <Card className="ranking-card">
             <CardHeader className="ranking-card-header">
               <CardTitle>
-                Global players <span>{page.totalPlayers.toLocaleString()}</span>
+                {activeScope === "group" ? "Group players" : "Players"}{" "}
+                <span>{page.totalPlayers.toLocaleString()}</span>
               </CardTitle>
-              <Badge variant="secondary">GLOBAL</Badge>
+              <Badge variant="secondary">
+                {scopeLabels[activeScope].toUpperCase()}
+              </Badge>
             </CardHeader>
+            {activeScope === "group" && groupTitle && (
+              <p className="ranking-context">{groupTitle}</p>
+            )}
             <CardContent className="rank-rows">
               {page.rows
                 .filter((player) => !podiumPlayers.includes(player))
@@ -137,7 +196,13 @@ export function LeaderboardScreen({
           <CardContent>
             <Trophy />
             <b>No scores in this period yet</b>
-            <p>Be the first to make the global leaderboard.</p>
+            <p>
+              {activeScope === "global"
+                ? "Be the first to make the global leaderboard."
+                : activeScope === "group"
+                  ? "Be the first to score for this group."
+                  : "Play a game in this chat to start your private ranking."}
+            </p>
           </CardContent>
         </Card>
       )}
@@ -147,6 +212,64 @@ export function LeaderboardScreen({
         </div>
       )}
     </section>
+  );
+}
+
+function MyRankingStrip({
+  ranking,
+  loading,
+  onOpenProfile,
+}: {
+  ranking?: MyRanking;
+  loading: boolean;
+  onOpenProfile: () => void;
+}) {
+  return (
+    <Card className="leaderboard-me">
+      <CardContent>
+        <div className="leaderboard-me-label">
+          <UserRound aria-hidden="true" />
+          <span>Your ranking</span>
+        </div>
+        {loading ? (
+          <div className="leaderboard-me-loading">
+            <Skeleton className="leaderboard-me-rank-skeleton" />
+            <Skeleton className="leaderboard-me-value-skeleton" />
+            <Skeleton className="leaderboard-me-value-skeleton" />
+          </div>
+        ) : ranking ? (
+          <div className="leaderboard-me-content">
+            <div className="leaderboard-me-rank">
+              <small>RANK</small>
+              <b>#{ranking.rank}</b>
+              <span>of {ranking.totalPlayers.toLocaleString()}</span>
+            </div>
+            <div className="leaderboard-me-metrics">
+              <div>
+                <small>POINTS</small>
+                <b>{ranking.score.toLocaleString()}</b>
+              </div>
+              <div>
+                <small>BEST</small>
+                <b>{ranking.bestScore}</b>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="leaderboard-me-button"
+              onClick={onOpenProfile}
+            >
+              Profile
+            </Button>
+          </div>
+        ) : (
+          <p className="leaderboard-me-empty">
+            No score for these filters yet. Finish a game to claim your spot.
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -171,17 +294,22 @@ function Podium({
             key={player.userId}
             onClick={() => onOpenProfile(player.userId)}
             type="button"
-            aria-label={`View ${player.displayName}'s profile`}
+            aria-label={`Rank ${place}, ${player.displayName}, ${player.score} points`}
           >
+            <div className="podium-person">
+              <PlayerAvatar name={player.displayName} url={player.photoUrl} />
+              <div className="podium-name">
+                <b>{player.displayName}</b>
+                {player.isMe && <Badge>You</Badge>}
+              </div>
+              <span className="podium-points">
+                {player.score.toLocaleString()} pts
+              </span>
+            </div>
             <div className="podium-platform">
-              <span>{place === 1 ? <Crown size={15} /> : place}</span>
+              <span>{place === 1 ? <Crown size={14} /> : place}</span>
+              <small>{place === 1 ? "1st" : place === 2 ? "2nd" : "3rd"}</small>
             </div>
-            <PlayerAvatar name={player.displayName} url={player.photoUrl} />
-            <div className="podium-name">
-              <b>{player.displayName}</b>
-              {player.isMe && <Badge>You</Badge>}
-            </div>
-            <span>{player.score.toLocaleString()} pts</span>
           </button>
         );
       })}

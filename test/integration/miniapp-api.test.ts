@@ -199,4 +199,95 @@ describe("Mini App API", () => {
       wordLength: "all",
     });
   });
+
+  test("scopes rankings to the current group and finds players by nickname", async () => {
+    await seedUser(env.db, { id: "4242", name: "Ada Lovelace" });
+    await seedUser(env.db, { id: "7777", name: "Grace Hopper" });
+    await env.db
+      .updateTable("users")
+      .set({ nickname: "Speedster" })
+      .where("id", "=", "4242")
+      .execute();
+    await seedScore(env.db, {
+      userId: "4242",
+      chatId: "-1001",
+      score: 10,
+      wordLength: "5",
+    });
+    await seedScore(env.db, {
+      userId: "7777",
+      chatId: "-1001",
+      score: 20,
+      wordLength: "5",
+    });
+    await seedScore(env.db, {
+      userId: "4242",
+      chatId: "4242",
+      score: 5,
+      wordLength: "5",
+    });
+
+    const auth: AuthContext = {
+      userId: "4242",
+      user: { id: 4242, first_name: "Ada" },
+      group: { chatId: "-1001", title: "Testers" },
+    };
+
+    const groupResponse = await handleApiRequest(
+      new Request(
+        "http://localhost/api/leaderboard?scope=group&period=all&length=5",
+      ),
+      auth,
+    );
+    const groupBody = (await groupResponse.json()) as {
+      data: {
+        scope: string;
+        rows: Array<{ displayName: string; score: number }>;
+      };
+    };
+
+    expect(groupResponse.status).toBe(200);
+    expect(groupBody.data.scope).toBe("group");
+    expect(
+      groupBody.data.rows.map(({ displayName, score }) => ({
+        displayName,
+        score,
+      })),
+    ).toEqual([
+      { displayName: "Grace Hopper", score: 20 },
+      { displayName: "Speedster", score: 10 },
+    ]);
+
+    const privateResponse = await handleApiRequest(
+      new Request(
+        "http://localhost/api/leaderboard?scope=private&period=all&length=5",
+      ),
+      auth,
+    );
+    const privateBody = (await privateResponse.json()) as {
+      data: {
+        rows: Array<{ displayName: string; score: number; isMe: boolean }>;
+      };
+    };
+
+    expect(
+      privateBody.data.rows.map(({ displayName, score, isMe }) => ({
+        displayName,
+        score,
+        isMe,
+      })),
+    ).toEqual([{ displayName: "Speedster", score: 5, isMe: true }]);
+
+    const searchResponse = await handleApiRequest(
+      new Request("http://localhost/api/profile/search?q=speedster"),
+      auth,
+    );
+    const searchBody = (await searchResponse.json()) as {
+      data: Record<string, unknown>;
+    };
+
+    expect(searchResponse.status).toBe(200);
+    expect(searchBody.data.id).toBe("4242");
+    expect(searchBody.data.displayName).toBe("Speedster");
+  });
 });

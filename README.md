@@ -19,7 +19,10 @@
 - Play daily and classic games in the integrated Telegram Mini App.
 - Supports multiplayer gameplay in groups, with admin tools for game management.
 - Daily **WordSeek of the Day** with streaks and AI-generated word details.
-- Keep track of scores with group and global leaderboards.
+- Keep track of scores with global, group and private leaderboards, plus your
+  own rank under every filter.
+- Personalize the Mini App with a leaderboard nickname, Telegram light/dark
+  theme sync, and your profile statistics.
 - Commands to view personal scores and leaderboard rankings filtered by time (today, week, month, etc.).
 - Flexible game settings: customizable limits for attempts and group admin permissions.
 - Anti-cheat message tracking, captcha challenges and broadcast tools for admins.
@@ -145,24 +148,30 @@ then close Postgres and Redis before exiting.
 
 ## Environment Variables
 
-| Variable                  | Description                                             | Example                                              |
-| ------------------------- | ------------------------------------------------------- | ---------------------------------------------------- |
-| `BOT_TOKEN`               | Your Telegram bot token from BotFather                  | `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`               |
-| `DATABASE_URL`            | PostgreSQL connection string                            | `postgresql://user:password@localhost:5432/wordseek` |
-| `NODE_ENV`                | Environment mode                                        | `development`, `production` or `test`                |
-| `REDIS_URI`               | Redis connection string                                 | `redis://127.0.0.1:6379`                             |
-| `ADMIN_USERS`             | Comma-separated Telegram user IDs with bot-admin rights | `123456789,987654321`                                |
-| `TIME_ZONE`               | Timezone used for the daily reset                       | `Asia/Kathmandu`                                     |
-| `DAILY_WORDLE_SECRET`     | Secret used to derive the daily word order              | `change-me`                                          |
-| `DAILY_WORDLE_START_DATE` | First day of the daily-word rotation (`YYYY-MM-DD`)     | `2025-01-01`                                         |
-| `GEMINI_API_KEYS`         | Space-separated Gemini keys for daily word details      | `key-one key-two`                                    |
-| `CUSTOM_API_ROOT`         | Optional Telegram Bot API root                          | `https://api.telegram.org`                           |
-| `LOGS_CHANNEL`            | Anti-cheat channel for suspicious messages only         | `-1001234567890`                                     |
-| `SYSTEM_LOG_CHANNEL`      | Separate channel for unexpected system errors           | `-1009876543210`                                     |
-| `LOG_LEVEL`               | Minimum log level (`fatal` … `silent`)                  | `info`                                               |
-| `LOG_DIR`                 | Directory for daily log files                           | `logs`                                               |
-| `LOG_RETENTION_DAYS`      | Days of daily log files to keep                         | `14`                                                 |
-| `LOG_TO_FILE`             | Write daily log files in addition to stdout             | `true` or `false`                                    |
+| Variable                       | Description                                             | Example                                              |
+| ------------------------------ | ------------------------------------------------------- | ---------------------------------------------------- |
+| `BOT_TOKEN`                    | Your Telegram bot token from BotFather                  | `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`               |
+| `DATABASE_URL`                 | PostgreSQL connection string                            | `postgresql://user:password@localhost:5432/wordseek` |
+| `NODE_ENV`                     | Environment mode                                        | `development`, `production` or `test`                |
+| `REDIS_URI`                    | Redis connection string                                 | `redis://127.0.0.1:6379`                             |
+| `ADMIN_USERS`                  | Comma-separated Telegram user IDs with bot-admin rights | `123456789,987654321`                                |
+| `TIME_ZONE`                    | Timezone used for the daily reset                       | `Asia/Kathmandu`                                     |
+| `DAILY_WORDLE_SECRET`          | Secret used to derive the daily word order              | `change-me`                                          |
+| `DAILY_WORDLE_START_DATE`      | First day of the daily-word rotation (`YYYY-MM-DD`)     | `2025-01-01`                                         |
+| `GEMINI_API_KEYS`              | Space-separated Gemini keys for daily word details      | `key-one key-two`                                    |
+| `CUSTOM_API_ROOT`              | Optional Telegram Bot API root                          | `https://api.telegram.org`                           |
+| `LOGS_CHANNEL`                 | Anti-cheat channel for suspicious messages only         | `-1001234567890`                                     |
+| `SYSTEM_LOG_CHANNEL`           | Separate channel for unexpected system errors           | `-1009876543210`                                     |
+| `LOG_LEVEL`                    | Minimum log level (`fatal` … `silent`)                  | `info`                                               |
+| `LOG_DIR`                      | Directory for daily log files                           | `logs`                                               |
+| `LOG_RETENTION_DAYS`           | Days of daily log files to keep                         | `14`                                                 |
+| `LOG_TO_FILE`                  | Write daily log files in addition to stdout             | `true` or `false`                                    |
+| `MINIAPP_URL`                  | Public HTTPS origin of the Mini App                     | `https://wordseek.example.com`                       |
+| `MINIAPP_SHORT_NAME`           | BotFather short name used by group `/app` links         | `app`                                                |
+| `MINIAPP_PORT`                 | Mini App HTTP port when `PORT` is not set               | `3000`                                               |
+| `MINIAPP_STATIC_DIR`           | Built frontend directory served by Bun                  | `dist/miniapp`                                       |
+| `MINIAPP_AUTH_MAX_AGE_SECONDS` | Maximum accepted age of signed `initData`               | `86400`                                              |
+| `MINIAPP_DEV_USER_ID`          | Development-only user ID for browser previews           | `123456789`                                          |
 
 `LOGS_CHANNEL` and `SYSTEM_LOG_CHANNEL` serve different purposes and must not
 point at the same chat: the former tracks cheaters, the latter reports crashes.

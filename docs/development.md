@@ -75,27 +75,50 @@ command menu and resumes a pending broadcast.
 
 `src/config/env.ts` is authoritative. `.env.example` is the documented template.
 
-| Variable                  | Required | Default                    | Notes                                                                      |
-| ------------------------- | -------- | -------------------------- | -------------------------------------------------------------------------- |
-| `BOT_TOKEN`               | yes      | —                          | Telegram bot token.                                                        |
-| `DATABASE_URL`            | yes      | —                          | PostgreSQL connection string.                                              |
-| `DAILY_WORDLE_SECRET`     | yes      | —                          | Seed for the deterministic daily word order.                               |
-| `REDIS_URI`               | no       | `redis://127.0.0.1:6379`   | Redis connection.                                                          |
-| `NODE_ENV`                | no       | `development`              | `development`, `production` or `test`.                                     |
-| `ADMIN_USERS`             | no       | empty                      | Comma-separated Telegram user IDs with bot-admin rights.                   |
-| `TIME_ZONE`               | no       | `UTC`                      | Timezone for cron schedules and daily boundaries.                          |
-| `DAILY_WORDLE_START_DATE` | no       | `2025-01-01`               | First day of the daily-word rotation (`YYYY-MM-DD`).                       |
-| `GEMINI_API_KEYS`         | no       | empty                      | Space-separated Gemini keys. Without keys, daily word details are omitted. |
-| `CUSTOM_API_ROOT`         | no       | `https://api.telegram.org` | Alternate Telegram Bot API root.                                           |
-| `LOGS_CHANNEL`            | no       | empty                      | Anti-cheat alerts only.                                                    |
-| `SYSTEM_LOG_CHANNEL`      | no       | empty                      | Unexpected errors/fatal failures only.                                     |
-| `LOG_LEVEL`               | no       | `info`                     | `fatal`, `error`, `warn`, `info`, `debug`, `trace`, `silent`.              |
-| `LOG_DIR`                 | no       | `logs`                     | Daily log file directory.                                                  |
-| `LOG_RETENTION_DAYS`      | no       | `14`                       | Days of daily files to keep.                                               |
-| `LOG_TO_FILE`             | no       | `true`                     | Set `false` to log only to stdout.                                         |
+| Variable                       | Required | Default                    | Notes                                                                      |
+| ------------------------------ | -------- | -------------------------- | -------------------------------------------------------------------------- |
+| `BOT_TOKEN`                    | yes      | —                          | Telegram bot token.                                                        |
+| `DATABASE_URL`                 | yes      | —                          | PostgreSQL connection string.                                              |
+| `DAILY_WORDLE_SECRET`          | yes      | —                          | Seed for the deterministic daily word order.                               |
+| `REDIS_URI`                    | no       | `redis://127.0.0.1:6379`   | Redis connection.                                                          |
+| `NODE_ENV`                     | no       | `development`              | `development`, `production` or `test`.                                     |
+| `ADMIN_USERS`                  | no       | empty                      | Comma-separated Telegram user IDs with bot-admin rights.                   |
+| `TIME_ZONE`                    | no       | `UTC`                      | Timezone for cron schedules and daily boundaries.                          |
+| `DAILY_WORDLE_START_DATE`      | no       | `2025-01-01`               | First day of the daily-word rotation (`YYYY-MM-DD`).                       |
+| `GEMINI_API_KEYS`              | no       | empty                      | Space-separated Gemini keys. Without keys, daily word details are omitted. |
+| `CUSTOM_API_ROOT`              | no       | `https://api.telegram.org` | Alternate Telegram Bot API root.                                           |
+| `LOGS_CHANNEL`                 | no       | empty                      | Anti-cheat alerts only.                                                    |
+| `SYSTEM_LOG_CHANNEL`           | no       | empty                      | Unexpected errors/fatal failures only.                                     |
+| `LOG_LEVEL`                    | no       | `info`                     | `fatal`, `error`, `warn`, `info`, `debug`, `trace`, `silent`.              |
+| `LOG_DIR`                      | no       | `logs`                     | Daily log file directory.                                                  |
+| `LOG_RETENTION_DAYS`           | no       | `14`                       | Days of daily files to keep.                                               |
+| `LOG_TO_FILE`                  | no       | `true`                     | Set `false` to log only to stdout.                                         |
+| `MINIAPP_URL`                  | no       | empty                      | Public HTTPS origin of the Mini App. Enables `/app` and the chat menu.     |
+| `MINIAPP_SHORT_NAME`           | no       | `app`                      | BotFather short name used by group `/app` links.                           |
+| `MINIAPP_PORT`                 | no       | `3000`                     | Mini App HTTP port when `PORT` is not set.                                 |
+| `MINIAPP_STATIC_DIR`           | no       | `dist/miniapp`             | Built frontend directory served by Bun.                                    |
+| `MINIAPP_AUTH_MAX_AGE_SECONDS` | no       | `86400`                    | Maximum accepted age of signed Telegram `initData`.                        |
+| `MINIAPP_DEV_USER_ID`          | no       | empty                      | Development-only user ID for browser previews; ignored in production.      |
 
 `LOGS_CHANNEL` and `SYSTEM_LOG_CHANNEL` must not be the same chat. The first is
 for suspicious-message tracking; the second is for crashes.
+
+### Mini App frontend
+
+The React frontend lives in `web/` and is bundled into `dist/miniapp` by Vite.
+It uses the shared pure modules in `src/shared/` for scoring, leaderboard types
+and nickname validation, so the API and UI cannot drift apart.
+
+```bash
+bun run dev:miniapp      # Vite dev server with hot reload
+bun run build:miniapp    # production bundle served by the Bun process
+bun run preview:miniapp  # inspect the production bundle locally
+bun run check:web        # type check the frontend (part of verify)
+```
+
+Set `MINIAPP_URL` to the public HTTPS origin in production. For browser-only
+testing, set `MINIAPP_DEV_USER_ID` (development only) and start Vite; API
+requests then send `X-Dev-User-Id` instead of Telegram `initData`.
 
 ## Day-to-day commands
 
@@ -113,7 +136,8 @@ bun lint                # lint (warnings do not fail)
 bun lint:fix            # safe autofixes
 bun lint:type-aware     # opt-in, currently noisy
 bun check               # type check
-bun run verify          # fmt:check + lint + check + test
+bun run check:web       # type check the Mini App frontend
+bun run verify          # fmt:check + lint + check + check:web + test
 ```
 
 Run `bun run verify` before committing. CI runs the same command with the Bun

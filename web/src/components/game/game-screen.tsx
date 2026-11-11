@@ -487,6 +487,20 @@ export function GameScreen({
         <GameResultCard kind="daily" state={game} />
       )}
       {mode === "classic" && classicState && finished && (
+        <GameResultCard
+          kind="classic"
+          state={classicState}
+          onNewGame={onNewGame}
+        />
+      )}
+      <div className="sr-only" role="status" aria-live="polite">
+        {finished && game
+          ? game.status === "won"
+            ? "Puzzle solved."
+            : `Puzzle complete. The answer was ${game.solution?.toUpperCase()}.`
+          : ""}
+      </div>
+      {mode === "classic" && classicState && finished && (
         <GameResultDialog
           open={resultOpen}
           onOpenChange={setResultOpen}
